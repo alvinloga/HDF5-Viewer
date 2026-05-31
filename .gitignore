@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# PyInstaller generated spec files
+*.spec
+
+# Test data (too large for GitHub)
+*.h5
+*.hdf5
+*.hdf
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# OpenClaw agent workspace files (not part of HDF5 Viewer)
+AGENTS.md
+SOUL.md
+IDENTITY.md
+USER.md
+TOOLS.md
+HEARTBEAT.md
+.openclaw/

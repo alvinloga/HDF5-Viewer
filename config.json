@@ -1,0 +1,41 @@
+{
+  "app": {
+    "name": "HDF5 Viewer",
+    "version": "0.1.0"
+  },
+  "viewer": {
+    "maxPreviewRows": 200,
+    "maxPreviewCols": 100,
+    "maxPreviewBytes": 52428800,
+    "defaultSliceRows": 200,
+    "pageSize": 200
+  },
+  "cache": {
+    "maxSizeMb": 512,
+    "ttlSeconds": 300
+  },
+  "async": {
+    "maxWorkers": 4,
+    "timeoutMs": 30000
+  },
+  "ui": {
+    "theme": "dark",
+    "fontFamily": "Consolas, Monaco, monospace",
+    "fontSize": 13,
+    "sidebarWidth": 280,
+    "bottomPanelHeight": 200,
+    "activityBarWidth": 48
+  },
+  "plugins": {
+    "builtinDir": "plugins/builtin",
+    "externalDir": "plugins/external",
+    "autoDiscover": true
+  },
+  "folder": {
+    "defaultPath": "",
+    "fileFilters": [".h5", ".hdf5", ".hdf", ".h5py"],
+    "maxRecursionDepth": 5,
+    "showHiddenFiles": false,
+    "watchForChanges": false
+  }
+}
