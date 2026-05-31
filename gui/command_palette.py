@@ -23,43 +23,18 @@ class CommandPalette(QDialog):
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Type a command...")
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #3c3c3c;
-                color: #cccccc;
-                border: 1px solid #555555;
-                padding: 8px;
-                font-size: 14px;
-                border-radius: 4px;
-            }
-            QLineEdit:focus {
-                border-color: #0078d4;
-            }
-        """)
         self.search_input.textChanged.connect(self._filter_commands)
         layout.addWidget(self.search_input)
 
         self.command_list = QListWidget()
-        self.command_list.setStyleSheet("""
-            QListWidget {
-                background-color: #252526;
-                color: #cccccc;
-                border: none;
-                font-size: 13px;
-            }
-            QListWidget::item {
-                padding: 6px 8px;
-            }
-            QListWidget::item:selected {
-                background-color: #094771;
-                color: #ffffff;
-            }
-        """)
         self.command_list.itemClicked.connect(self._on_command_clicked)
         layout.addWidget(self.command_list)
 
         self._commands: list[tuple[str, str, str]] = []
         self._register_default_commands()
+
+        # 应用默认主题样式
+        self.apply_theme("dark")
 
     def _register_default_commands(self):
         self._commands = [
@@ -117,6 +92,67 @@ class CommandPalette(QDialog):
                 self.command_list.setCurrentRow(row + 1)
         else:
             super().keyPressEvent(event)
+
+    def apply_theme(self, theme: str):
+        """根据主题切换样式"""
+        if theme == "light":
+            self.search_input.setStyleSheet("""
+                QLineEdit {
+                    background-color: #ffffff;
+                    color: #333333;
+                    border: 1px solid #cccccc;
+                    padding: 8px;
+                    font-size: 14px;
+                    border-radius: 4px;
+                }
+                QLineEdit:focus {
+                    border-color: #0078d4;
+                }
+            """)
+            self.command_list.setStyleSheet("""
+                QListWidget {
+                    background-color: #ffffff;
+                    color: #333333;
+                    border: none;
+                    font-size: 13px;
+                }
+                QListWidget::item {
+                    padding: 6px 8px;
+                }
+                QListWidget::item:selected {
+                    background-color: #0060c0;
+                    color: #ffffff;
+                }
+            """)
+        else:  # dark
+            self.search_input.setStyleSheet("""
+                QLineEdit {
+                    background-color: #3c3c3c;
+                    color: #cccccc;
+                    border: 1px solid #555555;
+                    padding: 8px;
+                    font-size: 14px;
+                    border-radius: 4px;
+                }
+                QLineEdit:focus {
+                    border-color: #0078d4;
+                }
+            """)
+            self.command_list.setStyleSheet("""
+                QListWidget {
+                    background-color: #252526;
+                    color: #cccccc;
+                    border: none;
+                    font-size: 13px;
+                }
+                QListWidget::item {
+                    padding: 6px 8px;
+                }
+                QListWidget::item:selected {
+                    background-color: #094771;
+                    color: #ffffff;
+                }
+            """)
 
     def show_palette(self):
         self.search_input.clear()

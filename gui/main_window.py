@@ -287,10 +287,16 @@ class MainWindow(QMainWindow):
         from PyQt6.QtWidgets import QApplication
         if theme == 'light':
             QApplication.instance().setStyleSheet(LIGHT_STYLE)
-            self.secondary_bar.setStyleSheet("background-color: #f3f3f3;")
         else:
             QApplication.instance().setStyleSheet(DARK_STYLE)
-            self.secondary_bar.setStyleSheet("background-color: #333333;")
+
+        # 同步更新组件主题
+        if hasattr(self, 'secondary_bar'):
+            self.secondary_bar.apply_theme(theme)
+        if hasattr(self, 'secondary_panel'):
+            self.secondary_panel.apply_theme(theme)
+        if hasattr(self, 'command_palette'):
+            self.command_palette.apply_theme(theme)
 
     def _on_open_file(self):
         """打开文件"""

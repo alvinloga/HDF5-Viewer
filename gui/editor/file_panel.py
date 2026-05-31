@@ -252,6 +252,7 @@ class FilePanel(QWidget):
         self.editor_bar = DataEditorBar(self)
         self.editor_bar.hide()  # 默认隐藏，只在 View 菜单中启用
         self.editor_bar.edit_enabled.connect(self._on_edit_enabled)
+        self.editor_bar.save_requested.connect(self._on_save_requested)
         layout.addWidget(self.editor_bar)
 
         # 数据表格
@@ -297,6 +298,22 @@ class FilePanel(QWidget):
     def _on_edit_enabled(self, enabled: bool) -> None:
         """编辑模式切换"""
         self.data_table.set_editable(enabled)
+
+    def _on_save_requested(self) -> None:
+        """保存编辑后的数据回文件"""
+        if not self._current_path or not self._source:
+            return
+
+        try:
+            edited_data = self.data_table.get_edited_data()
+            if edited_data is None:
+                self._event_bus.emit(EventBus.ERROR_OCCURRED, "No data to save")
+                return
+
+            self._source.write_data(self._current_path, edited_data)
+            self._event_bus.emit(EventBus.STATUS_MESSAGE, f"Saved: {self._current_path}")
+        except Exception as e:
+            self._event_bus.emit(EventBus.ERROR_OCCURRED, f"Save failed: {e}")
 
     def _load_data_async(self, slices: tuple) -> None:
         """异步加载数据"""

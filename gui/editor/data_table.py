@@ -98,6 +98,12 @@ class DataTableModel(QAbstractTableModel):
                 return str(self._row_start + section)
         return None
 
+    def get_edited_data(self) -> np.ndarray | None:
+        """获取编辑后的完整数据"""
+        if not self._editable or self._data is None:
+            return None
+        return self._data.copy()
+
     def load_data(self, data: np.ndarray, row_start: int = 0) -> None:
         """加载数据"""
         self.beginResetModel()

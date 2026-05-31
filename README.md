@@ -15,9 +15,10 @@
 - 📊 **Attributes 独立标签页** — 底部面板独立显示属性，双击可在新标签页查看属性值
 - 🔍 **全局搜索** — 搜索 HDF5 节点路径
 - 💾 **多格式导出** — CSV + NumPy (.npy) 导出
-- ✏️ **数据编辑模式** — 切换编辑模式，直接修改数据集值
+- ✏️ **数据编辑模式** — 切换编辑模式，直接修改数据集值并保存回文件
 - 🌐 **多数据源** — HDF5 + NetCDF + Zarr（可选依赖，缺失时静默跳过）
 - 🌐 **右侧面板栏** — Search + Plugins 独立右侧面板，与 Explorer 同时可见
+- 🧪 **121 项测试覆盖** — 主题切换、数据编辑、标签操作、搜索、插件、边界情况全覆盖
 
 ## 🚀 快速开始
 
@@ -254,14 +255,16 @@ sudo apt install libxcb-cursor0
 
 - ✅ 插件面板 UI（Activity Bar 🔌 入口 + 可视化插件选择 + 参数配置）
 - ✅ Matplotlib 可视化（折线图/直方图/热力图，替代 ASCII 渲染）
-- ✅ Command Palette（Ctrl+Shift+P，14 个命令）
+- ✅ Command Palette（Ctrl+Shift+P，14 个命令）+ 主题跟随切换
 - ✅ 标签拖拽独立窗口（拖出标签 → 独立窗口，关闭自动回收）
-- ✅ Dark/Light 主题切换 + 配置持久化
+- ✅ Dark/Light 主题切换 + 配置持久化（CommandPalette/SecondaryBar/SecondaryPanel 全部跟随）
 - ✅ NetCDF/Zarr 条件注册（可选依赖，缺失时静默跳过）
 - ✅ NumPy (.npy) 导出
-- ✅ 数据编辑模式（Toggle Edit Mode + 单元格编辑 + Save）
+- ✅ 数据编辑模式（Toggle Edit Mode + 单元格编辑 + Save 回写文件）
 - ✅ 右侧面板栏（Search + Plugins 独立面板，与 Explorer 同时可见）
-- ✅ 右键菜单修复（Split Right/Down、Close/Others/All 全部可用）
+- ✅ 右键菜单修复（Split Right/Down 垂直嵌套、Close/Others/All 全部可用）
+- ✅ Split Down 真正的垂直嵌套分割（QSplitter 嵌套）
+- ✅ 121 项测试全面覆盖
 
 ### v0.1.0
 

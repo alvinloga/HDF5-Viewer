@@ -76,3 +76,42 @@ class SecondaryBar(QWidget):
         for n, btn in self._buttons.items():
             btn.setChecked(n == name)
         self._current_panel = name
+
+    def apply_theme(self, theme: str):
+        """根据主题切换样式"""
+        if theme == "light":
+            self.setStyleSheet("background-color: #f3f3f3;")
+            for btn in self._buttons.values():
+                btn.setStyleSheet("""
+                    QPushButton {
+                        border: none;
+                        background-color: transparent;
+                        font-size: 18px;
+                        padding: 8px;
+                    }
+                    QPushButton:hover {
+                        background-color: rgba(0, 0, 0, 0.06);
+                    }
+                    QPushButton:checked {
+                        background-color: rgba(0, 0, 0, 0.08);
+                        border-right: 2px solid #0078d4;
+                    }
+                """)
+        else:  # dark
+            self.setStyleSheet("background-color: #333333;")
+            for btn in self._buttons.values():
+                btn.setStyleSheet("""
+                    QPushButton {
+                        border: none;
+                        background-color: transparent;
+                        font-size: 18px;
+                        padding: 8px;
+                    }
+                    QPushButton:hover {
+                        background-color: rgba(255, 255, 255, 0.1);
+                    }
+                    QPushButton:checked {
+                        background-color: rgba(255, 255, 255, 0.15);
+                        border-right: 2px solid #0078d4;
+                    }
+                """)

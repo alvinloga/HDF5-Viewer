@@ -115,3 +115,8 @@ class DataSource(ABC):
     def get_path(self) -> str:
         """获取文件路径"""
         ...
+
+    @abstractmethod
+    def write_data(self, path: str, data: np.ndarray) -> bool:
+        """将数据写回指定路径（子类实现）"""
+        ...

@@ -26,7 +26,7 @@ class H5Source(DataSource):
         if self._file:
             self.close()
         self._path = path
-        self._file = h5py.File(path, 'r')
+        self._file = h5py.File(path, 'r+')
 
     def close(self) -> None:
         """关闭文件"""
@@ -130,6 +130,17 @@ class H5Source(DataSource):
         if not self._file:
             raise RuntimeError("File not opened")
         return dict(self._file[path].attrs)
+
+    def write_data(self, path: str, data: np.ndarray) -> bool:
+        """将数据写回 HDF5 文件"""
+        if not self._file:
+            return False
+        try:
+            dataset = self._file[path]
+            dataset[...] = data
+            return True
+        except Exception as e:
+            raise RuntimeError(f"Failed to write data to {path}: {e}")
 
     def search(self, keyword: str) -> list[str]:
         """搜索节点路径"""

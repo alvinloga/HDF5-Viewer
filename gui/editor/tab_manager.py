@@ -157,7 +157,7 @@ class TabManager(QWidget):
         # 反向映射：panel 对象 -> key，用于通过 panel 快速查找 key
         self._panel_to_key: dict[int, str] = {}  # id(panel) -> key
 
-    def _create_tab_group(self) -> QTabWidget:
+    def _create_tab_group(self, add_to_splitter: bool = True) -> QTabWidget:
         """创建新的标签页组"""
         tab_widget = QTabWidget()
         tab_widget.setTabBar(DraggableTabBar(tab_widget))
@@ -202,7 +202,8 @@ class TabManager(QWidget):
         tab_bar.close_all_requested.connect(lambda tw=tab_widget: self._on_close_all(tw))
 
         self._tab_groups.append(tab_widget)
-        self._splitter.addWidget(tab_widget)
+        if add_to_splitter:
+            self._splitter.addWidget(tab_widget)
 
         return tab_widget
 
@@ -300,9 +301,35 @@ class TabManager(QWidget):
             return
         tab_name = tab_widget.tabText(index)  # 先保存标题！
         tab_widget.removeTab(index)
-        new_group = self._create_tab_group()
-        new_group.addTab(panel, tab_name)
-        self._file_to_group[panel_key] = self._tab_groups.index(new_group)
+
+        if orientation == Qt.Orientation.Horizontal:
+            # Split Right: 在水平 splitter 中添加新 tab group
+            new_group = self._create_tab_group()
+            new_group.addTab(panel, tab_name)
+            self._file_to_group[panel_key] = self._tab_groups.index(new_group)
+        elif orientation == Qt.Orientation.Vertical:
+            # Split Down: 创建垂直嵌套分割
+            splitter = self._splitter
+            splitter_index = splitter.indexOf(tab_widget)
+
+            # QSplitter 没有 removeWidget，用 setParent(None) 取出
+            tab_widget.setParent(None)
+
+            # 创建垂直 splitter
+            v_splitter = QSplitter(Qt.Orientation.Vertical)
+            v_splitter.setChildrenCollapsible(False)
+            v_splitter.addWidget(tab_widget)
+
+            # 创建新 tab group 加入垂直 splitter
+            new_group = self._create_tab_group(add_to_splitter=False)
+            new_group.addTab(panel, tab_name)
+            v_splitter.addWidget(new_group)
+            v_splitter.setSizes([300, 300])
+
+            # 将垂直 splitter 插入原 splitter 的对应位置
+            splitter.insertWidget(splitter_index, v_splitter)
+
+            self._file_to_group[panel_key] = self._tab_groups.index(new_group)
 
     def _on_close_others(self, tab_widget: QTabWidget, keep_index: int) -> None:
         """关闭其他标签页"""

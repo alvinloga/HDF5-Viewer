@@ -66,3 +66,50 @@ class SecondaryPanel(QWidget):
 
     def get_plugin_panel(self) -> PluginPanel:
         return self.plugin_panel
+
+    def apply_theme(self, theme: str):
+        """根据主题切换样式"""
+        if theme == "light":
+            self.setStyleSheet("background-color: #f3f3f3;")
+            self.tabs.setStyleSheet("""
+                QTabWidget::pane {
+                    border: none;
+                    background-color: #f3f3f3;
+                }
+                QTabBar::tab {
+                    background-color: #e8e8e8;
+                    color: #666666;
+                    padding: 6px 12px;
+                    margin-right: 1px;
+                    border: none;
+                }
+                QTabBar::tab:selected {
+                    background-color: #f3f3f3;
+                    color: #333333;
+                }
+                QTabBar::tab:hover {
+                    background-color: #d8d8d8;
+                }
+            """)
+        else:  # dark
+            self.setStyleSheet("background-color: #252526;")
+            self.tabs.setStyleSheet("""
+                QTabWidget::pane {
+                    border: none;
+                    background-color: #252526;
+                }
+                QTabBar::tab {
+                    background-color: #2d2d2d;
+                    color: #969696;
+                    padding: 6px 12px;
+                    margin-right: 1px;
+                    border: none;
+                }
+                QTabBar::tab:selected {
+                    background-color: #252526;
+                    color: #ffffff;
+                }
+                QTabBar::tab:hover {
+                    background-color: #383838;
+                }
+            """)
