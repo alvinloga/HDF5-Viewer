@@ -2,7 +2,7 @@
 
 from PyQt6.QtWidgets import (QTabWidget, QTabBar, QWidget, QVBoxLayout,
                               QHBoxLayout, QApplication, QMainWindow,
-                              QMenu, QSplitter)
+                              QMenu, QSplitter, QLabel)
 from PyQt6.QtCore import Qt, pyqtSignal, QPoint
 from PyQt6.QtGui import QMouseEvent, QAction
 
@@ -19,6 +19,10 @@ class DraggableTabBar(QTabBar):
     """可拖拽的标签栏"""
 
     tab_dragged_out = pyqtSignal(int)  # 标签被拖出的索引
+    split_requested = pyqtSignal(int, object)  # index, Qt.Orientation
+    close_requested = pyqtSignal(int)
+    close_others_requested = pyqtSignal(int)
+    close_all_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -58,59 +62,68 @@ class DraggableTabBar(QTabBar):
 
         # Split Right
         split_right = QAction("Split Right", self)
-        split_right.triggered.connect(lambda: self._split_tab(index, Qt.Orientation.Horizontal))
+        split_right.triggered.connect(lambda: self.split_requested.emit(index, Qt.Orientation.Horizontal))
         menu.addAction(split_right)
 
         # Split Down
         split_down = QAction("Split Down", self)
-        split_down.triggered.connect(lambda: self._split_tab(index, Qt.Orientation.Vertical))
+        split_down.triggered.connect(lambda: self.split_requested.emit(index, Qt.Orientation.Vertical))
         menu.addAction(split_down)
 
         menu.addSeparator()
 
         # Close
         close_action = QAction("Close", self)
-        close_action.triggered.connect(lambda: self._close_tab(index))
+        close_action.triggered.connect(lambda: self.close_requested.emit(index))
         menu.addAction(close_action)
 
         # Close Others
         close_others = QAction("Close Others", self)
-        close_others.triggered.connect(lambda: self._close_other_tabs(index))
+        close_others.triggered.connect(lambda: self.close_others_requested.emit(index))
         menu.addAction(close_others)
 
         # Close All
         close_all = QAction("Close All", self)
-        close_all.triggered.connect(self._close_all_tabs)
+        close_all.triggered.connect(self.close_all_requested.emit)
         menu.addAction(close_all)
 
         menu.exec(event.globalPos())
 
-    def _split_tab(self, index: int, orientation: Qt.Orientation) -> None:
-        """分割标签页"""
-        parent = self.parent()
-        if isinstance(parent, TabManager):
-            parent.split_tab(index, orientation)
 
-    def _close_tab(self, index: int) -> None:
-        """关闭标签页"""
-        parent = self.parent()
-        if isinstance(parent, TabManager):
-            parent.tabCloseRequested.emit(index)
+class DetachedWindow(QMainWindow):
+    """拖拽出去的独立窗口"""
 
-    def _close_other_tabs(self, keep_index: int) -> None:
-        """关闭其他标签页"""
-        parent = self.parent()
-        if isinstance(parent, TabManager):
-            for i in range(parent.count() - 1, -1, -1):
-                if i != keep_index:
-                    parent.tabCloseRequested.emit(i)
+    closed = pyqtSignal(str)  # panel_key
 
-    def _close_all_tabs(self) -> None:
-        """关闭所有标签页"""
-        parent = self.parent()
-        if isinstance(parent, TabManager):
-            for i in range(parent.count() - 1, -1, -1):
-                parent.tabCloseRequested.emit(i)
+    def __init__(self, widget, panel_key: str, title: str = ""):
+        super().__init__()
+        self._panel_key = panel_key
+        self.setWindowTitle(title or "HDF5 Viewer - Detached")
+        self.resize(800, 600)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+
+        if isinstance(widget, FilePanel) and not widget.get_current_node():
+            container = QWidget()
+            layout = QVBoxLayout(container)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.addWidget(widget)
+            self._empty_hint = QLabel("No dataset loaded. Double-click a dataset in Explorer to view data.")
+            self._empty_hint.setStyleSheet("""
+                QLabel {
+                    background-color: #1e1e1e;
+                    color: #969696;
+                    font-size: 14px;
+                }
+            """)
+            self._empty_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(self._empty_hint)
+            self.setCentralWidget(container)
+        else:
+            self.setCentralWidget(widget)
+
+    def closeEvent(self, event):
+        self.closed.emit(self._panel_key)
+        event.accept()
 
 
 class TabManager(QWidget):
@@ -123,6 +136,7 @@ class TabManager(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._event_bus = EventBus.get_instance()
+        self._detached_windows: list[DetachedWindow] = []
 
         # 主布局
         layout = QVBoxLayout(self)
@@ -177,6 +191,15 @@ class TabManager(QWidget):
         # 信号连接
         tab_widget.tabCloseRequested.connect(lambda idx, tw=tab_widget: self._on_tab_close(tw, idx))
         tab_widget.currentChanged.connect(lambda idx, tw=tab_widget: self._on_tab_changed(tw, idx))
+        tab_widget.tabBar().tab_dragged_out.connect(
+            lambda idx, tw=tab_widget: self._detach_tab(tw, idx))
+
+        # 右键菜单信号连接
+        tab_bar = tab_widget.tabBar()
+        tab_bar.split_requested.connect(lambda idx, orient, tw=tab_widget: self._on_split_requested(tw, idx, orient))
+        tab_bar.close_requested.connect(lambda idx, tw=tab_widget: self._on_tab_close(tw, idx))
+        tab_bar.close_others_requested.connect(lambda idx, tw=tab_widget: self._on_close_others(tw, idx))
+        tab_bar.close_all_requested.connect(lambda tw=tab_widget: self._on_close_all(tw))
 
         self._tab_groups.append(tab_widget)
         self._splitter.addWidget(tab_widget)
@@ -267,47 +290,30 @@ class TabManager(QWidget):
         self.file_closed.emit(panel_key)
         self._event_bus.emit(EventBus.FILE_CLOSED, panel_key)
 
-    def split_tab(self, index: int, orientation: Qt.Orientation) -> None:
-        """分割标签页"""
-        # 找到源标签页组
-        source_group = None
-        for tab_widget in self._tab_groups:
-            if index < tab_widget.count():
-                source_group = tab_widget
-                break
-            index -= tab_widget.count()
-
-        if source_group is None:
-            return
-
-        # 获取要分割的面板
-        panel = source_group.widget(index)
+    def _on_split_requested(self, tab_widget: QTabWidget, index: int, orientation: Qt.Orientation) -> None:
+        """分割标签页到新的标签页组"""
+        panel = tab_widget.widget(index)
         if not isinstance(panel, (FilePanel, AttrPanel)):
             return
-
-        # 找到该 panel 的 key
         panel_key = self._panel_to_key.get(id(panel))
         if not panel_key:
             return
-
-        # 从源组移除
-        source_group.removeTab(index)
-
-        # 创建新的标签页组
+        tab_name = tab_widget.tabText(index)  # 先保存标题！
+        tab_widget.removeTab(index)
         new_group = self._create_tab_group()
-
-        # 设置分割方向
-        if orientation == Qt.Orientation.Horizontal:
-            self._splitter.setOrientation(Qt.Orientation.Horizontal)
-        else:
-            self._splitter.setOrientation(Qt.Orientation.Vertical)
-
-        # 添加到新组
-        tab_name = source_group.tabText(index)
         new_group.addTab(panel, tab_name)
-
-        # 更新映射
         self._file_to_group[panel_key] = self._tab_groups.index(new_group)
+
+    def _on_close_others(self, tab_widget: QTabWidget, keep_index: int) -> None:
+        """关闭其他标签页"""
+        for i in range(tab_widget.count() - 1, -1, -1):
+            if i != keep_index:
+                self._on_tab_close(tab_widget, i)
+
+    def _on_close_all(self, tab_widget: QTabWidget) -> None:
+        """关闭所有标签页"""
+        for i in range(tab_widget.count() - 1, -1, -1):
+            self._on_tab_close(tab_widget, i)
     def _on_tab_close(self, tab_widget: QTabWidget, index: int) -> None:
         """标签关闭请求"""
         panel = tab_widget.widget(index)
@@ -331,6 +337,35 @@ class TabManager(QWidget):
         elif isinstance(panel, AttrPanel):
             # 属性标签页激活，不需要特殊处理
             pass
+
+    def _detach_tab(self, tab_widget: QTabWidget, index: int) -> None:
+        """将标签拖出为独立窗口"""
+        panel = tab_widget.widget(index)
+        if not isinstance(panel, (FilePanel, AttrPanel)):
+            return
+
+        panel_key = self._panel_to_key.get(id(panel))
+        if not panel_key:
+            return
+
+        tab_title = tab_widget.tabText(index)
+        tab_widget.removeTab(index)
+
+        detached = DetachedWindow(panel, panel_key, tab_title)
+        detached.closed.connect(self._on_detached_closed)
+        detached.show()
+        self._detached_windows.append(detached)
+
+    def _on_detached_closed(self, panel_key: str) -> None:
+        """独立窗口关闭时清理"""
+        # 从列表中移除已关闭的窗口
+        self._detached_windows = [
+            w for w in self._detached_windows
+            if w._panel_key != panel_key
+        ]
+        # 关闭对应的 panel（如果还在 _panels 中）
+        if panel_key in self._panels:
+            self.close_file(panel_key)
 
     def _get_active_tab_group(self) -> QTabWidget:
         """获取当前活动的标签页组"""

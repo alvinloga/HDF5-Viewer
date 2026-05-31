@@ -1,14 +1,15 @@
-"""Line Chart Plugin — 折线图可视化"""
+"""Line Chart Plugin — Matplotlib 折线图可视化"""
 
 import numpy as np
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
-from PyQt6.QtCore import Qt
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from core.datasource import DataMeta
 from plugins.base import VisualizePlugin
 
 
 class LineChartWidget(QWidget):
-    """折线图控件（简化版，使用文本显示）"""
+    """折线图控件（Matplotlib 渲染）"""
 
     def __init__(self, data: np.ndarray, meta: DataMeta, parent=None):
         super().__init__(parent)
@@ -16,64 +17,54 @@ class LineChartWidget(QWidget):
         self._meta = meta
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(4)
 
         # 标题
         title = QLabel(f"Line Chart: {meta.name}")
-        title.setStyleSheet("font-weight: bold; font-size: 14px;")
+        title.setStyleSheet("color: #cccccc; font-weight: bold; font-size: 13px; padding: 4px;")
         layout.addWidget(title)
 
-        # 数据预览
-        preview = QLabel()
-        preview.setStyleSheet("font-family: Consolas, Monaco, monospace; font-size: 11px;")
-        preview.setWordWrap(True)
+        # Matplotlib 图表
+        self.figure = Figure(figsize=(6, 4), dpi=100, facecolor='#1e1e1e')
+        self.canvas = FigureCanvasQTAgg(self.figure)
+        self.toolbar = NavigationToolbar2QT(self.canvas, self)
+
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.canvas)
+
+        self._plot()
+
+    def _plot(self):
+        ax = self.figure.add_subplot(111)
+        ax.set_facecolor('#252526')
 
         try:
-            if data.ndim == 1:
-                preview.setText(self._format_1d(data))
-            elif data.ndim == 2:
-                # 显示第一列
-                preview.setText(self._format_1d(data[:, 0]) + f"\n\n(Showing column 0 of {data.shape[1]} columns)")
+            if self._data.ndim == 1:
+                ax.plot(self._data, color='#4ec9b0', linewidth=1)
+            elif self._data.ndim == 2:
+                for i in range(min(self._data.shape[1], 10)):
+                    ax.plot(self._data[:, i], label=f'Col {i}', linewidth=1)
+                if self._data.shape[1] <= 10:
+                    ax.legend(fontsize=8, facecolor='#2d2d2d', edgecolor='#555555', labelcolor='#cccccc')
             else:
-                flat = data.flatten()[:1000]
-                preview.setText(self._format_1d(flat))
+                flat = self._data.flatten()[:10000]
+                ax.plot(flat, color='#4ec9b0', linewidth=1)
+
+            ax.set_title(self._meta.name, color='#cccccc', fontsize=11)
+            ax.tick_params(colors='#969696', labelsize=9)
+            ax.spines['bottom'].set_color('#555555')
+            ax.spines['left'].set_color('#555555')
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.grid(True, alpha=0.2, color='#555555')
+
         except Exception as e:
-            preview.setText(f"Error: {e}")
+            ax.text(0.5, 0.5, f'Error: {e}', transform=ax.transAxes,
+                    ha='center', va='center', color='#f44747')
 
-        layout.addWidget(preview)
-        layout.addStretch()
-
-    def _format_1d(self, data: np.ndarray) -> str:
-        """格式化 1D 数据为简单的 ASCII 图"""
-        if len(data) == 0:
-            return "No data"
-
-        # 采样
-        max_points = 100
-        if len(data) > max_points:
-            indices = np.linspace(0, len(data) - 1, max_points, dtype=int)
-            sampled = data[indices]
-        else:
-            sampled = data
-
-        # 归一化到 0-40
-        min_val = np.nanmin(sampled)
-        max_val = np.nanmax(sampled)
-        val_range = max_val - min_val
-
-        if val_range == 0:
-            return f"Constant value: {min_val}"
-
-        lines = []
-        for i, val in enumerate(sampled):
-            if np.isnan(val):
-                bar = "?"
-            else:
-                normalized = int((val - min_val) / val_range * 40)
-                bar = "─" * normalized + "●"
-            lines.append(f"{i:4d} |{bar}")
-
-        return "\n".join(lines)
+        self.figure.tight_layout()
+        self.canvas.draw()
 
 
 class LineChartPlugin(VisualizePlugin):

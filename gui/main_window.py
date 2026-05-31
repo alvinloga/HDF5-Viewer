@@ -16,7 +16,47 @@ from .sidebar.folder_explorer import FolderExplorerPanel
 from .editor.tab_manager import TabManager
 from .status_bar import StatusBar
 from .bottom_panel import BottomPanel
+from .command_palette import CommandPalette
 from services.search import SearchPanel
+
+
+DARK_STYLE = """
+QMainWindow { background-color: #1e1e1e; }
+QWidget { background-color: #1e1e1e; color: #cccccc; }
+QMenuBar { background-color: #333333; color: #cccccc; border-bottom: 1px solid #1e1e1e; }
+QMenuBar::item:selected { background-color: #505050; }
+QMenu { background-color: #2d2d2d; color: #cccccc; border: 1px solid #555555; }
+QMenu::item:selected { background-color: #094771; }
+QTabWidget::pane { border: none; background-color: #1e1e1e; }
+QTabBar::tab { background-color: #2d2d2d; color: #969696; padding: 6px 12px; }
+QTabBar::tab:selected { background-color: #1e1e1e; color: #ffffff; }
+QTreeWidget { background-color: #252526; color: #cccccc; border: none; }
+QTreeWidget::item:selected { background-color: #094771; color: #ffffff; }
+QTextEdit { background-color: #1e1e1e; color: #cccccc; }
+QListWidget { background-color: #252526; color: #cccccc; }
+QLineEdit { background-color: #3c3c3c; color: #cccccc; border: 1px solid #555555; }
+QPushButton { background-color: #0078d4; color: white; border: none; padding: 4px 12px; }
+QSplitter::handle { background-color: #333333; }
+"""
+
+LIGHT_STYLE = """
+QMainWindow { background-color: #ffffff; }
+QWidget { background-color: #ffffff; color: #333333; }
+QMenuBar { background-color: #f3f3f3; color: #333333; border-bottom: 1px solid #e0e0e0; }
+QMenuBar::item:selected { background-color: #0060c0; color: #ffffff; }
+QMenu { background-color: #ffffff; color: #333333; border: 1px solid #e0e0e0; }
+QMenu::item:selected { background-color: #0060c0; color: #ffffff; }
+QTabWidget::pane { border: none; background-color: #ffffff; }
+QTabBar::tab { background-color: #f3f3f3; color: #666666; padding: 6px 12px; }
+QTabBar::tab:selected { background-color: #ffffff; color: #333333; }
+QTreeWidget { background-color: #ffffff; color: #333333; border: none; }
+QTreeWidget::item:selected { background-color: #0060c0; color: #ffffff; }
+QTextEdit { background-color: #ffffff; color: #333333; }
+QListWidget { background-color: #ffffff; color: #333333; }
+QLineEdit { background-color: #ffffff; color: #333333; border: 1px solid #cccccc; }
+QPushButton { background-color: #0078d4; color: white; border: none; padding: 4px 12px; }
+QSplitter::handle { background-color: #e0e0e0; }
+"""
 
 
 class MainWindow(QMainWindow):
@@ -41,6 +81,10 @@ class MainWindow(QMainWindow):
         self._setup_menu()
         self._setup_connections()
         self._apply_style()
+
+        # 命令面板
+        self.command_palette = CommandPalette(self)
+        self.command_palette.command_selected.connect(self._execute_command)
 
     def _setup_ui(self):
         """设置 UI 布局"""
@@ -86,21 +130,6 @@ class MainWindow(QMainWindow):
         # 侧边栏标签页
         self.sidebar_tabs = QTabWidget()
         self.sidebar_tabs.setTabPosition(QTabWidget.TabPosition.North)
-        self.sidebar_tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: none;
-                background-color: #252526;
-            }
-            QTabBar::tab {
-                background-color: #2d2d2d;
-                color: #969696;
-                padding: 6px 12px;
-            }
-            QTabBar::tab:selected {
-                background-color: #252526;
-                color: #ffffff;
-            }
-        """)
 
         # Explorer 面板
         self.explorer = ExplorerPanel()
@@ -109,6 +138,11 @@ class MainWindow(QMainWindow):
         # Search 面板
         self.search_panel = SearchPanel()
         self.sidebar_tabs.addTab(self.search_panel, "Search")
+
+        # Plugins 面板
+        from gui.sidebar.plugin_panel import PluginPanel
+        self.plugin_panel = PluginPanel()
+        self.sidebar_tabs.addTab(self.plugin_panel, "Plugins")
 
         self.sidebar_splitter.addWidget(self.sidebar_tabs)
         self.sidebar_splitter.setSizes([150, 450])
@@ -141,24 +175,6 @@ class MainWindow(QMainWindow):
     def _setup_menu(self):
         """设置菜单栏"""
         menu_bar = self.menuBar()
-        menu_bar.setStyleSheet("""
-            QMenuBar {
-                background-color: #333333;
-                color: #cccccc;
-                border-bottom: 1px solid #1e1e1e;
-            }
-            QMenuBar::item:selected {
-                background-color: #505050;
-            }
-            QMenu {
-                background-color: #2d2d2d;
-                color: #cccccc;
-                border: 1px solid #555555;
-            }
-            QMenu::item:selected {
-                background-color: #094771;
-            }
-        """)
 
         # File 菜单
         file_menu = menu_bar.addMenu("File")
@@ -183,6 +199,10 @@ class MainWindow(QMainWindow):
         export_csv.setShortcut(QKeySequence("Ctrl+Shift+E"))
         export_csv.triggered.connect(self._on_export_csv)
         file_menu.addAction(export_csv)
+
+        export_npy = QAction("Export as NumPy (.npy)...", self)
+        export_npy.triggered.connect(self._on_export_npy)
+        file_menu.addAction(export_npy)
 
         file_menu.addSeparator()
 
@@ -222,6 +242,25 @@ class MainWindow(QMainWindow):
         toggle_bottom.triggered.connect(self._toggle_bottom_panel)
         view_menu.addAction(toggle_bottom)
 
+        view_menu.addSeparator()
+
+        toggle_theme_action = QAction("Toggle Theme", self)
+        toggle_theme_action.triggered.connect(self._toggle_theme)
+        view_menu.addAction(toggle_theme_action)
+
+        view_menu.addSeparator()
+
+        toggle_edit = QAction("Toggle Edit Mode", self)
+        toggle_edit.setCheckable(True)
+        toggle_edit.triggered.connect(self._toggle_edit_mode)
+        view_menu.addAction(toggle_edit)
+
+        # Command Palette shortcut (Ctrl+Shift+P)
+        palette_action = QAction("Command Palette", self)
+        palette_action.setShortcut(QKeySequence("Ctrl+Shift+P"))
+        palette_action.triggered.connect(lambda: self.command_palette.show_palette())
+        self.addAction(palette_action)
+
         # Help 菜单
         help_menu = menu_bar.addMenu("Help")
         about_action = QAction("About", self)
@@ -244,15 +283,12 @@ class MainWindow(QMainWindow):
 
     def _apply_style(self):
         """应用全局样式"""
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #1e1e1e;
-            }
-            QWidget {
-                background-color: #1e1e1e;
-                color: #cccccc;
-            }
-        """)
+        theme = self._config.get('ui', {}).get('theme', 'dark')
+        from PyQt6.QtWidgets import QApplication
+        if theme == 'light':
+            QApplication.instance().setStyleSheet(LIGHT_STYLE)
+        else:
+            QApplication.instance().setStyleSheet(DARK_STYLE)
 
     def _on_open_file(self):
         """打开文件"""
@@ -365,6 +401,8 @@ class MainWindow(QMainWindow):
             self._show_sidebar(0)
         elif panel_name == "search":
             self._show_sidebar(1)
+        elif panel_name == "plugins":
+            self._show_sidebar(2)
         else:
             self.sidebar.hide()
 
@@ -405,6 +443,10 @@ class MainWindow(QMainWindow):
                     if file_path:
                         self.tab_manager.open_dataset_tab(file_path, path, source, meta)
 
+                # 更新插件面板
+                source_for_plugin = source
+                self.plugin_panel.set_data(source_for_plugin, path, meta)
+
                 self._event_bus.emit(EventBus.NODE_SELECTED, {
                     'path': path,
                     'meta': meta
@@ -436,6 +478,9 @@ class MainWindow(QMainWindow):
                 return
 
             self.tab_manager.open_dataset_tab(file_path, path, source, meta)
+
+            # 更新插件面板
+            self.plugin_panel.set_data(source, path, meta)
 
             self._event_bus.emit(EventBus.NODE_SELECTED, {
                 'path': path,
@@ -497,6 +542,47 @@ class MainWindow(QMainWindow):
                     self.status_bar.set_message("Export failed")
             except Exception as e:
                 self.status_bar.set_message(f"Export error: {e}")
+
+    def _on_export_npy(self):
+        """导出 NumPy"""
+        panel = self.tab_manager.get_current_panel()
+        if not panel:
+            return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Export as NumPy", "", "NumPy Files (*.npy)"
+        )
+
+        if file_path:
+            from services.exporter import DataExporter
+            try:
+                source = panel.get_source()
+                current_path = panel.get_current_node()
+                if not current_path:
+                    self.status_bar.set_message("No dataset selected")
+                    return
+
+                meta = source.get_metadata(current_path)
+                from core.slicer import SliceParser
+                slices = SliceParser.default_slice(meta.shape)
+                data = source.read_slice(current_path, slices)
+
+                if DataExporter.to_npy(data, file_path):
+                    self.status_bar.set_message(f"Exported to {file_path}")
+                else:
+                    self.status_bar.set_message("Export failed")
+            except Exception as e:
+                self.status_bar.set_message(f"Export error: {e}")
+
+    def _toggle_edit_mode(self, checked: bool = False):
+        """切换编辑模式"""
+        panel = self.tab_manager.get_current_panel()
+        if panel and hasattr(panel, 'editor_bar'):
+            if checked:
+                panel.editor_bar.show()
+            else:
+                panel.editor_bar.hide()
+                panel.editor_bar.edit_btn.setChecked(False)
 
     def _on_file_opened(self, file_path: str):
         """文件打开后"""
@@ -564,11 +650,53 @@ class MainWindow(QMainWindow):
 
         self.tab_manager.open_attr_tab(file_path, dataset_path, attr_name, attr_value)
 
+    def _toggle_theme(self):
+        """切换 dark/light 主题"""
+        ui = self._config.setdefault('ui', {})
+        current = ui.get('theme', 'dark')
+        new_theme = 'light' if current == 'dark' else 'dark'
+        ui['theme'] = new_theme
+        self._apply_style()
+        self._save_config()
+
+    def _save_config(self):
+        """保存配置到 config.json"""
+        import json
+        config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config.json')
+        try:
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(self._config, f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+
+    def _execute_command(self, cmd_id: str):
+        """执行命令面板选择的命令"""
+        command_map = {
+            "file.open": self._on_open_file,
+            "file.open_folder": self._on_open_folder,
+            "file.export_csv": self._on_export_csv,
+            "file.export_npy": self._on_export_npy,
+            "file.close": self._on_close_tab,
+            "file.close_all": self._on_close_all,
+            "view.explorer": lambda: self._show_sidebar(0),
+            "view.search": lambda: self._show_sidebar(1),
+            "view.plugins": lambda: self._show_sidebar(2),
+            "view.bottom_panel": self._toggle_bottom_panel,
+            "view.toggle_theme": self._toggle_theme,
+            "view.edit_mode": lambda: self._toggle_edit_mode(True),
+            "view.command_palette": lambda: self.command_palette.show_palette(),
+            "help.about": self._on_about,
+        }
+        handler = command_map.get(cmd_id)
+        if handler:
+            handler()
+        self.status_bar.set_message(f"Command: {cmd_id}")
+
     def _on_about(self):
         """关于"""
         QMessageBox.about(
             self, "About HDF5 Viewer",
-            "HDF5 Viewer v0.1.0\n\n"
+            "HDF5 Viewer v0.2.0\n\n"
             "A lightweight HDF5 file viewer\n"
             "with VSCode-style interface.\n\n"
             "Features:\n"

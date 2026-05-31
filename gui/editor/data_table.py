@@ -1,19 +1,25 @@
-"""DataTable — 数据表格视图（优化版：虚拟模型 + 分页）"""
+"""DataTable — 数据表格视图（优化版：虚拟模型 + 分页 + 编辑支持）"""
 
 from PyQt6.QtWidgets import (QTableView, QWidget, QVBoxLayout, QHeaderView,
                               QAbstractItemView, QLabel, QHBoxLayout, QPushButton)
 from PyQt6.QtCore import Qt, QAbstractTableModel, QModelIndex, pyqtSignal
+from PyQt6.QtGui import QColor, QBrush
 import numpy as np
 
 
 class DataTableModel(QAbstractTableModel):
     """虚拟表格模型 — 只在需要时渲染数据"""
 
+    cell_modified = pyqtSignal(int, int, object)  # row, col, new_value
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._data: np.ndarray | None = None
         self._headers: list[str] = []
         self._row_start = 0
+        self._modified: set[tuple[int, int]] = set()
+        self._original_data: np.ndarray | None = None
+        self._editable = False
 
     def rowCount(self, parent=QModelIndex()) -> int:
         if self._data is None:
@@ -42,10 +48,45 @@ class DataTableModel(QAbstractTableModel):
             except:
                 return ""
 
+        if role == Qt.ItemDataRole.ForegroundRole:
+            if (index.row(), index.column()) in self._modified:
+                return QBrush(QColor("#d44040"))  # 红色表示已修改
+            return None
+
         if role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
 
         return None
+
+    def setData(self, index: QModelIndex, value, role: int = Qt.ItemDataRole.EditRole) -> bool:
+        if not index.isValid() or self._data is None:
+            return False
+        if role != Qt.ItemDataRole.EditRole:
+            return False
+
+        row = index.row()
+        col = index.column()
+        try:
+            if self._data.ndim == 1:
+                self._data[row] = type(self._data[row])(value)
+            else:
+                self._data[row, col] = type(self._data[row, col])(value)
+            self._modified.add((row, col))
+            self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.ForegroundRole])
+            self.cell_modified.emit(row, col, value)
+            return True
+        except (ValueError, TypeError):
+            return False
+
+    def set_editable(self, editable: bool) -> None:
+        """设置是否可编辑"""
+        self._editable = editable
+
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+        flags = super().flags(index)
+        if self._editable:
+            flags |= Qt.ItemFlag.ItemIsEditable
+        return flags
 
     def headerData(self, section: int, orientation, role=Qt.ItemDataRole.DisplayRole):
         if role == Qt.ItemDataRole.DisplayRole:
@@ -66,12 +107,10 @@ class DataTableModel(QAbstractTableModel):
             self._headers = []
             self._row_start = 0
         else:
-            # 限制显示行数
             MAX_ROWS = 5000
             if data.ndim == 1:
                 if len(data) > MAX_ROWS:
                     data = data[:MAX_ROWS]
-                # 转换为 2D: [Index, Value]
                 self._data = np.column_stack([np.arange(len(data)), data])
                 self._headers = ["Index", "Value"]
             elif data.ndim == 2:
@@ -80,7 +119,6 @@ class DataTableModel(QAbstractTableModel):
                 self._data = data
                 self._headers = [f"Col {i}" for i in range(data.shape[1])]
             else:
-                # 高维：展平
                 flat = data.flatten()
                 if len(flat) > MAX_ROWS:
                     flat = flat[:MAX_ROWS]
@@ -88,6 +126,8 @@ class DataTableModel(QAbstractTableModel):
                 self._headers = ["Index", "Value"]
 
             self._row_start = row_start
+            self._modified.clear()
+            self._original_data = self._data.copy()
 
         self.endResetModel()
 
@@ -97,6 +137,8 @@ class DataTableModel(QAbstractTableModel):
         self._data = None
         self._headers = []
         self._row_start = 0
+        self._modified.clear()
+        self._original_data = None
         self.endResetModel()
 
     def _format_value(self, val) -> str:
@@ -134,6 +176,8 @@ class DataTable(QTableView):
         self.setSelectionMode(QAbstractItemView.SelectionMode.ContiguousSelection)
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setSortingEnabled(False)
+
+        self._editable = False
 
         # 样式
         self.setStyleSheet("""
@@ -176,6 +220,18 @@ class DataTable(QTableView):
     def clear_data(self) -> None:
         """清空"""
         self._model.clear_data()
+
+    def set_editable(self, editable: bool) -> None:
+        """设置是否可编辑"""
+        self._editable = editable
+        self._model.set_editable(editable)
+        if editable:
+            self.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        else:
+            self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+    def is_editable(self) -> bool:
+        return self._editable
 
 
 class DataTablePanel(QWidget):
@@ -220,3 +276,7 @@ class DataTablePanel(QWidget):
         """清空"""
         self.table.clear_data()
         self._status_label.setText("")
+
+    def set_editable(self, editable: bool) -> None:
+        """设置表格可编辑"""
+        self.table.set_editable(editable)

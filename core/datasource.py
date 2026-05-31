@@ -37,6 +37,23 @@ class TreeNode:
     node_type: NodeType
     children: list['TreeNode'] = field(default_factory=list)
     meta: DataMeta | None = None
+    shape: tuple = ()
+    dtype: str = ""
+    size: int = 0
+    attrs: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        if self.meta is None and (self.shape or self.dtype or self.attrs):
+            self.meta = DataMeta(
+                path=self.path,
+                name=self.name,
+                shape=self.shape,
+                dtype=self.dtype,
+                ndim=len(self.shape),
+                size=self.size,
+                node_type=self.node_type,
+                attrs=self.attrs
+            )
 
 
 class DataSource(ABC):

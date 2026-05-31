@@ -11,6 +11,7 @@ from core.datasource import DataSource, DataMeta, NodeType
 from core.slicer import SliceParser
 from core.event_bus import EventBus
 from .data_table import DataTablePanel
+from .data_editor import DataEditorBar
 
 
 class DataLoadThread(QThread):
@@ -247,6 +248,12 @@ class FilePanel(QWidget):
         self.slice_input.slice_changed.connect(self._on_slice_changed)
         layout.addWidget(self.slice_input)
 
+        # 数据编辑工具栏（在切片输入和数据表格之间）
+        self.editor_bar = DataEditorBar(self)
+        self.editor_bar.hide()  # 默认隐藏，只在 View 菜单中启用
+        self.editor_bar.edit_enabled.connect(self._on_edit_enabled)
+        layout.addWidget(self.editor_bar)
+
         # 数据表格
         self.data_table = DataTablePanel(self)
         layout.addWidget(self.data_table)
@@ -286,6 +293,10 @@ class FilePanel(QWidget):
             self._load_data_async(slices)
         except Exception as e:
             self._event_bus.emit(EventBus.ERROR_OCCURRED, str(e))
+
+    def _on_edit_enabled(self, enabled: bool) -> None:
+        """编辑模式切换"""
+        self.data_table.set_editable(enabled)
 
     def _load_data_async(self, slices: tuple) -> None:
         """异步加载数据"""

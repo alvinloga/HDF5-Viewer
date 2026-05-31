@@ -51,6 +51,19 @@ def main():
     from core.registry import PluginManager
     PluginManager.load_builtin_plugins()
 
+    # 尝试注册可选数据源
+    from core.registry import DataSourceRegistry
+    try:
+        from plugins.external.netcdf_source import NetCDFSource
+        DataSourceRegistry.try_register(NetCDFSource)
+    except ImportError:
+        pass
+    try:
+        from plugins.external.zarr_source import ZarrSource
+        DataSourceRegistry.try_register(ZarrSource)
+    except ImportError:
+        pass
+
     # 创建主窗口
     from gui.main_window import MainWindow
     window = MainWindow(config)

@@ -36,6 +36,16 @@ class DataSourceRegistry:
         ext = Path(path).suffix.lower()
         return ext in cls._sources
 
+    @classmethod
+    def try_register(cls, source_class: Type) -> None:
+        """尝试注册数据源（如果依赖可用）"""
+        try:
+            instance = source_class()
+            for ext in instance.extensions:
+                cls._sources[ext.lower()] = source_class
+        except ImportError:
+            pass  # 依赖不可用，跳过注册
+
 
 class PluginManager:
     """插件管理器"""
