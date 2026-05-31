@@ -16,8 +16,8 @@
 - 🔍 **全局搜索** — 搜索 HDF5 节点路径
 - 💾 **多格式导出** — CSV + NumPy (.npy) 导出
 - ✏️ **数据编辑模式** — 切换编辑模式，直接修改数据集值
-- 📂 **文件夹浏览器** — 侧边栏浏览本地文件夹，拖放打开
 - 🌐 **多数据源** — HDF5 + NetCDF + Zarr（可选依赖，缺失时静默跳过）
+- 🌐 **右侧面板栏** — Search + Plugins 独立右侧面板，与 Explorer 同时可见
 
 ## 🚀 快速开始
 
@@ -80,6 +80,7 @@ dist\HDF5Viewer\HDF5Viewer.exe [file.h5]
 | 切换侧边栏 | Activity Bar 图标点击 |
 | Split 视图 | 右键标签 → Split Right / Split Down |
 | 拖出标签 | 拖拽标签页到标签栏外 |
+| 右侧面板 | 点击右侧 Activity Bar 🔍/🔌 按钮 |
 | 切换底部面板 | `Ctrl+J` |
 | 搜索节点 | `Ctrl+Shift+F` |
 | 切换主题 | Command Palette → Toggle Theme |
@@ -163,6 +164,8 @@ hdf5-viewer/
 │   ├── main_window.py         # 主窗口
 │   ├── activity_bar.py        # 活动栏
 │   ├── command_palette.py     # Command Palette
+│   ├── secondary_bar.py       # 右侧 Activity Bar
+│   ├── secondary_panel.py     # 右侧面板（Search + Plugins）
 │   ├── sidebar/               # 侧边栏
 │   │   ├── explorer.py        # HDF5 文件树
 │   │   ├── folder_explorer.py # 本地文件夹浏览器
@@ -210,10 +213,14 @@ hdf5-viewer/
 | 字段 | 说明 | 默认值 |
 |------|------|--------|
 | `ui.theme` | 主题：`dark` / `light` | `dark` |
-| `ui.sidebarWidth` | 侧边栏宽度（px） | `280` |
+| `ui.sidebarWidth` | 左侧边栏宽度（px） | `280` |
+| `ui.secondaryPanelWidth` | 右侧面板宽度（px） | `280` |
+| `ui.secondaryPanelVisible` | 右侧面板是否显示 | `false` |
 | `folder.fileFilters` | 文件过滤器支持的扩展名 | 见上 |
 
 主题切换后自动持久化到 `config.json`。
+
+右侧面板（Search + Plugins）显示/隐藏状态也会持久化。
 
 ## 🧪 测试
 
@@ -253,6 +260,7 @@ sudo apt install libxcb-cursor0
 - ✅ NetCDF/Zarr 条件注册（可选依赖，缺失时静默跳过）
 - ✅ NumPy (.npy) 导出
 - ✅ 数据编辑模式（Toggle Edit Mode + 单元格编辑 + Save）
+- ✅ 右侧面板栏（Search + Plugins 独立面板，与 Explorer 同时可见）
 - ✅ 右键菜单修复（Split Right/Down、Close/Others/All 全部可用）
 
 ### v0.1.0

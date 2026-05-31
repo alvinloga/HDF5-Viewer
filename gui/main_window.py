@@ -2,7 +2,7 @@
 
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
                               QSplitter, QFileDialog, QMessageBox, QMenuBar,
-                              QMenu, QApplication, QTabWidget)
+                              QMenu, QApplication)
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction, QKeySequence, QDragEnterEvent, QDropEvent
 import os
@@ -17,7 +17,7 @@ from .editor.tab_manager import TabManager
 from .status_bar import StatusBar
 from .bottom_panel import BottomPanel
 from .command_palette import CommandPalette
-from services.search import SearchPanel
+# SearchPanel and PluginPanel are now accessed via SecondaryPanel
 
 
 DARK_STYLE = """
@@ -86,6 +86,11 @@ class MainWindow(QMainWindow):
         self.command_palette = CommandPalette(self)
         self.command_palette.command_selected.connect(self._execute_command)
 
+        # 右侧面板初始状态
+        if self._config.get('ui', {}).get('secondaryPanelVisible', False):
+            self.secondary_panel.show()
+            self.secondary_bar.show()
+
     def _setup_ui(self):
         """设置 UI 布局"""
         central = QWidget()
@@ -95,79 +100,58 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Activity Bar
+        # 左侧 Activity Bar
         self.activity_bar = ActivityBar(self)
         main_layout.addWidget(self.activity_bar)
 
-        # 主内容区域
-        content_widget = QWidget()
-        content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(0)
-
-        # 垂直分割器（主编辑区 + 底部面板）
-        self.vertical_splitter = QSplitter(Qt.Orientation.Vertical)
-        self.vertical_splitter.setChildrenCollapsible(False)
-
-        # 水平分割器（侧边栏 + 编辑区）
-        self.horizontal_splitter = QSplitter(Qt.Orientation.Horizontal)
-        self.horizontal_splitter.setChildrenCollapsible(False)
-
-        # Sidebar
+        # 左侧 Sidebar（FolderExplorer + Explorer）
         self.sidebar = QWidget()
         sidebar_layout = QVBoxLayout(self.sidebar)
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(0)
 
-        # 侧边栏垂直分割器：FolderExplorer（上）+ 内部标签页（下）
-        self.sidebar_splitter = QSplitter(Qt.Orientation.Vertical)
-        self.sidebar_splitter.setChildrenCollapsible(False)
-
         # FolderExplorer 面板
         self.folder_explorer = FolderExplorerPanel(self._config)
-        self.sidebar_splitter.addWidget(self.folder_explorer)
+        sidebar_layout.addWidget(self.folder_explorer)
 
-        # 侧边栏标签页
-        self.sidebar_tabs = QTabWidget()
-        self.sidebar_tabs.setTabPosition(QTabWidget.TabPosition.North)
-
-        # Explorer 面板
+        # Explorer 面板（直接放，不用标签页）
         self.explorer = ExplorerPanel()
-        self.sidebar_tabs.addTab(self.explorer, "Explorer")
-
-        # Search 面板
-        self.search_panel = SearchPanel()
-        self.sidebar_tabs.addTab(self.search_panel, "Search")
-
-        # Plugins 面板
-        from gui.sidebar.plugin_panel import PluginPanel
-        self.plugin_panel = PluginPanel()
-        self.sidebar_tabs.addTab(self.plugin_panel, "Plugins")
-
-        self.sidebar_splitter.addWidget(self.sidebar_tabs)
-        self.sidebar_splitter.setSizes([150, 450])
-
-        sidebar_layout.addWidget(self.sidebar_splitter)
+        sidebar_layout.addWidget(self.explorer)
 
         self.sidebar.setFixedWidth(self._config.get('ui', {}).get('sidebarWidth', 280))
-        self.horizontal_splitter.addWidget(self.sidebar)
+        main_layout.addWidget(self.sidebar)
 
-        # 编辑器区域
+        # 中间：编辑区 + 底部面板（垂直分割）
+        center_widget = QWidget()
+        center_layout = QVBoxLayout(center_widget)
+        center_layout.setContentsMargins(0, 0, 0, 0)
+        center_layout.setSpacing(0)
+
+        self.vertical_splitter = QSplitter(Qt.Orientation.Vertical)
+        self.vertical_splitter.setChildrenCollapsible(False)
+
         self.tab_manager = TabManager(self)
-        self.horizontal_splitter.addWidget(self.tab_manager)
+        self.vertical_splitter.addWidget(self.tab_manager)
 
-        self.horizontal_splitter.setSizes([280, 1120])
-
-        # 底部面板
         self.bottom_panel = BottomPanel(self)
-
-        # 组装垂直分割器
-        self.vertical_splitter.addWidget(self.horizontal_splitter)
         self.vertical_splitter.addWidget(self.bottom_panel)
         self.vertical_splitter.setSizes([700, 200])
 
-        content_layout.addWidget(self.vertical_splitter)
-        main_layout.addWidget(content_widget)
+        center_layout.addWidget(self.vertical_splitter)
+        main_layout.addWidget(center_widget, 1)  # 弹性伸缩
+
+        # 右侧面板（Search + Plugins）
+        from gui.secondary_panel import SecondaryPanel
+        self.secondary_panel = SecondaryPanel(self)
+        self.secondary_panel.setFixedWidth(self._config.get('ui', {}).get('secondaryPanelWidth', 280))
+        self.secondary_panel.hide()  # 默认隐藏
+        main_layout.addWidget(self.secondary_panel)
+
+        # 右侧 Activity Bar
+        from gui.secondary_bar import SecondaryBar
+        self.secondary_bar = SecondaryBar(self)
+        self.secondary_bar.hide()  # 默认隐藏
+        main_layout.addWidget(self.secondary_bar)
 
         # 状态栏
         self.status_bar = StatusBar(self)
@@ -232,7 +216,7 @@ class MainWindow(QMainWindow):
 
         search_action = QAction("Search", self)
         search_action.setShortcut(QKeySequence("Ctrl+Shift+F"))
-        search_action.triggered.connect(lambda: self._show_sidebar(1))
+        search_action.triggered.connect(lambda: self._show_secondary_panel("search"))
         view_menu.addAction(search_action)
 
         view_menu.addSeparator()
@@ -269,16 +253,32 @@ class MainWindow(QMainWindow):
 
     def _setup_connections(self):
         """设置信号连接"""
+        # 左侧 Activity Bar
         self.activity_bar.panel_changed.connect(self._on_panel_changed)
+
+        # 右侧 Secondary Bar
+        self.secondary_bar.panel_changed.connect(self._on_secondary_panel_changed)
+
+        # Explorer
         self.explorer.node_double_clicked.connect(self._on_node_double_clicked)
         self.explorer.open_in_new_tab.connect(self._on_open_in_new_tab)
-        self.search_panel.node_selected.connect(self._on_search_result_clicked)
+
+        # Search（从 secondary_panel 获取）
+        self.secondary_panel.get_search_panel().node_selected.connect(self._on_search_result_clicked)
+
+        # Tab Manager
         self.tab_manager.file_opened.connect(self._on_file_opened)
         self.tab_manager.file_closed.connect(self._on_file_closed)
         self.tab_manager.tab_activated.connect(self._on_tab_activated)
+
+        # Folder Explorer
         self.folder_explorer.file_clicked.connect(self.browse_file)
         self.folder_explorer.file_double_clicked.connect(self.browse_file)
+
+        # Bottom Panel
         self.bottom_panel.attributes.attr_double_clicked.connect(self._on_attr_double_clicked)
+
+        # Event Bus
         self._event_bus.on(EventBus.ERROR_OCCURRED, self._on_error)
 
     def _apply_style(self):
@@ -287,8 +287,10 @@ class MainWindow(QMainWindow):
         from PyQt6.QtWidgets import QApplication
         if theme == 'light':
             QApplication.instance().setStyleSheet(LIGHT_STYLE)
+            self.secondary_bar.setStyleSheet("background-color: #f3f3f3;")
         else:
             QApplication.instance().setStyleSheet(DARK_STYLE)
+            self.secondary_bar.setStyleSheet("background-color: #333333;")
 
     def _on_open_file(self):
         """打开文件"""
@@ -377,7 +379,7 @@ class MainWindow(QMainWindow):
             if self.explorer.tree._loaded_file_path != file_path:
                 tree = source.get_tree()
                 self.explorer.load_tree(tree, file_path, source)
-            self.search_panel.set_source(source)
+            self.secondary_panel.get_search_panel().set_source(source)
 
     def _on_close_tab(self):
         """关闭当前标签页"""
@@ -396,20 +398,33 @@ class MainWindow(QMainWindow):
             self.tab_manager.close_file(key)
 
     def _on_panel_changed(self, panel_name: str):
-        """切换面板"""
+        """左侧面板切换"""
         if panel_name == "explorer":
-            self._show_sidebar(0)
-        elif panel_name == "search":
-            self._show_sidebar(1)
-        elif panel_name == "plugins":
-            self._show_sidebar(2)
+            self.sidebar.show()
         else:
             self.sidebar.hide()
 
+    def _on_secondary_panel_changed(self, panel_name: str):
+        """右侧面板切换"""
+        if panel_name == "":
+            # 关闭右侧面板
+            self.secondary_panel.hide()
+            self.secondary_bar.hide()
+            self._config.setdefault('ui', {})['secondaryPanelVisible'] = False
+        else:
+            # 显示右侧面板
+            self.secondary_panel.show()
+            self.secondary_bar.show()
+            if panel_name == "search":
+                self.secondary_panel.show_search()
+            elif panel_name == "plugins":
+                self.secondary_panel.show_plugins()
+            self._config.setdefault('ui', {})['secondaryPanelVisible'] = True
+        self._save_config()
+
     def _show_sidebar(self, tab_index: int):
-        """显示侧边栏并切换标签"""
+        """显示左侧侧边栏"""
         self.sidebar.show()
-        self.sidebar_tabs.setCurrentIndex(tab_index)
 
     def _toggle_bottom_panel(self):
         """切换底部面板显示"""
@@ -445,7 +460,7 @@ class MainWindow(QMainWindow):
 
                 # 更新插件面板
                 source_for_plugin = source
-                self.plugin_panel.set_data(source_for_plugin, path, meta)
+                self.secondary_panel.get_plugin_panel().set_data(source_for_plugin, path, meta)
 
                 self._event_bus.emit(EventBus.NODE_SELECTED, {
                     'path': path,
@@ -480,7 +495,7 @@ class MainWindow(QMainWindow):
             self.tab_manager.open_dataset_tab(file_path, path, source, meta)
 
             # 更新插件面板
-            self.plugin_panel.set_data(source, path, meta)
+            self.secondary_panel.get_plugin_panel().set_data(source, path, meta)
 
             self._event_bus.emit(EventBus.NODE_SELECTED, {
                 'path': path,
@@ -679,8 +694,8 @@ class MainWindow(QMainWindow):
             "file.close": self._on_close_tab,
             "file.close_all": self._on_close_all,
             "view.explorer": lambda: self._show_sidebar(0),
-            "view.search": lambda: self._show_sidebar(1),
-            "view.plugins": lambda: self._show_sidebar(2),
+            "view.search": lambda: self._show_secondary_panel("search"),
+            "view.plugins": lambda: self._show_secondary_panel("plugins"),
             "view.bottom_panel": self._toggle_bottom_panel,
             "view.toggle_theme": self._toggle_theme,
             "view.edit_mode": lambda: self._toggle_edit_mode(True),
@@ -691,6 +706,18 @@ class MainWindow(QMainWindow):
         if handler:
             handler()
         self.status_bar.set_message(f"Command: {cmd_id}")
+
+    def _show_secondary_panel(self, panel_name: str):
+        """显示右侧面板"""
+        self.secondary_panel.show()
+        self.secondary_bar.show()
+        self.secondary_bar.set_active(panel_name)
+        if panel_name == "search":
+            self.secondary_panel.show_search()
+        elif panel_name == "plugins":
+            self.secondary_panel.show_plugins()
+        self._config.setdefault('ui', {})['secondaryPanelVisible'] = True
+        self._save_config()
 
     def _on_about(self):
         """关于"""

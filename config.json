@@ -1,9 +1,8 @@
 {
   "ui": {
     "theme": "dark",
-    "sidebarWidth": 280
-  },
-  "folder": {
-    "fileFilters": [".h5", ".hdf5", ".hdf", ".h5py", ".nc", ".nc4", ".netcdf", ".zarr"]
+    "sidebarWidth": 280,
+    "secondaryPanelWidth": 280,
+    "secondaryPanelVisible": true
   }
 }
