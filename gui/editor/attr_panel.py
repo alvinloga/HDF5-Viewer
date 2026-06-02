@@ -27,20 +27,14 @@ class AttrPanel(QWidget):
         # 信息栏
         type_str = self._describe_type(attr_value)
         self._info_label = QLabel(f"  {attr_name}  ({type_str})  [Read-only]")
-        self._info_label.setStyleSheet("""
-            QLabel {
-                background-color: #2d2d2d;
-                color: #969696;
-                font-size: 11px;
-                padding: 4px 8px;
-                border-bottom: 1px solid #333333;
-            }
-        """)
         layout.addWidget(self._info_label)
 
         # 数据表格
         self.data_table = DataTablePanel(self)
         layout.addWidget(self.data_table)
+
+        # 应用默认主题
+        self.apply_theme("dark")
 
         # 加载数据
         data = self._to_ndarray(attr_value)
@@ -99,6 +93,20 @@ class AttrPanel(QWidget):
                 return np.array([[str(value)]])
         except Exception:
             return np.array([[str(value)]])
+
+    def apply_theme(self, theme: str):
+        from ..theme import get_theme_colors
+        colors = get_theme_colors(theme)
+        self._info_label.setStyleSheet(f"""
+            QLabel {{
+                background-color: {colors['bg_tertiary']};
+                color: {colors['text_secondary']};
+                font-size: 11px;
+                padding: 4px 8px;
+                border-bottom: 1px solid {colors['border']};
+            }}
+        """)
+        self.data_table.apply_theme(theme)
 
     def get_attr_name(self) -> str:
         """获取属性名"""

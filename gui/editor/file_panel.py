@@ -11,13 +11,14 @@ from core.datasource import DataSource, DataMeta, NodeType
 from core.slicer import SliceParser
 from core.event_bus import EventBus
 from .data_table import DataTablePanel
-from .data_editor import DataEditorBar
+
+from ..theme import get_theme_colors
 
 
 class DataLoadThread(QThread):
     """数据加载线程"""
 
-    finished = pyqtSignal(object)  # np.ndarray or None
+    finished = pyqtSignal(object)
     error = pyqtSignal(str)
 
     def __init__(self, source: DataSource, path: str, slices: tuple, parent=None):
@@ -38,7 +39,9 @@ class DataLoadThread(QThread):
 class SliceInput(QWidget):
     """增强的切片输入控件"""
 
-    slice_changed = pyqtSignal(str)  # slice_str
+    slice_changed = pyqtSignal(str)
+    edit_enabled = pyqtSignal(bool)
+    save_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -48,53 +51,37 @@ class SliceInput(QWidget):
         layout.setContentsMargins(8, 4, 8, 4)
         layout.setSpacing(4)
 
-        # 手动输入行
         input_row = QHBoxLayout()
         input_row.setSpacing(8)
 
-        label = QLabel("Slice:")
-        label.setStyleSheet("color: #cccccc; font-size: 12px;")
-        input_row.addWidget(label)
+        self._slice_label = QLabel("Slice:")
+        input_row.addWidget(self._slice_label)
 
         self.input = QLineEdit()
         self.input.setPlaceholderText("[0:100, :]")
-        self.input.setStyleSheet("""
-            QLineEdit {
-                background-color: #3c3c3c;
-                color: #cccccc;
-                border: 1px solid #555555;
-                padding: 4px 8px;
-                font-family: Consolas, Monaco, monospace;
-                font-size: 12px;
-                border-radius: 2px;
-            }
-            QLineEdit:focus {
-                border-color: #0078d4;
-            }
-        """)
         self.input.returnPressed.connect(self._on_apply_manual)
         input_row.addWidget(self.input)
 
         self.apply_btn = QPushButton("Apply")
-        self.apply_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #0e639c;
-                color: white;
-                border: none;
-                padding: 4px 12px;
-                font-size: 12px;
-                border-radius: 2px;
-            }
-            QPushButton:hover {
-                background-color: #1177bb;
-            }
-        """)
         self.apply_btn.clicked.connect(self._on_apply_manual)
         input_row.addWidget(self.apply_btn)
 
+        # 编辑模式按钮（每个标签页独立控制）
+        self.edit_btn = QPushButton("✏️ Edit")
+        self.edit_btn.setCheckable(True)
+        self.edit_btn.setToolTip("Toggle edit mode for this tab")
+        self.edit_btn.toggled.connect(self._on_edit_toggled)
+        input_row.addWidget(self.edit_btn)
+
+        # 保存更改按钮
+        self.save_btn = QPushButton("💾 Save")
+        self.save_btn.setEnabled(False)
+        self.save_btn.setToolTip("Save changes to file")
+        self.save_btn.clicked.connect(self._on_save)
+        input_row.addWidget(self.save_btn)
+
         layout.addLayout(input_row)
 
-        # 快捷切片按钮行
         quick_row = QHBoxLayout()
         quick_row.setSpacing(4)
 
@@ -115,48 +102,18 @@ class SliceInput(QWidget):
 
         quick_row.addStretch()
 
-        # 维度选择器（用于高维数据）
         self.dim_combo = QComboBox()
-        self.dim_combo.setStyleSheet("""
-            QComboBox {
-                background-color: #3c3c3c;
-                color: #cccccc;
-                border: 1px solid #555555;
-                padding: 2px 8px;
-                font-size: 11px;
-            }
-        """)
         self.dim_combo.currentIndexChanged.connect(self._on_dim_changed)
         quick_row.addWidget(QLabel("View dim:"))
         quick_row.addWidget(self.dim_combo)
 
         layout.addLayout(quick_row)
 
-        # 按钮样式
-        btn_style = """
-            QPushButton {
-                background-color: #3c3c3c;
-                color: #cccccc;
-                border: 1px solid #555555;
-                padding: 2px 8px;
-                font-size: 11px;
-                border-radius: 2px;
-            }
-            QPushButton:hover {
-                background-color: #505050;
-            }
-        """
-        self.first_btn.setStyleSheet(btn_style)
-        self.last_btn.setStyleSheet(btn_style)
-        self.all_btn.setStyleSheet(btn_style)
-
     def set_shape_hint(self, shape: tuple) -> None:
-        """设置形状提示"""
         self._shape = shape
         if shape:
             self.input.setPlaceholderText(f"[0:100, :]  shape={shape}")
 
-            # 更新维度选择器
             self.dim_combo.blockSignals(True)
             self.dim_combo.clear()
             if len(shape) > 2:
@@ -170,13 +127,11 @@ class SliceInput(QWidget):
             self.dim_combo.blockSignals(False)
 
     def _on_apply_manual(self) -> None:
-        """应用手动输入的切片"""
         slice_str = self.input.text().strip()
         if slice_str:
             self.slice_changed.emit(slice_str)
 
     def _apply_quick_slice(self, mode: str) -> None:
-        """应用快捷切片"""
         if not self._shape:
             return
 
@@ -194,7 +149,6 @@ class SliceInput(QWidget):
         self.slice_changed.emit(slices)
 
     def _on_dim_changed(self, index: int) -> None:
-        """维度选择改变"""
         if index == 0 or not self._shape:
             return
 
@@ -207,11 +161,106 @@ class SliceInput(QWidget):
             self.input.setText(slice_str)
             self.slice_changed.emit(slice_str)
 
+    def _on_edit_toggled(self, checked: bool) -> None:
+        self.save_btn.setEnabled(checked)
+        self.edit_enabled.emit(checked)
+
+    def _on_save(self) -> None:
+        self.save_requested.emit()
+        self.edit_btn.setChecked(False)
+
+    def apply_theme(self, colors: dict):
+        self._slice_label.setStyleSheet(f"color: {colors['text_primary']}; font-size: 12px;")
+        self.input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {colors['bg_input']};
+                color: {colors['text_primary']};
+                border: 1px solid {colors['border_input']};
+                padding: 4px 8px;
+                font-family: Consolas, Monaco, monospace;
+                font-size: 12px;
+                border-radius: 2px;
+            }}
+            QLineEdit:focus {{
+                border-color: {colors['accent']};
+            }}
+        """)
+        self.apply_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {colors['bg_button']};
+                color: white;
+                border: none;
+                padding: 4px 12px;
+                font-size: 12px;
+                border-radius: 2px;
+            }}
+            QPushButton:hover {{
+                background-color: {colors['bg_button_hover']};
+            }}
+        """)
+        self.edit_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {colors['bg_input']};
+                color: {colors['text_primary']};
+                border: 1px solid {colors['border_input']};
+                padding: 4px 8px;
+                font-size: 11px;
+                border-radius: 2px;
+            }}
+            QPushButton:checked {{
+                background-color: #d44040;
+                color: white;
+                border-color: #d44040;
+            }}
+            QPushButton:hover {{
+                background-color: {colors['bg_hover']};
+            }}
+        """)
+        self.save_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {colors['bg_button']};
+                color: white;
+                border: none;
+                padding: 4px 8px;
+                font-size: 11px;
+                border-radius: 2px;
+            }}
+            QPushButton:disabled {{
+                background-color: {colors['bg_input']};
+                color: {colors['text_secondary']};
+            }}
+        """)
+        btn_style = f"""
+            QPushButton {{
+                background-color: {colors['bg_input']};
+                color: {colors['text_primary']};
+                border: 1px solid {colors['border_input']};
+                padding: 2px 8px;
+                font-size: 11px;
+                border-radius: 2px;
+            }}
+            QPushButton:hover {{
+                background-color: {colors['bg_hover']};
+            }}
+        """
+        self.first_btn.setStyleSheet(btn_style)
+        self.last_btn.setStyleSheet(btn_style)
+        self.all_btn.setStyleSheet(btn_style)
+        self.dim_combo.setStyleSheet(f"""
+            QComboBox {{
+                background-color: {colors['bg_input']};
+                color: {colors['text_primary']};
+                border: 1px solid {colors['border_input']};
+                padding: 2px 8px;
+                font-size: 11px;
+            }}
+        """)
+
 
 class FilePanel(QWidget):
     """单文件面板"""
 
-    _h5_lock = threading.Lock()  # 全局锁，保护 h5py 访问
+    _h5_lock = threading.Lock()
 
     def __init__(self, source: DataSource, parent=None):
         super().__init__(parent)
@@ -222,14 +271,13 @@ class FilePanel(QWidget):
         self._load_thread: DataLoadThread | None = None
 
         self._setup_ui()
+        self.apply_theme("dark")
 
     def _setup_ui(self):
-        """设置 UI"""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # 加载状态标签
         self._loading_label = QLabel("Loading...")
         self._loading_label.setStyleSheet("""
             QLabel {
@@ -243,24 +291,16 @@ class FilePanel(QWidget):
         self._loading_label.hide()
         layout.addWidget(self._loading_label)
 
-        # 切片输入
         self.slice_input = SliceInput(self)
         self.slice_input.slice_changed.connect(self._on_slice_changed)
+        self.slice_input.edit_enabled.connect(self._on_edit_enabled)
+        self.slice_input.save_requested.connect(self._on_save_requested)
         layout.addWidget(self.slice_input)
 
-        # 数据编辑工具栏（在切片输入和数据表格之间）
-        self.editor_bar = DataEditorBar(self)
-        self.editor_bar.hide()  # 默认隐藏，只在 View 菜单中启用
-        self.editor_bar.edit_enabled.connect(self._on_edit_enabled)
-        self.editor_bar.save_requested.connect(self._on_save_requested)
-        layout.addWidget(self.editor_bar)
-
-        # 数据表格
         self.data_table = DataTablePanel(self)
         layout.addWidget(self.data_table)
 
     def show_dataset(self, path: str, meta: DataMeta) -> None:
-        """显示数据集"""
         self._current_path = path
         self._current_meta = meta
 
@@ -270,7 +310,6 @@ class FilePanel(QWidget):
         self._load_default_slice()
 
     def _load_default_slice(self) -> None:
-        """加载默认切片"""
         if not self._current_path or not self._current_meta:
             return
 
@@ -285,7 +324,6 @@ class FilePanel(QWidget):
         self._load_data_async(slices)
 
     def _on_slice_changed(self, slice_str: str) -> None:
-        """切片改变"""
         if not self._current_path or not self._current_meta:
             return
 
@@ -296,11 +334,9 @@ class FilePanel(QWidget):
             self._event_bus.emit(EventBus.ERROR_OCCURRED, str(e))
 
     def _on_edit_enabled(self, enabled: bool) -> None:
-        """编辑模式切换"""
         self.data_table.set_editable(enabled)
 
     def _on_save_requested(self) -> None:
-        """保存编辑后的数据回文件"""
         if not self._current_path or not self._source:
             return
 
@@ -316,21 +352,17 @@ class FilePanel(QWidget):
             self._event_bus.emit(EventBus.ERROR_OCCURRED, f"Save failed: {e}")
 
     def _load_data_async(self, slices: tuple) -> None:
-        """异步加载数据"""
         if not self._current_path:
             return
 
-        # 如果有正在运行的加载线程，先停止
         if self._load_thread and self._load_thread.isRunning():
             self._load_thread.terminate()
             self._load_thread.wait()
 
-        # 显示加载状态
         self._loading_label.show()
         self._loading_label.setText(f"Loading {self._current_path}...")
         self.data_table.setEnabled(False)
 
-        # 创建并启动加载线程
         self._load_thread = DataLoadThread(
             self._source, self._current_path, slices, self
         )
@@ -340,12 +372,10 @@ class FilePanel(QWidget):
 
     @pyqtSlot(object)
     def _on_load_finished(self, data: np.ndarray) -> None:
-        """加载完成"""
         self._loading_label.hide()
         self.data_table.setEnabled(True)
 
         if data is not None:
-            # 大数据量保护：截断显示以避免 UI 卡死
             MAX_ELEMENTS = 1_000_000
             if data.size > MAX_ELEMENTS:
                 if data.ndim >= 2:
@@ -365,26 +395,34 @@ class FilePanel(QWidget):
 
     @pyqtSlot(str)
     def _on_load_error(self, error: str) -> None:
-        """加载错误"""
         self._loading_label.hide()
         self.data_table.setEnabled(True)
         self._event_bus.emit(EventBus.ERROR_OCCURRED, error)
 
     def get_source(self) -> DataSource:
-        """获取数据源"""
         return self._source
 
     def get_path(self) -> str:
-        """获取文件路径"""
         return self._source.get_path()
 
     def get_current_node(self) -> str:
-        """获取当前选中的节点"""
         return self._current_path
 
     def closeEvent(self, event):
-        """关闭时清理线程"""
         if self._load_thread and self._load_thread.isRunning():
             self._load_thread.terminate()
             self._load_thread.wait()
         super().closeEvent(event)
+
+    def apply_theme(self, theme: str):
+        colors = get_theme_colors(theme)
+        self._loading_label.setStyleSheet(f"""
+            QLabel {{
+                background-color: {colors['bg_button']};
+                color: white;
+                padding: 8px;
+                font-weight: bold;
+            }}
+        """)
+        self.slice_input.apply_theme(colors)
+        self.data_table.apply_theme(theme)

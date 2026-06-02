@@ -6,7 +6,7 @@
 
 - 🎨 **VSCode 风格界面** — Activity Bar + 侧边栏 + 编辑区 + 底部面板
 - 📑 **多标签 + Split** — 同时查看多个文件/数据集，支持左右/上下分屏
-- 🖱️ **标签拖拽独立窗口** — 拖出标签页成为独立窗口，关闭后自动回收
+- 🖱️ **标签拖拽** — 标签页拖拽排序（拖出独立窗口功能暂未启用）
 - 🚀 **大文件异步加载** — 异步加载 + 分页，UI 不卡
 - 📊 **Matplotlib 可视化** — 折线图、直方图、热力图，支持 1D/2D/3D 数据集
 - 🔌 **插件面板** — Activity Bar 插件入口，选择可视化插件 + 参数配置
@@ -80,7 +80,7 @@ dist\HDF5Viewer\HDF5Viewer.exe [file.h5]
 | Command Palette | `Ctrl+Shift+P` |
 | 切换侧边栏 | Activity Bar 图标点击 |
 | Split 视图 | 右键标签 → Split Right / Split Down |
-| 拖出标签 | 拖拽标签页到标签栏外 |
+| 拖拽标签 | 标签页拖拽排序（拖出独立窗口暂未启用） |
 | 右侧面板 | 点击右侧 Activity Bar 🔍/🔌 按钮 |
 | 切换底部面板 | `Ctrl+J` |
 | 搜索节点 | `Ctrl+Shift+F` |
@@ -132,9 +132,9 @@ dist\HDF5Viewer\HDF5Viewer.exe [file.h5]
 
 ### 数据编辑
 
-1. 通过 Command Palette 执行 **Toggle Edit Mode** 进入编辑模式
+1. 在标签页的 Slice 工具栏点击 **✏️ Edit** 按钮进入编辑模式（每个标签页独立控制）
 2. 双击单元格编辑值
-3. 编辑完成后点击工具栏 **Save** 按钮保存
+3. 编辑完成后点击 **💾 Save** 按钮保存
 
 ### 标签页操作
 
@@ -251,12 +251,19 @@ sudo apt install libxcb-cursor0
 
 ## 📋 版本历史
 
+### v0.2.1
+
+- ✅ 编辑模式按钮内嵌到每个标签页的 Slice 工具栏（✏️ Edit + 💾 Save，每个标签页独立控制）
+- ✅ Plugins 追踪最近激活的数据集（双击/搜索/切换标签页均更新插件面板数据源）
+- ✅ 右侧 Activity Bar 始终可见（关闭面板只隐藏内容区，不隐藏按钮栏）
+- ✅ 标签页拖出独立窗口功能暂时禁用
+
 ### v0.2.0
 
 - ✅ 插件面板 UI（Activity Bar 🔌 入口 + 可视化插件选择 + 参数配置）
 - ✅ Matplotlib 可视化（折线图/直方图/热力图，替代 ASCII 渲染）
 - ✅ Command Palette（Ctrl+Shift+P，14 个命令）+ 主题跟随切换
-- ✅ 标签拖拽独立窗口（拖出标签 → 独立窗口，关闭自动回收）
+- ✅ 标签拖拽排序（拖出独立窗口功能暂未启用）
 - ✅ Dark/Light 主题切换 + 配置持久化（CommandPalette/SecondaryBar/SecondaryPanel 全部跟随）
 - ✅ NetCDF/Zarr 条件注册（可选依赖，缺失时静默跳过）
 - ✅ NumPy (.npy) 导出

@@ -3,7 +3,7 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
                               QSplitter, QFileDialog, QMessageBox, QMenuBar,
                               QMenu, QApplication)
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QKeySequence, QDragEnterEvent, QDropEvent
 import os
 
@@ -19,43 +19,29 @@ from .bottom_panel import BottomPanel
 from .command_palette import CommandPalette
 # SearchPanel and PluginPanel are now accessed via SecondaryPanel
 
+from .theme import get_theme_colors
 
-DARK_STYLE = """
-QMainWindow { background-color: #1e1e1e; }
-QWidget { background-color: #1e1e1e; color: #cccccc; }
-QMenuBar { background-color: #333333; color: #cccccc; border-bottom: 1px solid #1e1e1e; }
-QMenuBar::item:selected { background-color: #505050; }
-QMenu { background-color: #2d2d2d; color: #cccccc; border: 1px solid #555555; }
-QMenu::item:selected { background-color: #094771; }
-QTabWidget::pane { border: none; background-color: #1e1e1e; }
-QTabBar::tab { background-color: #2d2d2d; color: #969696; padding: 6px 12px; }
-QTabBar::tab:selected { background-color: #1e1e1e; color: #ffffff; }
-QTreeWidget { background-color: #252526; color: #cccccc; border: none; }
-QTreeWidget::item:selected { background-color: #094771; color: #ffffff; }
-QTextEdit { background-color: #1e1e1e; color: #cccccc; }
-QListWidget { background-color: #252526; color: #cccccc; }
-QLineEdit { background-color: #3c3c3c; color: #cccccc; border: 1px solid #555555; }
-QPushButton { background-color: #0078d4; color: white; border: none; padding: 4px 12px; }
-QSplitter::handle { background-color: #333333; }
-"""
 
-LIGHT_STYLE = """
-QMainWindow { background-color: #ffffff; }
-QWidget { background-color: #ffffff; color: #333333; }
-QMenuBar { background-color: #f3f3f3; color: #333333; border-bottom: 1px solid #e0e0e0; }
-QMenuBar::item:selected { background-color: #0060c0; color: #ffffff; }
-QMenu { background-color: #ffffff; color: #333333; border: 1px solid #e0e0e0; }
-QMenu::item:selected { background-color: #0060c0; color: #ffffff; }
-QTabWidget::pane { border: none; background-color: #ffffff; }
-QTabBar::tab { background-color: #f3f3f3; color: #666666; padding: 6px 12px; }
-QTabBar::tab:selected { background-color: #ffffff; color: #333333; }
-QTreeWidget { background-color: #ffffff; color: #333333; border: none; }
-QTreeWidget::item:selected { background-color: #0060c0; color: #ffffff; }
-QTextEdit { background-color: #ffffff; color: #333333; }
-QListWidget { background-color: #ffffff; color: #333333; }
-QLineEdit { background-color: #ffffff; color: #333333; border: 1px solid #cccccc; }
-QPushButton { background-color: #0078d4; color: white; border: none; padding: 4px 12px; }
-QSplitter::handle { background-color: #e0e0e0; }
+def _build_global_style(colors: dict, theme: str) -> str:
+    return f"""
+QMainWindow {{ background-color: {colors['bg_primary']}; }}
+QWidget {{ background-color: {colors['bg_primary']}; color: {colors['text_primary']}; }}
+QFrame {{ border: none; }}
+QSplitter {{ border: none; }}
+QMenuBar {{ background-color: {colors['bg_activity_bar']}; color: {colors['text_primary']}; border-bottom: 1px solid {colors['bg_primary']}; }}
+QMenuBar::item:selected {{ background-color: {colors['bg_hover']}; }}
+QMenu {{ background-color: {colors['bg_tertiary']}; color: {colors['text_primary']}; border: 1px solid {colors['border_input']}; }}
+QMenu::item:selected {{ background-color: {colors['bg_selected']}; }}
+QTabWidget::pane {{ border: none; background-color: {colors['bg_primary']}; }}
+QTabBar::tab {{ background-color: {colors['bg_tab']}; color: {colors['text_secondary']}; padding: 6px 12px; }}
+QTabBar::tab:selected {{ background-color: {colors['bg_primary']}; color: {colors['text_selected']}; }}
+QTreeWidget {{ background-color: {colors['bg_secondary']}; color: {colors['text_primary']}; border: none; }}
+QTreeWidget::item:selected {{ background-color: {colors['bg_selected']}; color: {colors['text_selected']}; }}
+QTextEdit {{ background-color: {colors['bg_primary']}; color: {colors['text_primary']}; }}
+QListWidget {{ background-color: {colors['bg_secondary']}; color: {colors['text_primary']}; }}
+QLineEdit {{ background-color: {colors['bg_input']}; color: {colors['text_primary']}; border: 1px solid {colors['border_input']}; }}
+QPushButton {{ background-color: {colors['accent']}; color: white; border: none; padding: 4px 12px; }}
+QSplitter::handle {{ background-color: {colors['border']}; }}
 """
 
 
@@ -66,6 +52,11 @@ class MainWindow(QMainWindow):
         super().__init__()
         self._config = config
         self._event_bus = EventBus.get_instance()
+
+        # 追踪最近激活的数据集（供 Plugins 使用）
+        self._last_active_source = None
+        self._last_active_path = ""
+        self._last_active_meta = None
 
         # 注册数据源
         DataSourceRegistry.register(H5Source)
@@ -89,11 +80,11 @@ class MainWindow(QMainWindow):
         # 右侧面板初始状态
         if self._config.get('ui', {}).get('secondaryPanelVisible', False):
             self.secondary_panel.show()
-            self.secondary_bar.show()
 
     def _setup_ui(self):
         """设置 UI 布局"""
         central = QWidget()
+        central.setAutoFillBackground(True)
         self.setCentralWidget(central)
 
         main_layout = QHBoxLayout(central)
@@ -147,10 +138,9 @@ class MainWindow(QMainWindow):
         self.secondary_panel.hide()  # 默认隐藏
         main_layout.addWidget(self.secondary_panel)
 
-        # 右侧 Activity Bar
+        # 右侧 Activity Bar — 始终可见
         from gui.secondary_bar import SecondaryBar
         self.secondary_bar = SecondaryBar(self)
-        self.secondary_bar.hide()  # 默认隐藏
         main_layout.addWidget(self.secondary_bar)
 
         # 状态栏
@@ -280,17 +270,27 @@ class MainWindow(QMainWindow):
 
         # Event Bus
         self._event_bus.on(EventBus.ERROR_OCCURRED, self._on_error)
+        self._event_bus.on(EventBus.NODE_SELECTED, self._on_node_selected_for_plugins)
 
     def _apply_style(self):
         """应用全局样式"""
         theme = self._config.get('ui', {}).get('theme', 'dark')
+        colors = get_theme_colors(theme)
         from PyQt6.QtWidgets import QApplication
-        if theme == 'light':
-            QApplication.instance().setStyleSheet(LIGHT_STYLE)
-        else:
-            QApplication.instance().setStyleSheet(DARK_STYLE)
+        QApplication.instance().setStyleSheet(_build_global_style(colors, theme))
 
         # 同步更新组件主题
+        if hasattr(self, 'activity_bar'):
+            self.activity_bar.apply_theme(theme)
+        if hasattr(self, 'status_bar'):
+            self.status_bar.apply_theme(theme)
+        if hasattr(self, 'sidebar'):
+            self.explorer.apply_theme(theme)
+            self.folder_explorer.apply_theme(theme)
+        if hasattr(self, 'tab_manager'):
+            self.tab_manager.apply_theme(theme)
+        if hasattr(self, 'bottom_panel'):
+            self.bottom_panel.apply_theme(theme)
         if hasattr(self, 'secondary_bar'):
             self.secondary_bar.apply_theme(theme)
         if hasattr(self, 'secondary_panel'):
@@ -413,14 +413,12 @@ class MainWindow(QMainWindow):
     def _on_secondary_panel_changed(self, panel_name: str):
         """右侧面板切换"""
         if panel_name == "":
-            # 关闭右侧面板
+            # 只关闭右侧面板内容，保留右侧活动栏按钮
             self.secondary_panel.hide()
-            self.secondary_bar.hide()
             self._config.setdefault('ui', {})['secondaryPanelVisible'] = False
         else:
             # 显示右侧面板
             self.secondary_panel.show()
-            self.secondary_bar.show()
             if panel_name == "search":
                 self.secondary_panel.show_search()
             elif panel_name == "plugins":
@@ -464,9 +462,13 @@ class MainWindow(QMainWindow):
                     if file_path:
                         self.tab_manager.open_dataset_tab(file_path, path, source, meta)
 
+                # 更新最近激活追踪（供 Plugins 使用）
+                self._last_active_source = source
+                self._last_active_path = path
+                self._last_active_meta = meta
+
                 # 更新插件面板
-                source_for_plugin = source
-                self.secondary_panel.get_plugin_panel().set_data(source_for_plugin, path, meta)
+                self.secondary_panel.get_plugin_panel().set_data(source, path, meta)
 
                 self._event_bus.emit(EventBus.NODE_SELECTED, {
                     'path': path,
@@ -500,6 +502,11 @@ class MainWindow(QMainWindow):
 
             self.tab_manager.open_dataset_tab(file_path, path, source, meta)
 
+            # 更新最近激活追踪
+            self._last_active_source = source
+            self._last_active_path = path
+            self._last_active_meta = meta
+
             # 更新插件面板
             self.secondary_panel.get_plugin_panel().set_data(source, path, meta)
 
@@ -522,12 +529,19 @@ class MainWindow(QMainWindow):
             meta = source.get_metadata(path)
             if meta.node_type.value == "dataset":
                 panel.show_dataset(path, meta)
+
+                # 更新最近激活追踪
+                self._last_active_source = source
+                self._last_active_path = path
+                self._last_active_meta = meta
+                self.secondary_panel.get_plugin_panel().set_data(source, path, meta)
+
                 self._event_bus.emit(EventBus.NODE_SELECTED, {
                     'path': path,
                     'meta': meta
                 })
         except Exception as e:
-            self._event_bus.emit(EventBus.ERROR_OCCURRED, f"Error loading {path}: {e}")
+            self._event_bus.emit(EventBus.ERROR_OCCURRED, f"Error loading {path}: {e})")
 
     def _on_export_csv(self):
         """导出 CSV"""
@@ -596,7 +610,7 @@ class MainWindow(QMainWindow):
                 self.status_bar.set_message(f"Export error: {e}")
 
     def _toggle_edit_mode(self, checked: bool = False):
-        """切换编辑模式"""
+        """切换编辑模式 — 控制当前标签页的编辑工具栏可见性"""
         panel = self.tab_manager.get_current_panel()
         if panel and hasattr(panel, 'editor_bar'):
             if checked:
@@ -604,6 +618,26 @@ class MainWindow(QMainWindow):
             else:
                 panel.editor_bar.hide()
                 panel.editor_bar.edit_btn.setChecked(False)
+
+    def _on_node_selected_for_plugins(self, event):
+        """追踪最近激活的数据集，供 Plugins 使用"""
+        if isinstance(event.data, dict):
+            # 从 event 中获取 source 和 meta
+            # 但 NODE_SELECTED 事件可能没有 source，需要从当前 panel 获取
+            panel = self.tab_manager.get_current_panel()
+            if panel and hasattr(panel, 'get_source'):
+                source = panel.get_source()
+                path = panel.get_current_node()
+                if source and path:
+                    try:
+                        meta = source.get_metadata(path)
+                        self._last_active_source = source
+                        self._last_active_path = path
+                        self._last_active_meta = meta
+                        # 更新插件面板
+                        self.secondary_panel.get_plugin_panel().set_data(source, path, meta)
+                    except Exception:
+                        pass
 
     def _on_file_opened(self, file_path: str):
         """文件打开后"""
@@ -640,9 +674,24 @@ class MainWindow(QMainWindow):
         self._event_bus.emit(EventBus.FOLDER_CLOSED, None)
 
     def _on_tab_activated(self, file_path: str):
-        """标签页激活时更新侧边栏"""
+        """标签页激活时更新侧边栏和插件面板"""
         self._update_explorer_for_file(file_path)
         self._event_bus.emit(EventBus.FILE_TAB_ACTIVATED, {'path': file_path})
+
+        # 切换标签页时，更新最近激活追踪和插件面板
+        panel = self.tab_manager.get_current_panel()
+        if panel and hasattr(panel, 'get_source') and hasattr(panel, 'get_current_node'):
+            source = panel.get_source()
+            current_node = panel.get_current_node()
+            if source and current_node and source.is_open():
+                try:
+                    meta = source.get_metadata(current_node)
+                    self._last_active_source = source
+                    self._last_active_path = current_node
+                    self._last_active_meta = meta
+                    self.secondary_panel.get_plugin_panel().set_data(source, current_node, meta)
+                except Exception:
+                    pass
 
 
 

@@ -5,11 +5,13 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLineEdit, QListWidget,
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QAction
 
+from .theme import get_theme_colors
+
 
 class CommandPalette(QDialog):
     """命令面板 — 快速搜索和执行操作"""
 
-    command_selected = pyqtSignal(str)  # command_id
+    command_selected = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -32,9 +34,6 @@ class CommandPalette(QDialog):
 
         self._commands: list[tuple[str, str, str]] = []
         self._register_default_commands()
-
-        # 应用默认主题样式
-        self.apply_theme("dark")
 
     def _register_default_commands(self):
         self._commands = [
@@ -94,65 +93,35 @@ class CommandPalette(QDialog):
             super().keyPressEvent(event)
 
     def apply_theme(self, theme: str):
-        """根据主题切换样式"""
-        if theme == "light":
-            self.search_input.setStyleSheet("""
-                QLineEdit {
-                    background-color: #ffffff;
-                    color: #333333;
-                    border: 1px solid #cccccc;
-                    padding: 8px;
-                    font-size: 14px;
-                    border-radius: 4px;
-                }
-                QLineEdit:focus {
-                    border-color: #0078d4;
-                }
-            """)
-            self.command_list.setStyleSheet("""
-                QListWidget {
-                    background-color: #ffffff;
-                    color: #333333;
-                    border: none;
-                    font-size: 13px;
-                }
-                QListWidget::item {
-                    padding: 6px 8px;
-                }
-                QListWidget::item:selected {
-                    background-color: #0060c0;
-                    color: #ffffff;
-                }
-            """)
-        else:  # dark
-            self.search_input.setStyleSheet("""
-                QLineEdit {
-                    background-color: #3c3c3c;
-                    color: #cccccc;
-                    border: 1px solid #555555;
-                    padding: 8px;
-                    font-size: 14px;
-                    border-radius: 4px;
-                }
-                QLineEdit:focus {
-                    border-color: #0078d4;
-                }
-            """)
-            self.command_list.setStyleSheet("""
-                QListWidget {
-                    background-color: #252526;
-                    color: #cccccc;
-                    border: none;
-                    font-size: 13px;
-                }
-                QListWidget::item {
-                    padding: 6px 8px;
-                }
-                QListWidget::item:selected {
-                    background-color: #094771;
-                    color: #ffffff;
-                }
-            """)
+        colors = get_theme_colors(theme)
+        self.search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {colors['bg_input']};
+                color: {colors['text_primary']};
+                border: 1px solid {colors['border_input']};
+                padding: 8px;
+                font-size: 14px;
+                border-radius: 4px;
+            }}
+            QLineEdit:focus {{
+                border-color: {colors['accent']};
+            }}
+        """)
+        self.command_list.setStyleSheet(f"""
+            QListWidget {{
+                background-color: {colors['bg_secondary']};
+                color: {colors['text_primary']};
+                border: none;
+                font-size: 13px;
+            }}
+            QListWidget::item {{
+                padding: 6px 8px;
+            }}
+            QListWidget::item:selected {{
+                background-color: {colors['bg_selected']};
+                color: {colors['text_selected']};
+            }}
+        """)
 
     def show_palette(self):
         self.search_input.clear()

@@ -185,32 +185,6 @@ class DataTable(QTableView):
 
         self._editable = False
 
-        # 样式
-        self.setStyleSheet("""
-            QTableView {
-                background-color: #1e1e1e;
-                alternate-background-color: #252526;
-                color: #cccccc;
-                gridline-color: #333333;
-                border: none;
-                font-family: Consolas, Monaco, monospace;
-                font-size: 12px;
-            }
-            QTableView::item {
-                padding: 4px 8px;
-            }
-            QTableView::item:selected {
-                background-color: #264f78;
-            }
-            QHeaderView::section {
-                background-color: #2d2d2d;
-                color: #cccccc;
-                padding: 4px 8px;
-                border: 1px solid #333333;
-                font-weight: bold;
-            }
-        """)
-
         # 表头
         self.horizontalHeader().setSectionsMovable(True)
         self.horizontalHeader().setStretchLastSection(False)
@@ -239,6 +213,34 @@ class DataTable(QTableView):
     def is_editable(self) -> bool:
         return self._editable
 
+    def apply_theme(self, theme: str):
+        from ..theme import get_theme_colors
+        colors = get_theme_colors(theme)
+        self.setStyleSheet(f"""
+            QTableView {{
+                background-color: {colors['bg_primary']};
+                alternate-background-color: {colors['bg_secondary']};
+                color: {colors['text_primary']};
+                gridline-color: {colors['border']};
+                border: none;
+                font-family: Consolas, Monaco, monospace;
+                font-size: 12px;
+            }}
+            QTableView::item {{
+                padding: 4px 8px;
+            }}
+            QTableView::item:selected {{
+                background-color: #264f78;
+            }}
+            QHeaderView::section {{
+                background-color: {colors['bg_tertiary']};
+                color: {colors['text_primary']};
+                padding: 4px 8px;
+                border: 1px solid {colors['border']};
+                font-weight: bold;
+            }}
+        """)
+
 
 class DataTablePanel(QWidget):
     """数据表格面板（带状态信息）"""
@@ -256,7 +258,6 @@ class DataTablePanel(QWidget):
         status_layout.setContentsMargins(8, 4, 8, 4)
 
         self._status_label = QLabel("")
-        self._status_label.setStyleSheet("color: #888888; font-size: 11px;")
         status_layout.addWidget(self._status_label)
         status_layout.addStretch()
 
@@ -286,3 +287,9 @@ class DataTablePanel(QWidget):
     def set_editable(self, editable: bool) -> None:
         """设置表格可编辑"""
         self.table.set_editable(editable)
+
+    def apply_theme(self, theme: str):
+        from ..theme import get_theme_colors
+        colors = get_theme_colors(theme)
+        self._status_label.setStyleSheet(f"color: {colors['text_secondary']}; font-size: 11px;")
+        self.table.apply_theme(theme)

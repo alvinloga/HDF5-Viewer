@@ -43,8 +43,8 @@ class DataSourceRegistry:
             instance = source_class()
             for ext in instance.extensions:
                 cls._sources[ext.lower()] = source_class
-        except ImportError:
-            pass  # 依赖不可用，跳过注册
+        except (ImportError, TypeError):
+            pass  # 依赖不可用或类不完整，跳过注册
 
 
 class PluginManager:

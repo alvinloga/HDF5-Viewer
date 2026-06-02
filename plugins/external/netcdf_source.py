@@ -125,6 +125,9 @@ class NetCDFSource(SourcePlugin, DataSource):
             )
         return DataMeta(path=path, name=var_name, node_type=NodeType.GROUP, shape=(), dtype='', ndim=0, size=0, attrs={})
 
+    def write_data(self, path: str, data: np.ndarray) -> bool:
+        raise NotImplementedError("NetCDF source is read-only")
+
     def search(self, keyword: str) -> list[str]:
         if not self._file:
             return []

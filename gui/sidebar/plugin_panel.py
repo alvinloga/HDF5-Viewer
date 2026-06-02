@@ -36,78 +36,23 @@ class PluginPanel(QWidget):
         title_bar = QWidget()
         title_layout = QHBoxLayout(title_bar)
         title_layout.setContentsMargins(8, 8, 8, 4)
-        title = QLabel("PLUGINS")
-        title.setStyleSheet("color: #cccccc; font-size: 11px; font-weight: bold; letter-spacing: 1px;")
-        title_layout.addWidget(title)
+        self._title_label = QLabel("PLUGINS")
+        title_layout.addWidget(self._title_label)
         title_layout.addStretch()
 
         # 过滤器
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(["All", "Analyze", "Visualize"])
-        self.filter_combo.setStyleSheet("""
-            QComboBox {
-                background-color: #3c3c3c;
-                color: #cccccc;
-                border: 1px solid #555555;
-                padding: 2px 8px;
-                font-size: 11px;
-                border-radius: 2px;
-            }
-            QComboBox::drop-down {
-                border: none;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #2d2d2d;
-                color: #cccccc;
-                selection-background-color: #094771;
-            }
-        """)
         title_layout.addWidget(self.filter_combo)
         layout.addWidget(title_bar)
 
         # 插件列表
         self.plugin_list = QListWidget()
-        self.plugin_list.setStyleSheet("""
-            QListWidget {
-                background-color: #252526;
-                color: #cccccc;
-                border: none;
-                font-size: 12px;
-            }
-            QListWidget::item {
-                padding: 6px 8px;
-                border-bottom: 1px solid #2d2d2d;
-            }
-            QListWidget::item:selected {
-                background-color: #094771;
-                color: #ffffff;
-            }
-            QListWidget::item:hover {
-                background-color: #2a2d2e;
-            }
-        """)
         layout.addWidget(self.plugin_list)
 
         # 执行按钮
         self.execute_btn = QPushButton("Execute Plugin")
         self.execute_btn.setEnabled(False)
-        self.execute_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #0e639c;
-                color: white;
-                border: none;
-                padding: 8px;
-                font-size: 12px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #1177bb;
-            }
-            QPushButton:disabled {
-                background-color: #3c3c3c;
-                color: #666666;
-            }
-        """)
         self.execute_btn.clicked.connect(self._on_execute)
         layout.addWidget(self.execute_btn)
 
@@ -117,22 +62,11 @@ class PluginPanel(QWidget):
         # 文本结果页
         self.text_result = QTextEdit()
         self.text_result.setReadOnly(True)
-        self.text_result.setStyleSheet("""
-            QTextEdit {
-                background-color: #1e1e1e;
-                color: #cccccc;
-                border: none;
-                font-family: Consolas, Monaco, monospace;
-                font-size: 12px;
-                padding: 8px;
-            }
-        """)
         self.result_stack.addWidget(self.text_result)
 
         # 可视化结果页（占位，运行时动态替换）
         self.viz_placeholder = QLabel("Select a visualization plugin and click Execute")
         self.viz_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.viz_placeholder.setStyleSheet("color: #666666; font-size: 12px; background-color: #1e1e1e;")
         self.result_stack.addWidget(self.viz_placeholder)
 
         layout.addWidget(self.result_stack)
@@ -287,3 +221,73 @@ class PluginPanel(QWidget):
                 self.result_stack.removeWidget(current)
         self.result_stack.insertWidget(1, self.viz_placeholder)
         self.result_stack.setCurrentIndex(0)
+
+    def apply_theme(self, theme: str):
+        from ..theme import get_theme_colors
+        colors = get_theme_colors(theme)
+        self._title_label.setStyleSheet(f"color: {colors['text_primary']}; font-size: 11px; font-weight: bold; letter-spacing: 1px;")
+        self.filter_combo.setStyleSheet(f"""
+            QComboBox {{
+                background-color: {colors['bg_input']};
+                color: {colors['text_primary']};
+                border: 1px solid {colors['border_input']};
+                padding: 2px 8px;
+                font-size: 11px;
+                border-radius: 2px;
+            }}
+            QComboBox::drop-down {{
+                border: none;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {colors['bg_tertiary']};
+                color: {colors['text_primary']};
+                selection-background-color: {colors['bg_selected']};
+            }}
+        """)
+        self.plugin_list.setStyleSheet(f"""
+            QListWidget {{
+                background-color: {colors['bg_secondary']};
+                color: {colors['text_primary']};
+                border: none;
+                font-size: 12px;
+            }}
+            QListWidget::item {{
+                padding: 6px 8px;
+                border-bottom: 1px solid {colors['bg_tertiary']};
+            }}
+            QListWidget::item:selected {{
+                background-color: {colors['bg_selected']};
+                color: #ffffff;
+            }}
+            QListWidget::item:hover {{
+                background-color: {colors['bg_hover']};
+            }}
+        """)
+        self.execute_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {colors['bg_button']};
+                color: white;
+                border: none;
+                padding: 8px;
+                font-size: 12px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {colors['bg_button_hover']};
+            }}
+            QPushButton:disabled {{
+                background-color: {colors['bg_input']};
+                color: {colors['text_secondary']};
+            }}
+        """)
+        self.text_result.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {colors['bg_primary']};
+                color: {colors['text_primary']};
+                border: none;
+                font-family: Consolas, Monaco, monospace;
+                font-size: 12px;
+                padding: 8px;
+            }}
+        """)
+        self.viz_placeholder.setStyleSheet(f"color: {colors['text_secondary']}; font-size: 12px; background-color: {colors['bg_primary']};")

@@ -110,6 +110,9 @@ class ZarrSource(SourcePlugin, DataSource):
         self._search_tree(self._root, "/", keyword, results)
         return results
 
+    def write_data(self, path: str, data: np.ndarray) -> bool:
+        raise NotImplementedError("Zarr source is read-only")
+
     def _search_tree(self, group, path: str, keyword: str, results: list[str]):
         for name, item in group.items():
             item_path = f"{path}{name}" if path == "/" else f"{path}/{name}"
