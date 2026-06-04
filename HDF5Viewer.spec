@@ -1,17 +1,30 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_data_files
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+import os
+import sys
+from pathlib import Path
 
-datas = [('/home/alvin/Desktop/hdf5-viewer/config.json', '.')]
-hiddenimports = ['PyQt6.QtWidgets', 'PyQt6.QtCore', 'PyQt6.QtGui', 'PyQt6.sip', 'h5py', 'numpy', 'numpy.core', 'numpy.lib', 'matplotlib', 'matplotlib.backends.backend_qtagg']
-datas += collect_data_files('PyQt6')
+# Resolve project root from spec file location (cross-platform)
+PROJECT_ROOT = Path(SPECPATH)
+
+# Determine path separator based on OS
+sep = ';' if sys.platform == 'win32' else ':'
+
+# Data files
+datas = [(str(PROJECT_ROOT / 'config.json'), '.')]
 datas += collect_data_files('h5py')
-datas += collect_data_files('matplotlib')
-hiddenimports += collect_submodules('PyQt6')
+datas += collect_data_files('PyQt6')
 
+# Hidden imports
+hiddenimports = collect_submodules('PyQt6')
+hiddenimports += [
+    'h5py',
+    'numpy', 'numpy.core', 'numpy.lib',
+    'matplotlib', 'matplotlib.backends.backend_qtagg',
+]
 
 a = Analysis(
-    ['/home/alvin/Desktop/hdf5-viewer/main.py'],
+    [str(PROJECT_ROOT / 'main.py')],
     pathex=[],
     binaries=[],
     datas=datas,

@@ -155,7 +155,8 @@ def main():
     log("\n[Step 5] Building HDF5Viewer.exe...")
 
     run_cmd(
-        ["conda", "run", "-n", ENV_NAME, "pyinstaller", "HDF5Viewer.spec", "--noconfirm"],
+        ["conda", "run", "-n", ENV_NAME, "--cwd", str(PROJECT_ROOT),
+         "pyinstaller", str(PROJECT_ROOT / "HDF5Viewer.spec"), "--noconfirm"],
         "Step 5 - PyInstaller build",
     )
 
