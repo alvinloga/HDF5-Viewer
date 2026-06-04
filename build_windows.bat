@@ -2,45 +2,50 @@
 REM HDF5 Viewer - Windows Build Script
 REM Requires: conda with Python 3.10+
 REM
-REM 逻辑：
-REM   1. 检查是否存在 hdf5viewer_build 虚拟环境
-REM   2. 存在 → 直接使用
-REM   3. 不存在 → 新建环境，标记为临时环境
-REM   4. 用该环境安装依赖、跑测试、打包
-REM   5. 打包完成后，如果是临时环境则删除
+REM Logic:
+REM   1. Check if hdf5viewer_build conda env exists
+REM   2. Exists -> reuse it (no cleanup after build)
+REM   3. Not exists -> create new env, mark as temporary
+REM   4. Install deps, run tests, build
+REM   5. If temp env, delete after build
 
 setlocal enabledelayedexpansion
 
 set ENV_NAME=hdf5viewer_build
 set TEMP_ENV=0
+set SCRIPT_DIR=%~dp0
+
+REM Ensure we are in the project directory
+cd /d "%SCRIPT_DIR%"
 
 echo ========================================
 echo HDF5 Viewer - Windows Build
 echo ========================================
 
 REM Check conda
-conda --version >nul 2>&1
+where conda >nul 2>&1
 if errorlevel 1 (
     echo ERROR: conda not found. Please install Anaconda or Miniconda.
-    pause
-    exit /b 1
+    goto :error
 )
+
+echo.
+echo conda found. Proceeding...
 
 REM ========================================
 REM Step 1: Check or create virtual environment
 REM ========================================
 echo.
-echo Checking virtual environment...
+echo Checking virtual environment '%ENV_NAME%'...
 
-conda env list | findstr /C:"%ENV_NAME%" >nul 2>&1
+conda env list 2>nul | findstr /C:"%ENV_NAME%" >nul 2>&1
 if errorlevel 1 (
     echo.
     echo Virtual environment '%ENV_NAME%' not found. Creating new one...
     conda create -n %ENV_NAME% python=3.12 -y
     if errorlevel 1 (
         echo ERROR: Failed to create virtual environment
-        pause
-        exit /b 1
+        goto :error
     )
     set TEMP_ENV=1
     echo.
@@ -56,9 +61,16 @@ echo Activating environment '%ENV_NAME%'...
 call conda activate %ENV_NAME%
 if errorlevel 1 (
     echo ERROR: Failed to activate virtual environment
-    pause
-    exit /b 1
+    goto :error
 )
+
+echo.
+echo Active Python: 
+python --version
+
+echo.
+echo Active environment:
+conda info --envs | findstr "*"
 
 REM ========================================
 REM Step 2: Install dependencies
@@ -70,16 +82,14 @@ REM C extensions via conda (avoid pip/conda DLL conflicts)
 conda install numpy h5py pyqt=6 pyqt6-sip sip --solver classic -y
 if errorlevel 1 (
     echo ERROR: Failed to install conda dependencies
-    pause
-    exit /b 1
+    goto :error
 )
 
 REM Pure Python packages via pip
 pip install matplotlib pyinstaller
 if errorlevel 1 (
     echo ERROR: Failed to install pip dependencies
-    pause
-    exit /b 1
+    goto :error
 )
 
 REM ========================================
@@ -99,22 +109,19 @@ echo Running tests...
 python tests/test_core.py
 if errorlevel 1 (
     echo ERROR: Core tests failed
-    pause
-    exit /b 1
+    goto :error
 )
 
 python tests/test_phase1.py
 if errorlevel 1 (
     echo ERROR: Phase1 tests failed
-    pause
-    exit /b 1
+    goto :error
 )
 
 python tests/test_final.py
 if errorlevel 1 (
     echo ERROR: Final tests failed
-    pause
-    exit /b 1
+    goto :error
 )
 
 REM ========================================
@@ -126,8 +133,7 @@ pyinstaller HDF5Viewer.spec --noconfirm
 
 if errorlevel 1 (
     echo ERROR: Build failed
-    pause
-    exit /b 1
+    goto :error
 )
 
 REM ========================================
@@ -166,5 +172,13 @@ echo.
 echo Or double-click:
 echo   dist\HDF5Viewer\HDF5Viewer.bat
 echo ========================================
+goto :end
 
+:error
+echo.
+echo ========================================
+echo BUILD FAILED! Check the error messages above.
+echo ========================================
+
+:end
 pause
