@@ -1,5 +1,7 @@
 # HDF5 Viewer
 
+**[中文](README.md)** | **[English](README_EN.md)**
+
 轻量级 HDF5 文件浏览器，仿 VSCode 布局设计，支持大文件懒加载、多标签 Split、Matplotlib 可视化、数据编辑。
 
 ## ✨ 特性
