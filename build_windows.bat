@@ -55,38 +55,22 @@ if errorlevel 1 (
     echo Virtual environment '%ENV_NAME%' found. Using existing environment.
 )
 
-REM Activate the environment
-echo.
-echo Activating environment '%ENV_NAME%'...
-call conda activate %ENV_NAME%
-if errorlevel 1 (
-    echo ERROR: Failed to activate virtual environment
-    goto :error
-)
-
-echo.
-echo Active Python: 
-python --version
-
-echo.
-echo Active environment:
-conda info --envs | findstr "*"
-
 REM ========================================
 REM Step 2: Install dependencies
 REM ========================================
 echo.
-echo Installing dependencies...
+echo Installing dependencies via conda...
+echo This may take a few minutes. Please wait...
 
-REM C extensions via conda (avoid pip/conda DLL conflicts)
-conda install numpy h5py pyqt=6 pyqt6-sip sip --solver classic -y
+conda install -n %ENV_NAME% numpy h5py pyqt=6 pyqt6-sip sip --solver classic -y
 if errorlevel 1 (
     echo ERROR: Failed to install conda dependencies
     goto :error
 )
 
-REM Pure Python packages via pip
-pip install matplotlib pyinstaller
+echo.
+echo Installing dependencies via pip...
+conda run -n %ENV_NAME% pip install matplotlib pyinstaller
 if errorlevel 1 (
     echo ERROR: Failed to install pip dependencies
     goto :error
@@ -106,19 +90,19 @@ REM ========================================
 echo.
 echo Running tests...
 
-python tests/test_core.py
+conda run -n %ENV_NAME% python tests/test_core.py
 if errorlevel 1 (
     echo ERROR: Core tests failed
     goto :error
 )
 
-python tests/test_phase1.py
+conda run -n %ENV_NAME% python tests/test_phase1.py
 if errorlevel 1 (
     echo ERROR: Phase1 tests failed
     goto :error
 )
 
-python tests/test_final.py
+conda run -n %ENV_NAME% python tests/test_final.py
 if errorlevel 1 (
     echo ERROR: Final tests failed
     goto :error
@@ -129,7 +113,7 @@ REM Step 5: Build with PyInstaller
 REM ========================================
 echo.
 echo Building HDF5Viewer.exe...
-pyinstaller HDF5Viewer.spec --noconfirm
+conda run -n %ENV_NAME% pyinstaller HDF5Viewer.spec --noconfirm
 
 if errorlevel 1 (
     echo ERROR: Build failed
@@ -151,7 +135,6 @@ REM ========================================
 if "!TEMP_ENV!"=="1" (
     echo.
     echo Cleaning up temporary environment '%ENV_NAME%'...
-    call conda deactivate
     conda env remove -n %ENV_NAME% -y
     echo Temporary environment removed.
 ) else (
@@ -181,4 +164,5 @@ echo BUILD FAILED! Check the error messages above.
 echo ========================================
 
 :end
+echo.
 pause
