@@ -1,13 +1,6 @@
 @echo off
 REM HDF5 Viewer - Windows Build Script
 REM Requires: conda with Python 3.10+
-REM
-REM Logic:
-REM   1. Check if hdf5viewer_build conda env exists
-REM   2. Exists -> reuse it (no cleanup after build)
-REM   3. Not exists -> create new env, mark as temporary
-REM   4. Install deps, run tests, build
-REM   5. If temp env, delete after build
 
 setlocal enabledelayedexpansion
 
@@ -52,67 +45,122 @@ if errorlevel 1 (
     echo Virtual environment '%ENV_NAME%' created.
 ) else (
     echo.
-    echo Virtual environment '%ENV_NAME%' found. Using existing environment.
+    echo Virtual environment '%ENV_NAME%' found.
+    echo Checking if it has a valid Python...
+    conda run -n %ENV_NAME% python --version >nul 2>&1
+    if errorlevel 1 (
+        echo.
+        echo WARNING: Existing env '%ENV_NAME%' is broken. Recreating...
+        conda env remove -n %ENV_NAME% -y
+        conda create -n %ENV_NAME% python=3.12 -y
+        if errorlevel 1 (
+            echo ERROR: Failed to recreate virtual environment
+            goto :error
+        )
+        set TEMP_ENV=1
+        echo.
+        echo Virtual environment '%ENV_NAME%' recreated.
+    ) else (
+        echo Existing env '%ENV_NAME%' is healthy. Reusing it.
+    )
 )
+
+echo.
+echo Verifying environment...
+conda run -n %ENV_NAME% python --version
 
 REM ========================================
 REM Step 2: Install dependencies
 REM ========================================
 echo.
-echo Installing dependencies via conda...
-echo This may take a few minutes. Please wait...
+echo ========================================
+echo Step 2: Installing dependencies...
+echo ========================================
 
-conda install -n %ENV_NAME% numpy h5py pyqt=6 pyqt6-sip sip --solver classic -y
+echo.
+echo [2a] Installing conda packages (numpy, h5py, pyqt6, sip)...
+echo This may take a few minutes. Please wait...
+echo.
+
+conda install -n %ENV_NAME% numpy h5py pyqt=6 pyqt6-sip sip --solver classic --no-update-deps -y
 if errorlevel 1 (
     echo ERROR: Failed to install conda dependencies
     goto :error
 )
 
 echo.
-echo Installing dependencies via pip...
+echo [2a] Conda packages installed OK.
+echo.
+
+echo [2b] Installing pip packages (matplotlib, pyinstaller)...
+echo.
+
 conda run -n %ENV_NAME% pip install matplotlib pyinstaller
 if errorlevel 1 (
     echo ERROR: Failed to install pip dependencies
     goto :error
 )
 
+echo.
+echo [2b] Pip packages installed OK.
+echo.
+
 REM ========================================
 REM Step 3: Clean previous builds
 REM ========================================
 echo.
-echo Cleaning previous builds...
+echo ========================================
+echo Step 3: Cleaning previous builds...
+echo ========================================
+
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
+echo Done.
 
 REM ========================================
 REM Step 4: Run tests
 REM ========================================
 echo.
-echo Running tests...
+echo ========================================
+echo Step 4: Running tests...
+echo ========================================
 
+echo.
+echo [4a] Core tests...
 conda run -n %ENV_NAME% python tests/test_core.py
 if errorlevel 1 (
     echo ERROR: Core tests failed
     goto :error
 )
 
+echo.
+echo [4b] Phase1 tests...
 conda run -n %ENV_NAME% python tests/test_phase1.py
 if errorlevel 1 (
     echo ERROR: Phase1 tests failed
     goto :error
 )
 
+echo.
+echo [4c] Final tests...
 conda run -n %ENV_NAME% python tests/test_final.py
 if errorlevel 1 (
     echo ERROR: Final tests failed
     goto :error
 )
 
+echo.
+echo All tests passed!
+
 REM ========================================
 REM Step 5: Build with PyInstaller
 REM ========================================
 echo.
-echo Building HDF5Viewer.exe...
+echo ========================================
+echo Step 5: Building HDF5Viewer.exe...
+echo ========================================
+echo.
+
 conda run -n %ENV_NAME% pyinstaller HDF5Viewer.spec --noconfirm
 
 if errorlevel 1 (
