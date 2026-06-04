@@ -41,16 +41,25 @@ def build_linux():
         "--windowed",
         "--noconfirm",
         "--clean",
-        # 添加隐式导入
+        # PyQt6 隐式导入
         "--hidden-import", "PyQt6.QtWidgets",
         "--hidden-import", "PyQt6.QtCore",
         "--hidden-import", "PyQt6.QtGui",
+        "--hidden-import", "PyQt6.sip",
+        # 收集 PyQt6 所有子模块和数据（含 platform plugins）
+        "--collect-submodules", "PyQt6",
+        "--collect-data", "PyQt6",
+        # h5py
         "--hidden-import", "h5py",
+        "--collect-data", "h5py",
+        # numpy
         "--hidden-import", "numpy",
         "--hidden-import", "numpy.core",
         "--hidden-import", "numpy.lib",
-        # 收集 h5py 的数据文件
-        "--collect-data", "h5py",
+        # matplotlib
+        "--hidden-import", "matplotlib",
+        "--hidden-import", "matplotlib.backends.backend_qtagg",
+        "--collect-data", "matplotlib",
         # 打包配置文件
         "--add-data", f"{PROJECT_ROOT / 'config.json'}:.",
         # 入口文件
@@ -77,13 +86,13 @@ cd "$(dirname "$0")"
 
 
 def build_windows_spec():
-    """创建 Windows 构建的 spec 文件"""
+    """Windows 构建说明"""
     print("=" * 60)
-    print("Windows build spec file already exists: hdf5viewer_windows.spec")
+    print("Windows build uses HDF5Viewer.spec")
     print("=" * 60)
     print("\nTo build on Windows, run:")
     print("  build_windows.bat")
-    print("  or: pyinstaller hdf5viewer_windows.spec")
+    print("  or: pyinstaller HDF5Viewer.spec --noconfirm")
     return True
 
 

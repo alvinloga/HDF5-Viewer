@@ -13,8 +13,9 @@ venv/
 .vscode/
 .idea/
 
-# PyInstaller generated spec files
-*.spec
+# PyInstaller generated spec files (except the main one)
+# hdf5viewer_windows.spec was removed; keep HDF5Viewer.spec for builds
+hdf5viewer_windows.spec
 
 # Test data (too large for GitHub)
 *.h5

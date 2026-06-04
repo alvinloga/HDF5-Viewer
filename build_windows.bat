@@ -1,6 +1,6 @@
 @echo off
 REM HDF5 Viewer - Windows Build Script
-REM Requires: Python 3.10+, pip
+REM Requires: conda with Python 3.10+, pip
 
 echo ========================================
 echo HDF5 Viewer - Windows Build
@@ -14,12 +14,18 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Install dependencies
+REM Install dependencies (conda first for C extensions, pip for the rest)
 echo.
 echo Installing dependencies...
-pip install PyQt6 h5py numpy pyinstaller
+conda install numpy h5py pyqt=6 pyqt6-sip sip --solver classic -y
 if errorlevel 1 (
-    echo ERROR: Failed to install dependencies
+    echo ERROR: Failed to install conda dependencies
+    pause
+    exit /b 1
+)
+pip install matplotlib pyinstaller
+if errorlevel 1 (
+    echo ERROR: Failed to install pip dependencies
     pause
     exit /b 1
 )
@@ -54,10 +60,10 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Build with PyInstaller using Windows spec
+REM Build with PyInstaller
 echo.
 echo Building HDF5Viewer.exe...
-pyinstaller hdf5viewer_windows.spec --noconfirm
+pyinstaller HDF5Viewer.spec --noconfirm
 
 if errorlevel 1 (
     echo ERROR: Build failed

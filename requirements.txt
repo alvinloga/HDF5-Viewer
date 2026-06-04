@@ -1,6 +1,7 @@
 PyQt6>=6.5.0
+PyQt6-sip>=13.8
 h5py>=3.8.0
-numpy>=1.24.0
+numpy>=2.0.0
 matplotlib>=3.7.0
 PyInstaller>=6.0.0
 # Optional: NetCDF support
