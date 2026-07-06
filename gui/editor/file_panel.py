@@ -272,7 +272,15 @@ class FilePanel(QWidget):
         self._load_thread: Optional[DataLoadThread] = None
 
         self._setup_ui()
-        self.apply_theme("dark")
+        import json, os
+        config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'config.json')
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                _cfg = json.load(f)
+            _theme = _cfg.get('ui', {}).get('theme', 'dark')
+        except Exception:
+            _theme = 'dark'
+        self.apply_theme(_theme)
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)

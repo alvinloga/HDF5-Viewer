@@ -277,26 +277,31 @@ class MainWindow(QMainWindow):
         theme = self._config.get('ui', {}).get('theme', 'dark')
         colors = get_theme_colors(theme)
         from PyQt6.QtWidgets import QApplication
-        QApplication.instance().setStyleSheet(_build_global_style(colors, theme))
 
-        # 同步更新组件主题
-        if hasattr(self, 'activity_bar'):
-            self.activity_bar.apply_theme(theme)
-        if hasattr(self, 'status_bar'):
-            self.status_bar.apply_theme(theme)
-        if hasattr(self, 'sidebar'):
-            self.explorer.apply_theme(theme)
-            self.folder_explorer.apply_theme(theme)
-        if hasattr(self, 'tab_manager'):
-            self.tab_manager.apply_theme(theme)
-        if hasattr(self, 'bottom_panel'):
-            self.bottom_panel.apply_theme(theme)
-        if hasattr(self, 'secondary_bar'):
-            self.secondary_bar.apply_theme(theme)
-        if hasattr(self, 'secondary_panel'):
-            self.secondary_panel.apply_theme(theme)
-        if hasattr(self, 'command_palette'):
-            self.command_palette.apply_theme(theme)
+        self.setUpdatesEnabled(False)
+        try:
+            QApplication.instance().setStyleSheet(_build_global_style(colors, theme))
+
+            # 同步更新组件主题
+            if hasattr(self, 'activity_bar'):
+                self.activity_bar.apply_theme(theme)
+            if hasattr(self, 'status_bar'):
+                self.status_bar.apply_theme(theme)
+            if hasattr(self, 'sidebar'):
+                self.explorer.apply_theme(theme)
+                self.folder_explorer.apply_theme(theme)
+            if hasattr(self, 'tab_manager'):
+                self.tab_manager.apply_theme(theme)
+            if hasattr(self, 'bottom_panel'):
+                self.bottom_panel.apply_theme(theme)
+            if hasattr(self, 'secondary_bar'):
+                self.secondary_bar.apply_theme(theme)
+            if hasattr(self, 'secondary_panel'):
+                self.secondary_panel.apply_theme(theme)
+            if hasattr(self, 'command_palette'):
+                self.command_palette.apply_theme(theme)
+        finally:
+            self.setUpdatesEnabled(True)
 
     def _on_open_file(self):
         """打开文件"""

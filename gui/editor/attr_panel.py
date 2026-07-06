@@ -34,8 +34,16 @@ class AttrPanel(QWidget):
         self.data_table = DataTablePanel(self)
         layout.addWidget(self.data_table)
 
-        # 应用默认主题
-        self.apply_theme("dark")
+        # 应用当前主题
+        import json, os
+        config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'config.json')
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                _cfg = json.load(f)
+            _theme = _cfg.get('ui', {}).get('theme', 'dark')
+        except Exception:
+            _theme = 'dark'
+        self.apply_theme(_theme)
 
         # 加载数据
         data = self._to_ndarray(attr_value)
