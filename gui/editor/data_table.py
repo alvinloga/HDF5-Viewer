@@ -46,12 +46,12 @@ class DataTableModel(QAbstractTableModel):
                 else:
                     val = self._data[row, col]
                 return self._format_value(val)
-            except:
+            except Exception:
                 return ""
 
         if role == Qt.ItemDataRole.ForegroundRole:
             if (index.row(), index.column()) in self._modified:
-                return QBrush(QColor("#d44040"))  # 红色表示已修改
+                return QBrush(QColor("#d44040"))  # 红色表示已修改（主题中 accent_danger 色）
             return None
 
         if role == Qt.ItemDataRole.TextAlignmentRole:
@@ -180,7 +180,7 @@ class DataTableModel(QAbstractTableModel):
         elif isinstance(val, bytes):
             try:
                 return val.decode('utf-8')
-            except:
+            except UnicodeDecodeError:
                 return str(val)
         else:
             return str(val)

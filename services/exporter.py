@@ -70,7 +70,7 @@ class DataExporter:
         elif isinstance(val, bytes):
             try:
                 return val.decode('utf-8')
-            except:
+            except UnicodeDecodeError:
                 return str(val)
         else:
             return str(val)
