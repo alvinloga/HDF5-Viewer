@@ -1,13 +1,13 @@
 """AsyncLoader — 异步数据加载器"""
 
 from PyQt6.QtCore import QObject, QRunnable, QThreadPool, pyqtSignal, pyqtSlot
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 import numpy as np
 
 
 class LoadResult:
     """加载结果"""
-    def __init__(self, data: np.ndarray | None = None, error: str | None = None):
+    def __init__(self, data: Optional[np.ndarray] = None, error: Optional[str] = None):
         self.data = data
         self.error = error
         self.success = error is None
@@ -40,9 +40,13 @@ class LoadTask(QRunnable):
 
 
 class AsyncLoader(QObject):
-    """异步加载管理器"""
+    """异步加载管理器
 
-    _instance: 'AsyncLoader | None' = None
+    当前同步实现，后续改为 QThreadPool 异步。
+    LoadTask / LoadSignals 类已预定义，待异步改造时启用。
+    """
+
+    _instance: Optional['AsyncLoader'] = None
 
     def __init__(self, max_workers: int = 4):
         super().__init__()
@@ -55,7 +59,7 @@ class AsyncLoader(QObject):
             cls._instance = AsyncLoader()
         return cls._instance
 
-    def load(self, loader_fn: Callable, callback: Callable, error_callback: Callable | None = None, *args, **kwargs):
+    def load(self, loader_fn: Callable, callback: Callable, error_callback: Optional[Callable] = None, *args, **kwargs):
         """异步加载数据"""
         # 简化实现：直接同步调用（后续可改为真正的异步）
         try:

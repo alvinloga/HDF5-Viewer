@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (QTableView, QWidget, QVBoxLayout, QHeaderView,
 from PyQt6.QtCore import Qt, QAbstractTableModel, QModelIndex, pyqtSignal
 from PyQt6.QtGui import QColor, QBrush
 import numpy as np
+from typing import Optional
 
 
 class DataTableModel(QAbstractTableModel):
@@ -14,11 +15,11 @@ class DataTableModel(QAbstractTableModel):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._data: np.ndarray | None = None
+        self._data: Optional[np.ndarray] = None
         self._headers: list[str] = []
         self._row_start = 0
         self._modified: set[tuple[int, int]] = set()
-        self._original_data: np.ndarray | None = None
+        self._original_data: Optional[np.ndarray] = None
         self._editable = False
 
     def rowCount(self, parent=QModelIndex()) -> int:
@@ -98,7 +99,7 @@ class DataTableModel(QAbstractTableModel):
                 return str(self._row_start + section)
         return None
 
-    def get_edited_data(self) -> np.ndarray | None:
+    def get_edited_data(self) -> Optional[np.ndarray]:
         """获取编辑后的完整数据"""
         if not self._editable or self._data is None:
             return None

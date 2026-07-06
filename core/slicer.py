@@ -12,6 +12,9 @@ class SliceParser:
         """
         解析切片字符串，如 "[0:100, 10:20]" 或 "0:100, 10:20"
         返回 tuple of slice 对象
+
+        Raises:
+            ValueError: 越界索引
         """
         if not slice_str or not shape:
             return tuple()
@@ -32,10 +35,15 @@ class SliceParser:
             if ':' not in part:
                 # 单个索引
                 idx = int(part)
+                if idx < -shape[i] or idx >= shape[i]:
+                    raise ValueError(
+                        f"Index {idx} out of bounds for dimension {i} with size {shape[i]}"
+                    )
                 slices.append(idx)
             else:
                 # 切片范围
-                slices.append(SliceParser._parse_range(part, shape[i]))
+                s = SliceParser._parse_range(part, shape[i])
+                slices.append(s)
 
         return tuple(slices)
 

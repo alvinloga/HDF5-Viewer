@@ -16,15 +16,35 @@ class HistogramWidget(QWidget):
         self._data = data
         self._meta = meta
 
+        # Detect theme from QApplication palette
+        is_dark = self._detect_dark_theme()
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(4)
 
+        # 主题颜色
+        if is_dark:
+            colors = {
+                'figure_bg': '#1e1e1e', 'axes_bg': '#252526',
+                'text': '#cccccc', 'tick': '#969696', 'spine': '#555555',
+                'bar': '#569cd6', 'bar_edge': '#1e1e1e', 'error': '#f44747',
+                'grid': '#555555',
+            }
+        else:
+            colors = {
+                'figure_bg': '#ffffff', 'axes_bg': '#f8f8f8',
+                'text': '#333333', 'tick': '#666666', 'spine': '#cccccc',
+                'bar': '#0078d4', 'bar_edge': '#ffffff', 'error': '#d32f2f',
+                'grid': '#cccccc',
+            }
+        self._colors = colors
+
         title = QLabel(f"Histogram: {meta.name}")
-        title.setStyleSheet("color: #cccccc; font-weight: bold; font-size: 13px; padding: 4px;")
+        title.setStyleSheet(f"color: {colors['text']}; font-weight: bold; font-size: 13px; padding: 4px;")
         layout.addWidget(title)
 
-        self.figure = Figure(figsize=(6, 4), dpi=100, facecolor='#1e1e1e')
+        self.figure = Figure(figsize=(6, 4), dpi=100, facecolor=colors['figure_bg'])
         self.canvas = FigureCanvasQTAgg(self.figure)
         self.toolbar = NavigationToolbar2QT(self.canvas, self)
 
@@ -33,9 +53,22 @@ class HistogramWidget(QWidget):
 
         self._plot()
 
+    @staticmethod
+    def _detect_dark_theme() -> bool:
+        """Detect dark/light theme from QApplication palette"""
+        try:
+            from PyQt6.QtWidgets import QApplication
+            app = QApplication.instance()
+            if app:
+                bg = app.palette().window().color()
+                return bg.lightness() < 128
+        except Exception as e:
+            pass
+        return True  # default dark
+
     def _plot(self):
         ax = self.figure.add_subplot(111)
-        ax.set_facecolor('#252526')
+        ax.set_facecolor(self._colors['axes_bg'])
 
         try:
             flat_data = self._data.astype(float).flatten()
@@ -43,24 +76,25 @@ class HistogramWidget(QWidget):
 
             if len(flat_data) == 0:
                 ax.text(0.5, 0.5, 'No valid data', transform=ax.transAxes,
-                        ha='center', va='center', color='#f44747')
+                        ha='center', va='center', color=self._colors['error'])
             else:
                 n_bins = min(50, max(10, int(np.sqrt(len(flat_data)))))
-                ax.hist(flat_data, bins=n_bins, color='#569cd6', edgecolor='#1e1e1e', alpha=0.8)
+                ax.hist(flat_data, bins=n_bins, color=self._colors['bar'],
+                        edgecolor=self._colors['bar_edge'], alpha=0.8)
 
-            ax.set_title(self._meta.name, color='#cccccc', fontsize=11)
-            ax.set_xlabel('Value', color='#969696', fontsize=10)
-            ax.set_ylabel('Count', color='#969696', fontsize=10)
-            ax.tick_params(colors='#969696', labelsize=9)
-            ax.spines['bottom'].set_color('#555555')
-            ax.spines['left'].set_color('#555555')
+            ax.set_title(self._meta.name, color=self._colors['text'], fontsize=11)
+            ax.set_xlabel('Value', color=self._colors['tick'], fontsize=10)
+            ax.set_ylabel('Count', color=self._colors['tick'], fontsize=10)
+            ax.tick_params(colors=self._colors['tick'], labelsize=9)
+            ax.spines['bottom'].set_color(self._colors['spine'])
+            ax.spines['left'].set_color(self._colors['spine'])
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
-            ax.grid(True, alpha=0.2, color='#555555', axis='y')
+            ax.grid(True, alpha=0.2, color=self._colors['grid'], axis='y')
 
         except Exception as e:
             ax.text(0.5, 0.5, f'Error: {e}', transform=ax.transAxes,
-                    ha='center', va='center', color='#f44747')
+                    ha='center', va='center', color=self._colors['error'])
 
         self.figure.tight_layout()
         self.canvas.draw()

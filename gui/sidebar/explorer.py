@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QWidget, QVBoxLayout,
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QAction, QClipboard
 from PyQt6.QtWidgets import QApplication
+from typing import Optional
 
 from core.datasource import TreeNode, NodeType, DataMeta, DataSource, DataSource
 
@@ -28,9 +29,9 @@ class ExplorerTree(QTreeWidget):
         self.itemDoubleClicked.connect(self._on_item_double_clicked)
 
         self._path_items: dict[str, QTreeWidgetItem] = {}
-        self._current_tree: TreeNode | None = None
-        self._loaded_file_path: str | None = None
-        self._current_source: DataSource | None = None
+        self._current_tree: Optional[TreeNode] = None
+        self._loaded_file_path: Optional[str] = None
+        self._current_source: Optional[DataSource] = None
 
     def load_tree(self, tree: TreeNode, file_path: str, source=None) -> None:
         if source is not None:
@@ -155,7 +156,7 @@ class ExplorerTree(QTreeWidget):
         self._loaded_file_path = None
         self._current_source = None
 
-    def get_source(self) -> DataSource | None:
+    def get_source(self) -> Optional[DataSource]:
         return self._current_source
 
     def apply_theme(self, colors: dict):
@@ -239,7 +240,7 @@ class ExplorerPanel(QWidget):
     def clear_loaded_file(self) -> None:
         self.tree.clear_loaded_file()
 
-    def get_source(self) -> DataSource | None:
+    def get_source(self) -> Optional[DataSource]:
         return self.tree.get_source()
 
     def apply_theme(self, theme: str):

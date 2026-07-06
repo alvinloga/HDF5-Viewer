@@ -6,12 +6,29 @@ import os
 import tempfile
 import numpy as np
 import h5py
+import pytest
 from pathlib import Path
 
 # 设置项目路径
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+
+# ── Fixtures ──────────────────────────────────────────────────────────────
+
+@pytest.fixture
+def tmp_h5(tmp_path):
+    """创建临时 HDF5 文件路径，测试结束后自动清理"""
+    return str(tmp_path / "test.h5")
+
+
+@pytest.fixture
+def tmp_csv(tmp_path):
+    """创建临时 CSV 文件路径，测试结束后自动清理"""
+    return str(tmp_path / "test.csv")
+
+
+# ── Helper ────────────────────────────────────────────────────────────────
 
 def create_test_hdf5(path: str) -> None:
     """创建测试用的 HDF5 文件"""
@@ -25,10 +42,10 @@ def create_test_hdf5(path: str) -> None:
         f.create_dataset('labels', data=[b'label1', b'label2', b'label3'])
 
 
+# ── 测试 ──────────────────────────────────────────────────────────────────
+
 def test_core_imports():
     """测试核心模块导入"""
-    print("Testing core imports...")
-
     from core.event_bus import EventBus
     from core.datasource import DataSource, DataMeta, NodeType
     from core.h5_source import H5Source
@@ -36,60 +53,44 @@ def test_core_imports():
     from core.cache import LRUCache
     from core.registry import DataSourceRegistry, PluginManager
 
-    print("  [OK] Core imports")
-    return True
 
-
-def test_h5_operations():
+def test_h5_operations(tmp_h5):
     """测试 HDF5 操作"""
-    print("Testing HDF5 operations...")
-
     from core.h5_source import H5Source
 
-    with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as f:
-        temp_path = f.name
+    create_test_hdf5(tmp_h5)
 
-    try:
-        create_test_hdf5(temp_path)
+    source = H5Source()
+    source.open(tmp_h5)
 
-        source = H5Source()
-        source.open(temp_path)
+    # 测试树结构
+    tree = source.get_tree()
+    assert tree.name == os.path.basename(tmp_h5)
+    assert len(tree.children) > 0
 
-        # 测试树结构
-        tree = source.get_tree()
-        assert tree.name == os.path.basename(temp_path)
-        assert len(tree.children) > 0
+    # 测试元数据
+    meta = source.get_metadata('/data/temperature')
+    assert meta.shape == (100, 50)
+    assert meta.dtype == 'float64'
 
-        # 测试元数据
-        meta = source.get_metadata('/data/temperature')
-        assert meta.shape == (100, 50)
-        assert meta.dtype == 'float64'
+    # 测试数据读取
+    data = source.read_slice('/data/temperature', (slice(0, 10), slice(0, 5)))
+    assert data.shape == (10, 5)
 
-        # 测试数据读取
-        data = source.read_slice('/data/temperature', (slice(0, 10), slice(0, 5)))
-        assert data.shape == (10, 5)
+    # 测试属性
+    attrs = source.get_attrs('/data/coordinates')
+    assert 'units' in attrs
+    assert attrs['units'] == 'meters'
 
-        # 测试属性
-        attrs = source.get_attrs('/data/coordinates')
-        assert 'units' in attrs
-        assert attrs['units'] == 'meters'
+    # 测试搜索
+    results = source.search('temperature')
+    assert len(results) > 0
 
-        # 测试搜索
-        results = source.search('temperature')
-        assert len(results) > 0
-
-        source.close()
-        print("  [OK] HDF5 operations")
-        return True
-
-    finally:
-        os.unlink(temp_path)
+    source.close()
 
 
 def test_slicer():
     """测试切片解析"""
-    print("Testing slicer...")
-
     from core.slicer import SliceParser
 
     # 测试解析
@@ -104,14 +105,9 @@ def test_slicer():
     s_str = SliceParser.slice_to_str((slice(0, 100), slice(10, 20)))
     assert "0:100" in s_str
 
-    print("  [OK] Slicer")
-    return True
-
 
 def test_cache():
     """测试缓存"""
-    print("Testing cache...")
-
     from core.cache import LRUCache
 
     cache = LRUCache(max_size_mb=1)
@@ -128,14 +124,9 @@ def test_cache():
     # 不存在的键
     assert cache.get("nonexistent") is None
 
-    print("  [OK] Cache")
-    return True
-
 
 def test_plugins():
     """测试插件系统"""
-    print("Testing plugins...")
-
     from core.registry import PluginManager
     from plugins.base import AnalyzePlugin, VisualizePlugin
     from plugins.builtin.statistics import StatisticsPlugin
@@ -165,41 +156,24 @@ def test_plugins():
     matching = PluginManager.get_matching_visualizers((1000,), 'float64')
     assert len(matching) >= 2
 
-    print(f"  [OK] Plugins: {len(analyzers)} analyzers, {len(visualizers)} visualizers")
-    return True
 
-
-def test_export():
+def test_export(tmp_csv):
     """测试导出"""
-    print("Testing export...")
-
     from services.exporter import DataExporter
 
-    with tempfile.NamedTemporaryFile(suffix='.csv', delete=False) as f:
-        csv_path = f.name
+    data = np.random.randn(10, 5)
+    success = DataExporter.to_csv(data, tmp_csv)
+    assert success
+    assert os.path.exists(tmp_csv)
 
-    try:
-        data = np.random.randn(10, 5)
-        success = DataExporter.to_csv(data, csv_path)
-        assert success
-        assert os.path.exists(csv_path)
-
-        # 验证 CSV 内容
-        with open(csv_path, 'r') as f:
-            lines = f.readlines()
-            assert len(lines) == 11  # header + 10 rows
-
-        print("  [OK] Export")
-        return True
-
-    finally:
-        os.unlink(csv_path)
+    # 验证 CSV 内容
+    with open(tmp_csv, 'r') as f:
+        lines = f.readlines()
+        assert len(lines) == 11  # header + 10 rows
 
 
 def test_event_bus():
     """测试事件总线"""
-    print("Testing event bus...")
-
     from core.event_bus import EventBus
 
     bus = EventBus.get_instance()
@@ -214,9 +188,6 @@ def test_event_bus():
 
     assert len(results) == 1
     assert results[0] == "test.h5"
-
-    print("  [OK] Event bus")
-    return True
 
 
 def main():
@@ -240,10 +211,8 @@ def main():
 
     for test in tests:
         try:
-            if test():
-                passed += 1
-            else:
-                failed += 1
+            test()
+            passed += 1
         except Exception as e:
             print(f"  [FAIL] {test.__name__}: {e}")
             failed += 1

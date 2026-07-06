@@ -1,10 +1,16 @@
 """SearchService — 全局搜索服务"""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
                               QTreeWidget, QTreeWidgetItem, QLabel, QPushButton)
 from PyQt6.QtCore import Qt, pyqtSignal
 from core.event_bus import EventBus
+from typing import Optional
 from core.datasource import DataSource
+from gui.theme import get_theme_colors
 
 
 class SearchResult(QTreeWidget):
@@ -17,22 +23,24 @@ class SearchResult(QTreeWidget):
         self.setHeaderLabels(["Path", "Type"])
         self.setAlternatingRowColors(True)
 
-        self.setStyleSheet("""
-            QTreeWidget {
-                background-color: #252526;
-                color: #cccccc;
+        self.itemDoubleClicked.connect(self._on_item_clicked)
+
+    def apply_theme(self, theme: str):
+        colors = get_theme_colors(theme)
+        self.setStyleSheet(f"""
+            QTreeWidget {{
+                background-color: {colors['bg_secondary']};
+                color: {colors['text_primary']};
                 border: none;
                 font-size: 12px;
-            }
-            QTreeWidget::item {
+            }}
+            QTreeWidget::item {{
                 height: 22px;
-            }
-            QTreeWidget::item:selected {
-                background-color: #094771;
-            }
+            }}
+            QTreeWidget::item:selected {{
+                background-color: {colors['bg_selected']};
+            }}
         """)
-
-        self.itemDoubleClicked.connect(self._on_item_clicked)
 
     def load_results(self, results: list[str]) -> None:
         """加载搜索结果"""
@@ -57,25 +65,15 @@ class SearchPanel(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._source: DataSource | None = None
+        self._source: Optional[DataSource] = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
         # 标题
-        header = QLabel("SEARCH")
-        header.setStyleSheet("""
-            QLabel {
-                color: #bbbbbb;
-                font-size: 11px;
-                font-weight: bold;
-                padding: 8px 12px;
-                background-color: #252526;
-                border-bottom: 1px solid #1e1e1e;
-            }
-        """)
-        layout.addWidget(header)
+        self._header = QLabel("SEARCH")
+        layout.addWidget(self._header)
 
         # 搜索输入
         search_row = QHBoxLayout()
@@ -84,36 +82,12 @@ class SearchPanel(QWidget):
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search nodes...")
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #3c3c3c;
-                color: #cccccc;
-                border: 1px solid #555555;
-                padding: 4px 8px;
-                font-size: 12px;
-            }
-            QLineEdit:focus {
-                border-color: #0078d4;
-            }
-        """)
         self.search_input.returnPressed.connect(self._on_search)
         search_row.addWidget(self.search_input)
 
-        search_btn = QPushButton("Search")
-        search_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #0e639c;
-                color: white;
-                border: none;
-                padding: 4px 12px;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #1177bb;
-            }
-        """)
-        search_btn.clicked.connect(self._on_search)
-        search_row.addWidget(search_btn)
+        self._search_btn = QPushButton("Search")
+        self._search_btn.clicked.connect(self._on_search)
+        search_row.addWidget(self._search_btn)
 
         layout.addLayout(search_row)
 
@@ -139,4 +113,42 @@ class SearchPanel(QWidget):
             results = self._source.search(keyword)
             self.results.load_results(results)
         except Exception as e:
-            print(f"Search error: {e}")
+            logger.error(f"Search error: {e}")
+
+    def apply_theme(self, theme: str):
+        colors = get_theme_colors(theme)
+        self._header.setStyleSheet(f"""
+            QLabel {{
+                color: {colors['text_header']};
+                font-size: 11px;
+                font-weight: bold;
+                padding: 8px 12px;
+                background-color: {colors['bg_secondary']};
+                border-bottom: 1px solid {colors['border_header']};
+            }}
+        """)
+        self.search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {colors['bg_input']};
+                color: {colors['text_primary']};
+                border: 1px solid {colors['border_input']};
+                padding: 4px 8px;
+                font-size: 12px;
+            }}
+            QLineEdit:focus {{
+                border-color: {colors['accent']};
+            }}
+        """)
+        self._search_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {colors['bg_button']};
+                color: white;
+                border: none;
+                padding: 4px 12px;
+                font-size: 12px;
+            }}
+            QPushButton:hover {{
+                background-color: {colors['bg_button_hover']};
+            }}
+        """)
+        self.results.apply_theme(theme)

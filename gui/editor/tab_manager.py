@@ -9,6 +9,7 @@ from PyQt6.QtGui import QMouseEvent, QAction
 from core.datasource import DataSource, DataMeta
 from core.registry import DataSourceRegistry
 from core.event_bus import EventBus
+from typing import Optional
 from .file_panel import FilePanel
 from .attr_panel import AttrPanel
 
@@ -130,6 +131,7 @@ class DetachedWindow(QMainWindow):
 
     def closeEvent(self, event):
         self.closed.emit(self._panel_key)
+        super().closeEvent(event)
         event.accept()
 
 
@@ -321,7 +323,7 @@ class TabManager(QWidget):
                             'path': current_node,
                             'meta': meta
                         })
-                    except Exception:
+                    except Exception as e:
                         pass
         elif isinstance(panel, AttrPanel):
             pass
@@ -352,7 +354,7 @@ class TabManager(QWidget):
                 tab_widget.setCurrentIndex(idx)
                 return
 
-    def get_current_panel(self) -> FilePanel | AttrPanel | None:
+    def get_current_panel(self) -> Optional[FilePanel | AttrPanel]:
         for tab_widget in self._tab_groups:
             panel = tab_widget.currentWidget()
             if isinstance(panel, (FilePanel, AttrPanel)):

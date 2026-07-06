@@ -3,6 +3,7 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt6.QtCore import Qt
 import numpy as np
+from typing import Optional
 
 from .data_table import DataTablePanel
 
@@ -56,7 +57,7 @@ class AttrPanel(QWidget):
             return type(value).__name__
 
     @staticmethod
-    def _to_ndarray(value) -> np.ndarray | None:
+    def _to_ndarray(value) -> Optional[np.ndarray]:
         """将属性值转换为 numpy 数组用于显示
 
         类型处理：
@@ -85,13 +86,13 @@ class AttrPanel(QWidget):
                 try:
                     decoded = value.decode('utf-8')
                     return np.array([[decoded]])
-                except Exception:
+                except Exception as e:
                     return np.array([[value.hex()]])
             elif isinstance(value, (int, float, bool, np.integer, np.floating)):
                 return np.array([[value]])
             else:
                 return np.array([[str(value)]])
-        except Exception:
+        except Exception as e:
             return np.array([[str(value)]])
 
     def apply_theme(self, theme: str):
