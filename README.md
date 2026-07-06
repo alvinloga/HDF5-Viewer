@@ -28,7 +28,7 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/realalvinlog/HDF5-Viewer.git
+git clone https://github.com/alvinloga/HDF5-Viewer.git
 cd HDF5-Viewer
 
 # 创建虚拟环境

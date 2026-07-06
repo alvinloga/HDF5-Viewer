@@ -12,7 +12,7 @@ DIST_DIR = PROJECT_ROOT / "dist"
 BUILD_DIR = PROJECT_ROOT / "build"
 
 # 版本信息
-VERSION = "0.1.0"
+VERSION = "0.2.1"
 APP_NAME = "HDF5Viewer"
 
 
