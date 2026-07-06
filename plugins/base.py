@@ -114,7 +114,7 @@ class VisualizePlugin(ABC):
             try:
                 np.dtype(dtype)
                 return True
-            except:
+            except Exception:
                 pass
 
         return False
