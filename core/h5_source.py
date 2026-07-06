@@ -3,6 +3,7 @@
 import h5py
 import numpy as np
 from pathlib import Path
+from typing import Optional
 from .datasource import DataSource, DataMeta, TreeNode, NodeType
 
 
@@ -10,8 +11,9 @@ class H5Source(DataSource):
     """HDF5 数据源"""
 
     def __init__(self):
-        self._file: h5py.File | None = None
+        self._file: Optional[h5py.File] = None
         self._path: str = ""
+        self._writable: bool = False
 
     @property
     def name(self) -> str:
@@ -22,11 +24,19 @@ class H5Source(DataSource):
         return [".h5", ".hdf5", ".hdf", ".h5py"]
 
     def open(self, path: str) -> None:
-        """打开 HDF5 文件"""
+        """打开 HDF5 文件（只读模式）"""
+        if self._file:
+            self.close()
+        self._path = path
+        self._file = h5py.File(path, 'r')
+
+    def open_writable(self, path: str) -> None:
+        """打开 HDF5 文件（读写模式）"""
         if self._file:
             self.close()
         self._path = path
         self._file = h5py.File(path, 'r+')
+        self._writable = True
 
     def close(self) -> None:
         """关闭文件"""
@@ -34,6 +44,7 @@ class H5Source(DataSource):
             self._file.close()
             self._file = None
             self._path = ""
+            self._writable = False
 
     def is_open(self) -> bool:
         return self._file is not None and self._file.id.valid
@@ -123,6 +134,9 @@ class H5Source(DataSource):
 
         if slices:
             return ds[slices]
+        # 0维（标量）数据集不能用 ds[:]，需要用 ds[()]
+        if ds.ndim == 0:
+            return np.array(ds[()])
         return ds[:]
 
     def get_attrs(self, path: str) -> dict:
@@ -136,6 +150,12 @@ class H5Source(DataSource):
         if not self._file:
             return False
         try:
+            # 如果文件不是可写模式，重新以 r+ 打开
+            if not self._writable:
+                file_path = self._path
+                self._file.close()
+                self._file = h5py.File(file_path, 'r+')
+                self._writable = True
             dataset = self._file[path]
             dataset[...] = data
             return True

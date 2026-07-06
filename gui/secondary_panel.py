@@ -66,4 +66,5 @@ class SecondaryPanel(QWidget):
                 background-color: {colors['bg_tab_hover']};
             }}
         """)
+        self.search_panel.apply_theme(theme)
         self.plugin_panel.apply_theme(theme)

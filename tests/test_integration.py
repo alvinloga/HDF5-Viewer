@@ -6,10 +6,27 @@ import os
 import tempfile
 import numpy as np
 import h5py
+import pytest
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+
+# ── Fixtures ──────────────────────────────────────────────────────────────
+
+@pytest.fixture
+def tmp_h5(tmp_path):
+    """创建临时 HDF5 文件路径，测试结束后自动清理"""
+    return str(tmp_path / "test.h5")
+
+
+@pytest.fixture
+def tmp_csv(tmp_path):
+    """创建临时 CSV 文件路径，测试结束后自动清理"""
+    return str(tmp_path / "test.csv")
+
+
+# ── Helper ────────────────────────────────────────────────────────────────
 
 def create_complex_hdf5(path: str) -> None:
     """创建复杂的测试 HDF5 文件"""
@@ -50,72 +67,60 @@ def create_complex_hdf5(path: str) -> None:
         f.attrs['operator'] = 'Alvin'
 
 
-def test_file_operations():
-    """测试文件操作"""
-    print("Testing file operations...")
+# ── 测试 ──────────────────────────────────────────────────────────────────
 
+def test_file_operations(tmp_h5):
+    """测试文件操作"""
     from core.h5_source import H5Source
 
-    with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as f:
-        temp_path = f.name
+    create_complex_hdf5(tmp_h5)
 
-    try:
-        create_complex_hdf5(temp_path)
+    # 测试打开
+    source = H5Source()
+    source.open(tmp_h5)
+    assert source.is_open()
 
-        # 测试打开
-        source = H5Source()
-        source.open(temp_path)
-        assert source.is_open()
+    # 测试树结构
+    tree = source.get_tree()
+    assert tree.name == os.path.basename(tmp_h5)
+    assert len(tree.children) > 0
 
-        # 测试树结构
-        tree = source.get_tree()
-        assert tree.name == os.path.basename(temp_path)
-        assert len(tree.children) > 0
+    # 测试元数据
+    meta = source.get_metadata('/experiment/temperature')
+    assert meta.shape == (1000, 100)
+    assert meta.dtype == 'float64'
+    assert meta.attrs.get('units') == 'celsius'
 
-        # 测试元数据
-        meta = source.get_metadata('/experiment/temperature')
-        assert meta.shape == (1000, 100)
-        assert meta.dtype == 'float64'
-        assert meta.attrs.get('units') == 'celsius'
+    # 测试数据读取
+    data = source.read_slice('/experiment/temperature', (slice(0, 10), slice(0, 5)))
+    assert data.shape == (10, 5)
+    assert not np.any(np.isnan(data))
 
-        # 测试数据读取
-        data = source.read_slice('/experiment/temperature', (slice(0, 10), slice(0, 5)))
-        assert data.shape == (10, 5)
-        assert not np.any(np.isnan(data))
+    # 测试属性
+    attrs = source.get_attrs('/experiment/temperature')
+    assert 'units' in attrs
+    assert attrs['units'] == 'celsius'
 
-        # 测试属性
-        attrs = source.get_attrs('/experiment/temperature')
-        assert 'units' in attrs
-        assert attrs['units'] == 'celsius'
+    # 测试搜索
+    results = source.search('temperature')
+    assert len(results) > 0
+    assert any('temperature' in r for r in results)
 
-        # 测试搜索
-        results = source.search('temperature')
-        assert len(results) > 0
-        assert any('temperature' in r for r in results)
+    # 测试多维数据
+    meta_3d = source.get_metadata('/experiment/3d_data')
+    assert meta_3d.shape == (10, 20, 30)
+    assert meta_3d.ndim == 3
 
-        # 测试多维数据
-        meta_3d = source.get_metadata('/experiment/3d_data')
-        assert meta_3d.shape == (10, 20, 30)
-        assert meta_3d.ndim == 3
+    # 测试字符串数据
+    labels = source.read_slice('/experiment/channel_labels', (slice(0, 5),))
+    assert len(labels) == 5
 
-        # 测试字符串数据
-        labels = source.read_slice('/experiment/channel_labels', (slice(0, 5),))
-        assert len(labels) == 5
-
-        source.close()
-        assert not source.is_open()
-
-        print("  [OK] File operations")
-        return True
-
-    finally:
-        os.unlink(temp_path)
+    source.close()
+    assert not source.is_open()
 
 
 def test_slicer_integration():
     """测试切片解析集成"""
-    print("Testing slicer integration...")
-
     from core.slicer import SliceParser
 
     # 测试各种切片格式
@@ -140,14 +145,9 @@ def test_slicer_integration():
     assert "0:100" in s_str
     assert "10:20" in s_str
 
-    print("  [OK] Slicer integration")
-    return True
-
 
 def test_cache_integration():
     """测试缓存集成"""
-    print("Testing cache integration...")
-
     from core.cache import LRUCache
 
     cache = LRUCache(max_size_mb=1)
@@ -170,14 +170,9 @@ def test_cache_integration():
     cache.clear()
     assert cache.count == 0
 
-    print("  [OK] Cache integration")
-    return True
-
 
 def test_plugin_integration():
     """测试插件集成"""
-    print("Testing plugin integration...")
-
     from core.registry import PluginManager
     from plugins.builtin.statistics import StatisticsPlugin
     from plugins.builtin.histogram import HistogramPlugin
@@ -213,54 +208,35 @@ def test_plugin_integration():
     assert 'Histogram' in plugin_names
     assert 'Line Chart' in plugin_names
 
-    print("  [OK] Plugin integration")
-    return True
 
-
-def test_export_integration():
+def test_export_integration(tmp_csv):
     """测试导出集成"""
-    print("Testing export integration...")
-
     from services.exporter import DataExporter
 
-    with tempfile.NamedTemporaryFile(suffix='.csv', delete=False) as f:
-        csv_path = f.name
+    # 测试 2D 数据导出
+    data_2d = np.random.randn(10, 5)
+    success = DataExporter.to_csv(data_2d, tmp_csv)
+    assert success
 
-    try:
-        # 测试 2D 数据导出
-        data_2d = np.random.randn(10, 5)
-        success = DataExporter.to_csv(data_2d, csv_path)
-        assert success
+    # 验证 CSV 内容
+    with open(tmp_csv, 'r') as f:
+        lines = f.readlines()
+        assert len(lines) == 11  # header + 10 rows
+        header = lines[0].strip()
+        assert 'Col_0' in header
 
-        # 验证 CSV 内容
-        with open(csv_path, 'r') as f:
-            lines = f.readlines()
-            assert len(lines) == 11  # header + 10 rows
-            header = lines[0].strip()
-            assert 'Col_0' in header
+    # 测试 1D 数据导出
+    data_1d = np.random.randn(100)
+    success = DataExporter.to_csv(data_1d, tmp_csv)
+    assert success
 
-        # 测试 1D 数据导出
-        os.unlink(csv_path)
-        data_1d = np.random.randn(100)
-        success = DataExporter.to_csv(data_1d, csv_path)
-        assert success
-
-        with open(csv_path, 'r') as f:
-            lines = f.readlines()
-            assert len(lines) == 101  # header + 100 rows
-
-        print("  [OK] Export integration")
-        return True
-
-    finally:
-        if os.path.exists(csv_path):
-            os.unlink(csv_path)
+    with open(tmp_csv, 'r') as f:
+        lines = f.readlines()
+        assert len(lines) == 101  # header + 100 rows
 
 
 def test_event_bus_integration():
     """测试事件总线集成"""
-    print("Testing event bus integration...")
-
     from core.event_bus import EventBus
 
     bus = EventBus.get_instance()
@@ -291,9 +267,6 @@ def test_event_bus_integration():
     bus.off(EventBus.FILE_OPENED, handler1)
     bus.off(EventBus.NODE_SELECTED, handler2)
 
-    print("  [OK] Event bus integration")
-    return True
-
 
 def main():
     """运行所有测试"""
@@ -315,11 +288,8 @@ def main():
 
     for test in tests:
         try:
-            if test():
-                passed += 1
-            else:
-                failed += 1
-                print(f"  [FAIL] {test.__name__}")
+            test()
+            passed += 1
         except Exception as e:
             failed += 1
             print(f"  [FAIL] {test.__name__}: {e}")

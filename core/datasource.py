@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 import numpy as np
 
 
@@ -24,8 +24,8 @@ class DataMeta:
     ndim: int = 0
     size: int = 0
     node_type: NodeType = NodeType.UNKNOWN
-    chunks: tuple | None = None
-    compression: str | None = None
+    chunks: Optional[tuple] = None
+    compression: Optional[str] = None
     attrs: dict = field(default_factory=dict)
 
 
@@ -36,7 +36,7 @@ class TreeNode:
     path: str
     node_type: NodeType
     children: list['TreeNode'] = field(default_factory=list)
-    meta: DataMeta | None = None
+    meta: Optional[DataMeta] = None
     shape: tuple = ()
     dtype: str = ""
     size: int = 0

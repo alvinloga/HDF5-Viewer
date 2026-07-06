@@ -1,7 +1,7 @@
 """Cache — LRU 数据缓存"""
 
 from collections import OrderedDict
-from typing import Any
+from typing import Any, Optional
 import numpy as np
 import sys
 
@@ -14,7 +14,7 @@ class LRUCache:
         self._current_size = 0
         self._cache: OrderedDict[str, tuple[np.ndarray, int]] = OrderedDict()
 
-    def get(self, key: str) -> np.ndarray | None:
+    def get(self, key: str) -> Optional[np.ndarray]:
         """获取缓存"""
         if key in self._cache:
             # 移到末尾（最近使用）

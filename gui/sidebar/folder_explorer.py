@@ -19,7 +19,7 @@ class FolderExplorerTree(QTreeWidget):
     file_clicked = pyqtSignal(str)
     file_double_clicked = pyqtSignal(str)
 
-    _DEFAULT_FILE_FILTERS: list[str] = [".h5", ".hdf5", ".hdf", ".h5py"]
+    _DEFAULT_FILE_FILTERS: list[str] = [".h5", ".hdf5", ".hdf", ".h5py", ".zarr"]
     _DEFAULT_MAX_DEPTH: int = 5
     _DEFAULT_SHOW_HIDDEN: bool = False
 
@@ -95,7 +95,14 @@ class FolderExplorerTree(QTreeWidget):
                 continue
 
             if os.path.isdir(entry_path):
-                if depth < self._max_depth and self._folder_has_matches(entry_path, depth + 1):
+                # 检查是否为匹配的目录格式（如 .zarr）
+                if self._is_matching_dir(entry_path):
+                    file_item = QTreeWidgetItem(parent_item)
+                    file_item.setText(0, f"\U0001f4c4 {entry_name}")
+                    file_item.setData(0, Qt.ItemDataRole.UserRole, entry_path)
+                    file_item.setData(0, Qt.ItemDataRole.UserRole + 1, "file")
+                    file_item.setData(0, Qt.ItemDataRole.UserRole + 2, depth + 1)
+                elif depth < self._max_depth and self._folder_has_matches(entry_path, depth + 1):
                     folder_item = QTreeWidgetItem(parent_item)
                     folder_item.setText(0, f"\U0001f4c1 {entry_name}")
                     folder_item.setData(0, Qt.ItemDataRole.UserRole, entry_path)
@@ -132,9 +139,12 @@ class FolderExplorerTree(QTreeWidget):
             if os.path.isfile(entry_path) and self._is_matching_file(entry_path):
                 return True
 
-            if os.path.isdir(entry_path) and depth < self._max_depth:
-                if self._folder_has_matches(entry_path, depth + 1):
+            if os.path.isdir(entry_path):
+                if self._is_matching_dir(entry_path):
                     return True
+                if depth < self._max_depth:
+                    if self._folder_has_matches(entry_path, depth + 1):
+                        return True
 
         return False
 
@@ -153,6 +163,14 @@ class FolderExplorerTree(QTreeWidget):
     def _is_matching_file(self, file_path: str) -> bool:
         suffix = Path(file_path).suffix.lower()
         return suffix in self._file_filters
+
+    def _is_matching_dir(self, dir_path: str) -> bool:
+        """检查目录是否为匹配的目录格式（如 .zarr）"""
+        dir_name = os.path.basename(dir_path)
+        for ext in self._file_filters:
+            if dir_name.endswith(ext):
+                return True
+        return False
 
     @staticmethod
     def _format_file_size(size_bytes: int) -> str:

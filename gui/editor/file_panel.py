@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
 from PyQt6.QtCore import Qt, pyqtSignal, QThread, pyqtSlot
 import threading
 import numpy as np
+from typing import Optional
 
 from core.datasource import DataSource, DataMeta, NodeType
 from core.slicer import SliceParser
@@ -266,9 +267,9 @@ class FilePanel(QWidget):
         super().__init__(parent)
         self._source = source
         self._current_path = ""
-        self._current_meta: DataMeta | None = None
+        self._current_meta: Optional[DataMeta] = None
         self._event_bus = EventBus.get_instance()
-        self._load_thread: DataLoadThread | None = None
+        self._load_thread: Optional[DataLoadThread] = None
 
         self._setup_ui()
         self.apply_theme("dark")
@@ -407,6 +408,17 @@ class FilePanel(QWidget):
 
     def get_current_node(self) -> str:
         return self._current_path
+
+    def get_current_data(self) -> Optional[np.ndarray]:
+        """获取当前显示的数据"""
+        model = self.data_table._model
+        if model._editable:
+            return model.get_edited_data()
+        return model._data
+
+    def get_current_slices(self) -> str:
+        """获取当前切片字符串"""
+        return self.slice_input.input.text().strip()
 
     def closeEvent(self, event):
         if self._load_thread and self._load_thread.isRunning():

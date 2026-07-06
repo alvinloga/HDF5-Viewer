@@ -1,5 +1,6 @@
 """Registry — 数据源/插件注册中心"""
 
+import os
 from pathlib import Path
 from typing import Type
 from .datasource import DataSource
@@ -9,6 +10,7 @@ class DataSourceRegistry:
     """数据源注册中心"""
 
     _sources: dict[str, Type[DataSource]] = {}
+    _instances: dict[str, DataSource] = {}  # cache: path -> instance
 
     @classmethod
     def register(cls, source_class: Type[DataSource]) -> None:
@@ -18,12 +20,28 @@ class DataSourceRegistry:
             cls._sources[ext.lower()] = source_class
 
     @classmethod
-    def get(cls, path: str) -> DataSource:
-        """根据文件路径获取对应的数据源"""
+    def get(cls, path: str, reuse: bool = True) -> DataSource:
+        """根据文件路径获取对应的数据源
+
+        Args:
+            path: 文件路径
+            reuse: 是否复用已有实例（默认 True）
+        """
         ext = Path(path).suffix.lower()
+        # 对于 .zarr 等目录格式，使用目录名后缀
+        if not ext and os.path.isdir(path):
+            for filter_ext in cls._sources:
+                if path.endswith(filter_ext):
+                    ext = filter_ext
+                    break
         if ext not in cls._sources:
             raise ValueError(f"Unsupported file format: {ext}")
-        return cls._sources[ext]()
+        if reuse and path in cls._instances:
+            return cls._instances[path]
+        instance = cls._sources[ext]()
+        if reuse:
+            cls._instances[path] = instance
+        return instance
 
     @classmethod
     def get_supported_extensions(cls) -> list[str]:
@@ -45,6 +63,21 @@ class DataSourceRegistry:
                 cls._sources[ext.lower()] = source_class
         except (ImportError, TypeError):
             pass  # 依赖不可用或类不完整，跳过注册
+
+    @classmethod
+    def remove_instance(cls, path: str) -> None:
+        """从缓存中移除实例（关闭文件后调用）"""
+        instance = cls._instances.pop(path, None)
+        if instance and instance.is_open():
+            instance.close()
+
+    @classmethod
+    def close_all(cls) -> None:
+        """关闭并清除所有缓存的数据源实例"""
+        for path, instance in list(cls._instances.items()):
+            if instance.is_open():
+                instance.close()
+        cls._instances.clear()
 
 
 class PluginManager:

@@ -2,8 +2,11 @@
 
 import numpy as np
 import csv
+import logging
 from pathlib import Path
 from typing import TextIO
+
+logger = logging.getLogger(__name__)
 
 
 class DataExporter:
@@ -39,7 +42,7 @@ class DataExporter:
             return True
 
         except Exception as e:
-            print(f"Export error: {e}")
+            logger.error(f"Export error: {e}")
             return False
 
     @staticmethod
@@ -49,7 +52,7 @@ class DataExporter:
             np.save(file_path, data)
             return True
         except Exception as e:
-            print(f"Export error: {e}")
+            logger.error(f"Export error: {e}")
             return False
 
     @staticmethod

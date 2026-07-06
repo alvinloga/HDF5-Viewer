@@ -134,7 +134,7 @@ class AttributesView(QTreeWidget):
                 if len(decoded) > 50:
                     return f'"{decoded[:50]}..."'
                 return f'"{decoded}"'
-            except Exception:
+            except Exception as e:
                 return f"bytes({len(value)})"
         elif isinstance(value, str):
             if len(value) > 50:

@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QListWidget,
                               QStackedWidget, QTextEdit)
 from PyQt6.QtCore import Qt, pyqtSignal
 import numpy as np
+from typing import Optional
 
 from core.event_bus import EventBus
 from core.datasource import DataMeta
@@ -20,8 +21,8 @@ class PluginPanel(QWidget):
         super().__init__(parent)
         self._current_source = None
         self._current_path = ""
-        self._current_meta: DataMeta | None = None
-        self._current_data: np.ndarray | None = None
+        self._current_meta: Optional[DataMeta] = None
+        self._current_data: Optional[np.ndarray] = None
         self._event_bus = EventBus.get_instance()
 
         self._setup_ui()
@@ -193,33 +194,26 @@ class PluginPanel(QWidget):
         self.result_stack.setCurrentIndex(0)
 
     def _show_visualize_result(self, widget: 'QWidget'):
-        # 移除旧的可视化控件
-        old_widget = self.result_stack.widget(1)
-        if old_widget is not None and old_widget is not self.viz_placeholder:
-            self.result_stack.removeWidget(old_widget)
-            old_widget.deleteLater()
-
-        # 移除当前 index 1 的控件（可能是占位符或已删除的旧控件）
-        current_widget = self.result_stack.widget(1)
-        if current_widget is not None:
-            self.result_stack.removeWidget(current_widget)
-
+        """显示可视化结果"""
+        # 移除旧的 widget（index 1，index 0 是占位符）
+        old = self.result_stack.widget(1)
+        if old is not None:
+            self.result_stack.removeWidget(old)
+            old.deleteLater()
         self.result_stack.insertWidget(1, widget)
         self.result_stack.setCurrentIndex(1)
 
     def clear_results(self):
         self.text_result.clear()
-        # 恢复占位符
-        old_widget = self.result_stack.widget(1)
-        if old_widget is not None and old_widget is not self.viz_placeholder:
-            self.result_stack.removeWidget(old_widget)
-            old_widget.deleteLater()
-        elif old_widget is None or old_widget is self.viz_placeholder:
-            # 确保占位符在正确位置
-            current = self.result_stack.widget(1)
-            if current is not None:
-                self.result_stack.removeWidget(current)
-        self.result_stack.insertWidget(1, self.viz_placeholder)
+        # 移除非占位符的可视化控件
+        old = self.result_stack.widget(1)
+        if old is not None:
+            self.result_stack.removeWidget(old)
+            old.deleteLater()
+
+        # 确保占位符在 index 1
+        if self.result_stack.widget(1) is None:
+            self.result_stack.insertWidget(1, self.viz_placeholder)
         self.result_stack.setCurrentIndex(0)
 
     def apply_theme(self, theme: str):

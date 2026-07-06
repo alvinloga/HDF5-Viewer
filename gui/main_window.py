@@ -378,7 +378,7 @@ class MainWindow(QMainWindow):
                 source = DataSourceRegistry.get(file_path)
                 if not source.is_open():
                     source.open(file_path)
-            except Exception:
+            except Exception as e:
                 return
 
         if source and source.is_open():
@@ -557,9 +557,18 @@ class MainWindow(QMainWindow):
             from services.exporter import DataExporter
             import numpy as np
 
-            # 获取当前显示的数据（从 FilePanel 获取）
             try:
-                # 获取当前切片的数据
+                # 优先从 FilePanel 获取当前显示的数据
+                if hasattr(panel, 'get_current_data'):
+                    data = panel.get_current_data()
+                    if data is not None:
+                        if DataExporter.to_csv(data, file_path):
+                            self.status_bar.set_message(f"Exported to {file_path}")
+                        else:
+                            self.status_bar.set_message("Export failed")
+                        return
+
+                # 回退：重新切片
                 source = panel.get_source()
                 current_path = panel.get_current_node()
                 if not current_path:
@@ -591,6 +600,17 @@ class MainWindow(QMainWindow):
         if file_path:
             from services.exporter import DataExporter
             try:
+                # 优先从 FilePanel 获取当前显示的数据
+                if hasattr(panel, 'get_current_data'):
+                    data = panel.get_current_data()
+                    if data is not None:
+                        if DataExporter.to_npy(data, file_path):
+                            self.status_bar.set_message(f"Exported to {file_path}")
+                        else:
+                            self.status_bar.set_message("Export failed")
+                        return
+
+                # 回退：重新切片
                 source = panel.get_source()
                 current_path = panel.get_current_node()
                 if not current_path:
@@ -636,7 +656,7 @@ class MainWindow(QMainWindow):
                         self._last_active_meta = meta
                         # 更新插件面板
                         self.secondary_panel.get_plugin_panel().set_data(source, path, meta)
-                    except Exception:
+                    except Exception as e:
                         pass
 
     def _on_file_opened(self, file_path: str):
@@ -647,12 +667,18 @@ class MainWindow(QMainWindow):
         """文件/数据集标签页关闭后
 
         如果关闭的是主文件标签页，且该文件正是 Explorer 当前显示的，
-        清除 Explorer 的已加载文件记录。
+        清除 Explorer 的已加载文件记录，并从 DataSourceRegistry 缓存中移除。
         """
         if "::" not in panel_key:
             # 主文件标签页关闭
             if self.explorer.tree._loaded_file_path == panel_key:
                 self.explorer.clear_loaded_file()
+            # 从注册表缓存中移除并关闭数据源
+            from core.registry import DataSourceRegistry
+            source = DataSourceRegistry._instances.get(panel_key)
+            if source and source.is_open():
+                source.close()
+            DataSourceRegistry.remove_instance(panel_key)
 
     def _on_open_folder(self):
         """打开文件夹"""
@@ -690,7 +716,7 @@ class MainWindow(QMainWindow):
                     self._last_active_path = current_node
                     self._last_active_meta = meta
                     self.secondary_panel.get_plugin_panel().set_data(source, current_node, meta)
-                except Exception:
+                except Exception as e:
                     pass
 
 
@@ -736,7 +762,7 @@ class MainWindow(QMainWindow):
         try:
             with open(config_path, 'w', encoding='utf-8') as f:
                 json.dump(self._config, f, indent=2, ensure_ascii=False)
-        except Exception:
+        except Exception as e:
             pass
 
     def _execute_command(self, cmd_id: str):
@@ -778,7 +804,7 @@ class MainWindow(QMainWindow):
         """关于"""
         QMessageBox.about(
             self, "About HDF5 Viewer",
-            "HDF5 Viewer v0.2.0\n\n"
+            "HDF5 Viewer v0.2.1\n\n"
             "A lightweight HDF5 file viewer\n"
             "with VSCode-style interface.\n\n"
             "Features:\n"
@@ -805,4 +831,8 @@ class MainWindow(QMainWindow):
         main_keys = [k for k in self.tab_manager.get_all_paths() if "::" not in k]
         for key in main_keys:
             self.tab_manager.close_file(key)
+        # 关闭所有缓存的数据源实例
+        from core.registry import DataSourceRegistry
+        DataSourceRegistry.close_all()
+        super().closeEvent(event)
         event.accept()

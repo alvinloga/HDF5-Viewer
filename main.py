@@ -42,7 +42,7 @@ def main():
 
     app = QApplication(sys.argv)
     app.setApplicationName("HDF5 Viewer")
-    app.setApplicationVersion("0.1.0")
+    app.setApplicationVersion("0.2.1")
 
     # 加载配置
     config = load_config()
