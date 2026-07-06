@@ -1,6 +1,6 @@
 {
   "ui": {
-    "theme": "dark",
+    "theme": "light",
     "sidebarWidth": 280,
     "secondaryPanelWidth": 280,
     "secondaryPanelVisible": false
