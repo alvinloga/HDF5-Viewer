@@ -1,25 +1,35 @@
-# HDF5 Viewer v0.1.0 — Release Notes
+# HDF5 Viewer v0.2.1 — Release Notes
 
-**发布日期**: 2026-05-27  
-**测试状态**: ✅ 全部 66 项测试通过  
+**发布日期**: 2026-07-06  
+**测试状态**: ✅ 全部 121 项测试通过  
 
 ---
 
 ## 🎉 发布说明
 
-HDF5 Viewer v0.1.0 是一个轻量级的 HDF5 文件查看器，采用 VSCode 风格界面设计。
+HDF5 Viewer v0.2.1 是一个轻量级的 HDF5 文件查看器，采用 VSCode 风格界面设计。此版本在 v0.2.0 的基础上进一步打磨交互体验。
 
-### 已完成功能
+### v0.2.1 更新内容
 
-- **多标签页 + Split** — 支持多文件同时查看，支持左右/上下分屏
-- **大数据异步加载** — 异步加载 + 分页，UI 不卡
-- **智能切片** — 默认限制 200x100，避免大数据卡顿
-- **Attributes 独立标签页** — 底部面板独立显示，双击可查看属性值详情
-- **数据导出** — 支持导出为 CSV 格式
-- **全局搜索** — 搜索 HDF5 节点路径
-- **文件夹浏览器** — 侧边栏浏览本地文件夹
-- **拖拽打开文件** — 拖拽文件/文件夹到窗口直接打开
-- **插件框架** — 代码层面可用，内置统计/折线图/热力图/直方图（ASCII 渲染，暂无 UI 入口）
+- ✅ 编辑模式按钮内嵌到每个标签页的 Slice 工具栏（✏️ Edit + 💾 Save，每个标签页独立控制）
+- ✅ Plugins 追踪最近激活的数据集（双击/搜索/切换标签页均更新插件面板数据源）
+- ✅ 右侧 Activity Bar 始终可见（关闭面板只隐藏内容区，不隐藏按钮栏）
+- ✅ 标签页拖出独立窗口功能暂时禁用
+
+### v0.2.0 功能更新
+
+- ✅ 插件面板 UI（Activity Bar 🔌 入口 + 可视化插件选择 + 参数配置）
+- ✅ Matplotlib 可视化（折线图/直方图/热力图，替代 ASCII 渲染）
+- ✅ Command Palette（Ctrl+Shift+P，14 个命令）+ 主题跟随切换
+- ✅ 标签拖拽排序（拖出独立窗口功能暂未启用）
+- ✅ Dark/Light 主题切换 + 配置持久化（CommandPalette/SecondaryBar/SecondaryPanel 全部跟随）
+- ✅ NetCDF/Zarr 条件注册（可选依赖，缺失时静默跳过）
+- ✅ NumPy (.npy) 导出
+- ✅ 数据编辑模式（Toggle Edit Mode + 单元格编辑 + Save 回写文件）
+- ✅ 右侧面板栏（Search + Plugins 独立面板，与 Explorer 同时可见）
+- ✅ 右键菜单修复（Split Right/Down 垂直嵌套、Close/Others/All 全部可用）
+- ✅ Split Down 真正的垂直嵌套分割（QSplitter 嵌套）
+- ✅ 121 项测试全面覆盖
 
 ### 已测试功能
 
@@ -30,38 +40,35 @@ HDF5 Viewer v0.1.0 是一个轻量级的 HDF5 文件查看器，采用 VSCode �
 | 数据表格显示 | ✅ |
 | 切片功能 | ✅ |
 | 异步加载 | ✅ |
-| 数据导出 | ✅ |
+| 数据导出 (CSV + NumPy) | ✅ |
 | 标签页管理 | ✅ |
 | Split 功能 | ✅ |
 | 搜索功能 | ✅ |
 | 拖拽打开 | ✅ |
 | Attributes 显示 | ✅ |
-
-### 已修复问题
-
-- 右键 "Open in New Tab" 空白问题
-- leadfield 大数据集加载卡死问题
-- CSV 导出失效问题
-- 1D 数据显示列数错误问题
+| 主题切换 | ✅ |
+| 数据编辑 | ✅ |
+| 可视化插件 | ✅ |
+| Command Palette | ✅ |
 
 ---
 
 ## 📦 打包信息
 
-### Linux 版本
+### 打包方式
 
 ```bash
+# Linux — OneDir 方式
 python build.py --all
 cd dist/HDF5Viewer/
 ./run.sh [file.h5]
-```
 
-### Windows 版本
-
-```bat
+# Windows
 build_windows.bat
 dist\HDF5Viewer\HDF5Viewer.exe [file.h5]
 ```
+
+**打包方式**: OneDir（目录模式），便于调试和排查依赖问题。
 
 ---
 
@@ -69,28 +76,21 @@ dist\HDF5Viewer\HDF5Viewer.exe [file.h5]
 
 详细测试报告请查看 [TEST_REPORT.md](TEST_REPORT.md)
 
+**测试概览**: 121 项测试全部通过，覆盖主题切换、数据编辑、标签操作、搜索、插件、边界情况等。
+
 ---
 
 ## 📋 后续开发计划
 
-### v0.2.0 — 补完框架缺失 UI
+### v0.3.0
 
-- [ ] 插件面板 UI（Activity Bar 🔌 按钮已有但无面板，用户无法在界面中触发插件）
-- [ ] 图形化可视化（集成 Matplotlib，替代当前 ASCII 文本渲染）
-
-### v0.2.x — 交互体验补全
-
-- [ ] 标签拖拽成独立窗口（信号已定义，处理逻辑未实现）
-- [ ] Command Palette (Ctrl+Shift+P)
-- [ ] 主题配置（dark/light 切换）
-
-### v0.3.0 — 功能扩展
-
-- [ ] NetCDF/Zarr 支持
-- [ ] NumPy 格式导出
-- [ ] 数据编辑（当前只读）
+- [ ] 清理重复文件（移除废弃的测试和配置文件）
+- [ ] 标签拖出独立窗口功能
+- [ ] 更丰富的插件生态
+- [ ] 数据集合并/对比功能
+- [ ] 性能优化（更大文件的懒加载策略改进）
 
 ---
 
 **发布者**: Alvin  
-**日期**: 2026-05-27
+**日期**: 2026-07-06

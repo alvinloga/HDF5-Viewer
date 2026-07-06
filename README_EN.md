@@ -28,7 +28,7 @@ A lightweight HDF5 file viewer with VSCode-style layout, supporting lazy loading
 
 ```bash
 # Clone the repository
-git clone https://github.com/realalvinlog/HDF5-Viewer.git
+git clone https://github.com/alvinloga/HDF5-Viewer.git
 cd HDF5-Viewer
 
 # Create virtual environment
