@@ -118,8 +118,18 @@ class DataTableModel(QAbstractTableModel):
             if data.ndim == 1:
                 if len(data) > MAX_ROWS:
                     data = data[:MAX_ROWS]
-                self._data = np.column_stack([np.arange(len(data)), data])
-                self._headers = ["Index", "Value"]
+                # 处理复合类型和其他不可 stack 的 dtype
+                try:
+                    self._data = np.column_stack([np.arange(len(data)), data])
+                    self._headers = ["Index", "Value"]
+                except (TypeError, ValueError, np.exceptions.DTypePromotionError):
+                    # compound/object/struct dtype：转为 2D object 数组
+                    rows = len(data)
+                    self._data = np.empty((rows, 2), dtype=object)
+                    self._data[:, 0] = np.arange(rows)
+                    for i, val in enumerate(data):
+                        self._data[i, 1] = str(val)
+                    self._headers = ["Index", "Value"]
             elif data.ndim == 2:
                 if data.shape[0] > MAX_ROWS:
                     data = data[:MAX_ROWS]
@@ -129,8 +139,16 @@ class DataTableModel(QAbstractTableModel):
                 flat = data.flatten()
                 if len(flat) > MAX_ROWS:
                     flat = flat[:MAX_ROWS]
-                self._data = np.column_stack([np.arange(len(flat)), flat])
-                self._headers = ["Index", "Value"]
+                try:
+                    self._data = np.column_stack([np.arange(len(flat)), flat])
+                    self._headers = ["Index", "Value"]
+                except (TypeError, ValueError, np.exceptions.DTypePromotionError):
+                    rows = len(flat)
+                    self._data = np.empty((rows, 2), dtype=object)
+                    self._data[:, 0] = np.arange(rows)
+                    for i, val in enumerate(flat):
+                        self._data[i, 1] = str(val)
+                    self._headers = ["Index", "Value"]
 
             self._row_start = row_start
             self._modified.clear()
