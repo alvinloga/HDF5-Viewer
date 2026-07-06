@@ -46,7 +46,7 @@ class DataTableModel(QAbstractTableModel):
                 else:
                     val = self._data[row, col]
                 return self._format_value(val)
-            except Exception:
+            except Exception as e:
                 return ""
 
         if role == Qt.ItemDataRole.ForegroundRole:
