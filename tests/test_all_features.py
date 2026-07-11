@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
-app = QApplication([])
+app = QApplication.instance() or QApplication([])
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────

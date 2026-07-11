@@ -10,7 +10,7 @@ import h5py
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PyQt6.QtWidgets import QApplication
-app = QApplication([])
+app = QApplication.instance() or QApplication([])
 
 # 测试核心模块
 from core.event_bus import EventBus
