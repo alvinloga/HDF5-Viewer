@@ -4,6 +4,10 @@ All notable Data Viewer changes are recorded here.
 
 ## Unreleased
 
+### Added
+
+- Added the installable `data_viewer` package skeleton with one canonical development version and a migration-safe command-line entry point.
+
 ### Documentation
 
 - Renamed the target product to Data Viewer.

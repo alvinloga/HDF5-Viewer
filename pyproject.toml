@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data-viewer"
+dynamic = ["version"]
+description = "Cross-platform desktop scientific data workbench."
+readme = { file = "README_EN.md", content-type = "text/markdown" }
+requires-python = ">=3.12,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "Data Viewer contributors" }]
+keywords = ["scientific-data", "data-viewer", "hdf5", "nifti"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: X11 Applications :: Qt",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "PyQt6",
+  "numpy",
+  "h5py",
+  "pandas",
+  "scipy",
+  "nibabel",
+  "openpyxl",
+  "PyYAML",
+  "matplotlib",
+  "jsonschema",
+  "platformdirs",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-qt",
+  "pytest-cov",
+  "hypothesis",
+  "ruff",
+  "mypy",
+  "build",
+]
+packaging = ["PyInstaller"]
+
+[project.scripts]
+data-viewer = "data_viewer.__main__:main"
+
+[project.urls]
+Repository = "https://github.com/alvinloga/HDF5-Viewer"
+Documentation = "https://github.com/alvinloga/HDF5-Viewer/tree/main/docs"
+Issues = "https://github.com/alvinloga/HDF5-Viewer/issues"
+
+[tool.setuptools.dynamic]
+version = { attr = "data_viewer._version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["data_viewer*"]
