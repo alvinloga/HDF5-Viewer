@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import locale
 import subprocess
 import sys
 from pathlib import Path
@@ -22,6 +23,12 @@ MULTI_MODULE_GUI_COLLECTION = [
 def test_qt_platform_is_configured_before_gui_modules_import() -> None:
     """Headless collection must choose Qt's offscreen platform up front."""
     assert os.environ.get("QT_QPA_PLATFORM") == "offscreen"
+
+
+def test_locale_and_timezone_are_stable_for_each_test() -> None:
+    """Locale-sensitive formatting must not inherit a developer workstation setting."""
+    assert os.environ.get("TZ") == "UTC"
+    assert locale.setlocale(locale.LC_ALL) == "C"
 
 
 def test_gui_config_writes_do_not_modify_repository_config(qapp) -> None:
