@@ -1,6 +1,7 @@
 name: Data Viewer quality
 
 on:
+  workflow_call:
   push:
     branches: [main, "codex/**"]
   pull_request:
@@ -42,6 +43,12 @@ jobs:
         with:
           python-version-file: .python-version
 
+      - name: Create quality evidence manifest
+        run: >-
+          python .github/scripts/write_quality_manifest.py
+          --platform "${{ matrix.name }}"
+          --output-directory "ci-reports/${{ matrix.name }}"
+
       - name: Set up uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
@@ -77,22 +84,39 @@ jobs:
 
       - name: Lint Data Viewer target and isolation harness
         run: >-
-          uv run --locked ruff check data_viewer tests/conftest.py tests/test_data_viewer_package.py tests/test_test_environment.py
+          uv run --locked ruff check data_viewer .github/scripts tests/conftest.py
+          tests/fixtures tests/test_ci_reporting.py tests/test_data_viewer_package.py
+          tests/test_fixture_factories.py tests/test_test_environment.py
 
       - name: Type-check Data Viewer target
-        run: uv run --locked mypy data_viewer
+        run: uv run --locked mypy data_viewer .github/scripts/write_quality_manifest.py
 
       - name: Compile target and legacy compatibility paths
-        run: uv run --locked python -m compileall -q data_viewer core gui plugins services utils main.py
+        run: >-
+          uv run --locked python -m compileall -q data_viewer .github/scripts
+          core gui plugins services utils main.py
 
       - name: Collect tests
         run: uv run --locked python -m pytest --collect-only -q
 
       - name: Run full offscreen regression suite
-        run: uv run --locked python -m pytest -q
+        run: >-
+          uv run --locked python -m pytest -q
+          --junitxml=ci-reports/${{ matrix.name }}/pytest.xml
 
       - name: Build source distribution and wheel
         run: uv build --no-sources --out-dir artifacts/${{ matrix.name }}
+
+      - name: Upload quality evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: data-viewer-quality-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ci-reports/${{ matrix.name }}/**
+            artifacts/${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Prune CI cache
         if: always()

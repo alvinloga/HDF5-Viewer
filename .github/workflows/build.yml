@@ -1,4 +1,4 @@
-name: Legacy release pipeline disabled
+name: Data Viewer release gate
 
 on:
   workflow_dispatch:
@@ -7,12 +7,16 @@ permissions:
   contents: read
 
 jobs:
+  quality:
+    uses: ./.github/workflows/ci.yml
+
   blocked:
+    needs: quality
     runs-on: ubuntu-latest
     steps:
-      - name: Explain the release block
+      - name: Explain the remaining release block
         run: |
           echo "Data Viewer v1 release is intentionally blocked."
-          echo "Use the Data Viewer quality workflow for Windows and Ubuntu verification."
-          echo "A release pipeline will be added only after the v1 package, artifact smoke tests, and PyQt licensing decision are complete."
+          echo "Windows and Ubuntu quality jobs passed before this job was eligible to run."
+          echo "A publication workflow will be added only after v1 artifact smoke tests and the PyQt licensing decision are complete."
           exit 1
