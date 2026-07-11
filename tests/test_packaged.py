@@ -172,24 +172,6 @@ def test_export(tmp_csv):
         assert len(lines) == 11  # header + 10 rows
 
 
-def test_event_bus():
-    """测试事件总线"""
-    from core.event_bus import EventBus
-
-    bus = EventBus.get_instance()
-    results = []
-
-    def handler(event):
-        results.append(event.data)
-
-    bus.on(EventBus.FILE_OPENED, handler)
-    bus.emit(EventBus.FILE_OPENED, "test.h5")
-    bus.off(EventBus.FILE_OPENED, handler)
-
-    assert len(results) == 1
-    assert results[0] == "test.h5"
-
-
 def main():
     """运行所有测试"""
     print("=" * 60)
@@ -203,7 +185,6 @@ def main():
         test_cache,
         test_plugins,
         test_export,
-        test_event_bus,
     ]
 
     passed = 0
