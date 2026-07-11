@@ -148,13 +148,13 @@ QT_QPA_PLATFORM=xcb python main.py
 
 ## 当前验证基线
 
-2026-07-11 的只读审查结果：
+初始只读审查已经被当前锁定 Windows 基线取代：
 
-- `python -m compileall -q core gui plugins services main.py` 通过；
-- `python -m pytest tests/test_core.py -q` 为 5 passed；
-- 全量 `pytest --collect-only` 因当前环境缺少完整 PyQt6 安装而中断；
-- 静态计数发现 128 个测试定义，而旧报告声称 121 个；
-- 仓库尚无可信的全量通过基线。
+- `uv sync --locked --all-extras` 在独立 CPython 3.12.13 环境通过；
+- 首版直接依赖（包括 PyQt6）导入通过；
+- 全量 `pytest --collect-only -q` 收集 134 项；全量执行为 133 passed、1 skipped；
+- Linux 的干净锁定安装与 CI 仍是未完成的发布门禁；
+- 静态计数与历史“121 tests / 100%”宣传仍不可作为当前证据。
 
 当前证据见 [测试状态](TEST_REPORT.md)。任何后续 agent 都不得把旧报告复制为新结论。
 

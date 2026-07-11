@@ -34,17 +34,17 @@ Tests follow the pyramid: most behavior below GUI, a focused GUI suite, and a sm
 
 ## 4. Standard commands
 
-Target project commands after Phase 0 establishes `pyproject.toml`:
+Target project commands use the committed universal lock:
 
 ```bash
-python -m pip install -e ".[dev]"
-python -m pytest --collect-only -q
-python -m pytest -m "not gui and not performance" -q
-python -m pytest -m gui -q
-python -m pytest --cov=data_viewer --cov-report=term-missing --cov-report=xml
-python -m ruff check .
-python -m mypy data_viewer
-python -m compileall -q data_viewer
+uv sync --locked --all-extras
+uv run pytest --collect-only -q
+uv run pytest -m "not gui and not performance" -q
+uv run pytest -m gui -q
+uv run pytest --cov=data_viewer --cov-report=term-missing --cov-report=xml
+uv run ruff check .
+uv run mypy data_viewer
+uv run python -m compileall -q data_viewer
 ```
 
 Until migration, legacy commands remain:

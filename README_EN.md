@@ -112,13 +112,13 @@ The target commands will be established in Phase 0 and then maintained in `docs/
 
 ## Current verification baseline
 
-Read-only audit on 2026-07-11:
+The initial read-only audit has been superseded by the current locked Windows baseline:
 
-- compileall passes for current Python sources;
-- five core tests pass;
-- full test collection stops because the active environment lacks a complete PyQt6 installation;
-- static analysis finds 128 test definitions while the legacy report claims 121;
-- there is no trustworthy all-green baseline yet.
+- `uv sync --locked --all-extras` passes in an independent CPython 3.12.13 environment;
+- all v1 direct dependencies, including PyQt6, import successfully;
+- full collection reports 134 tests and execution reports 133 passed, 1 skipped;
+- Linux clean locked installation and CI remain incomplete release gates;
+- static counts and the historical “121 tests / 100%” claim are still not current evidence.
 
 See [TEST_REPORT.md](TEST_REPORT.md). Future agents must replace this baseline only with reproducible CI evidence.
 

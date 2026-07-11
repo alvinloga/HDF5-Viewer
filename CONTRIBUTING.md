@@ -6,9 +6,24 @@ Read `AGENTS.md`, `docs/PRODUCT_SPEC.md`, `ARCHITECTURE.md`, and the documents l
 
 Choose exactly one task from `tasks/todo.md`. If the task is too large for one focused change, split the task in the plan before editing source.
 
-## Development environments
+## Locked development environment
 
-The current repository still uses the legacy `requirements.txt`. Phase 0 will replace it with reproducible runtime and development dependency sets. Until Phase 0 is complete, do not treat a locally working environment as proof of reproducibility.
+Use the committed `uv.lock` for all target-package work. Install uv `0.11.28`, use the repository's `.python-version`, and do not replace a locked sync with an unconstrained pip install.
+
+```bash
+uv python install 3.12.13
+uv sync --locked --all-extras
+uv run python -m data_viewer
+uv run pytest -q
+uv run ruff check .
+uv run mypy data_viewer
+```
+
+The Windows lock has a clean-install/import/test evidence record. Linux clean-install evidence remains a release gate and is obtained through CI; do not claim cross-platform release readiness from a local Windows run.
+
+## Legacy environment
+
+The existing HDF5 Viewer implementation can still be inspected with its legacy setup, but its `requirements.txt` is not a target dependency declaration.
 
 Legacy setup on Windows PowerShell:
 
@@ -30,20 +45,20 @@ python -m pip install -r requirements.txt
 
 ## Target commands
 
-Phase 0 must make these commands authoritative and identical on Windows and Linux:
+The locked commands below are authoritative on both Windows and Linux:
 
 ```bash
-python -m pip install -r requirements-dev.txt
-python -m data_viewer
-python -m pytest -q
-python -m pytest tests/unit -q
-python -m pytest tests/contract -q
-python -m pytest tests/integration -q
-python -m pytest tests/gui -q
-python -m ruff check .
-python -m mypy data_viewer
-python -m coverage run -m pytest
-python -m coverage report --fail-under=85
+uv sync --locked --all-extras
+uv run python -m data_viewer
+uv run pytest -q
+uv run pytest tests/unit -q
+uv run pytest tests/contract -q
+uv run pytest tests/integration -q
+uv run pytest tests/gui -q
+uv run ruff check .
+uv run mypy data_viewer
+uv run coverage run -m pytest
+uv run coverage report --fail-under=85
 ```
 
 Packaging commands after migration:
