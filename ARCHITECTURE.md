@@ -1,201 +1,439 @@
-# HDF5 Viewer — 架构文档
+# Data Viewer Target Architecture
 
-## 项目概述
+## 1. Purpose
 
-轻量级 HDF5 文件浏览器，仿 VSCode 布局设计，支持大文件懒加载、多标签 Split、插件扩展。
+This document defines the target architecture for Data Viewer v1. It is normative for module boundaries, ownership, threading, data identity, and runtime flow.
 
-**核心目标**: 像文本编辑器打开 txt 一样打开 HDF5 文件。
+The current `core/`, `gui/`, `plugins/`, and `services/` packages are legacy migration inputs. New architecture belongs under `data_viewer/` unless a task explicitly creates a compatibility bridge.
 
-## 技术栈
+## 2. Architectural goals
 
-- Python 3.10+
-- PyQt6 — GUI 框架
-- h5py — HDF5 读写核心
-- numpy — 数据处理
+- support multiple data domains without pretending every format is HDF5;
+- keep raw source semantics separate from UI presentation;
+- make expensive work bounded, asynchronous, cancellable, and observable;
+- make edits reviewable and safe;
+- provide stable DataSource, Plugin, and Workspace contracts;
+- keep plugins independent from GUI internals;
+- provide deterministic Windows and Linux behavior;
+- allow vertical, incremental migration from the legacy application.
 
-## 架构总览
+## 3. Context
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  MainWindow (VSCode 风格布局)                                        │
-│  ┌─────┬────────────┬──────────────────────────────────────────────┐│
-│  │ Act │ Sidebar    │ Editor Area (多标签 + Split + 拖拽排序)      ││
-│  │ Bar │ Explorer   │ ┌───────────────────────┬──────────────────┐ ││
-│  │     │ Search     │ │ DataTable (编辑模式)   │ SidePanel       │ ││
-│  │     │ Plugins    │ │                       │ (可视化结果)     │ ││
-│  │     │            │ └───────────────────────┴──────────────────┘ ││
-│  │     │            ├──────────────────────────────────────────────┤│
-│  │     │            │ BottomPanel: Properties / Attributes / Output││
-│  ├─────┼────────────┼──────────────────────────────────────────────┤│
-│  │ Sec │ Right Panel│ Search / Plugins (与 Explorer 同时可见)      ││
-│  │ Bar │            │                                               ││
-│  └─────┴────────────┴──────────────────────────────────────────────┘│
-│  Status Bar: file path | node path | shape | dtype | size           │
-├─────────────────────────────────────────────────────────────────────┤
-│       EventBus | CommandPalette | ThemeManager                      │
-├─────────────────────────────────────────────────────────────────────┤
-│  PluginManager                                                      │
-│  ┌───────────────┬───────────────┬───────────────────────────────┐  │
-│  │ SourcePlugin  │ AnalyzePlugin │ VisualizePlugin               │  │
-│  │ (数据源)      │ (统计分析)    │ (Matplotlib 可视化)           │  │
-│  │ H5Source      │ Statistics    │ LineChart / Heatmap           │  │
-│  │ NetCDF/Zarr   │ Histogram     │ Histogram                     │  │
-│  └───────────────┴───────────────┴───────────────────────────────┘  │
-├─────────────────────────────────────────────────────────────────────┤
-│  Services: AsyncLoader | DataCache | SearchService | Exporter       │
-├─────────────────────────────────────────────────────────────────────┤
-│  Config (统一配置, 主题持久化, 面板状态持久化)                       │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    User["Researcher / Engineer"] --> UI["Data Viewer Desktop UI"]
+    UI --> App["Application Services"]
+    App --> Sources["Source Adapters"]
+    App --> Plugins["Plugin Runtime"]
+    App --> Workspace["Workspace Service"]
+    Sources --> Files["Local Scientific Files"]
+    Plugins --> Results["Analysis / Plot Results"]
+    Workspace --> Manifest[".dvw Manifest"]
+    App --> Tasks["Task Manager"]
+    Tasks --> Diagnostics["Tasks / Problems / Logs"]
 ```
 
-## 核心设计
+Data Viewer v1 is local-first and offline. There is no server, account, telemetry, or remote plugin marketplace.
 
-### 1. DataSource 接口（泛化核心）
+## 4. Layer model
 
-```python
-class DataSource(ABC):
-    def open(self, path: str) -> None: ...
-    def get_tree(self) -> TreeNode: ...
-    def read_slice(self, path: str, slices: tuple) -> np.ndarray: ...
-    def get_attrs(self, path: str) -> dict: ...
-    def get_metadata(self, path: str) -> DataMeta: ...
-    def search(self, keyword: str) -> list[str]: ...
-    def close(self) -> None: ...
+```text
+┌───────────────────────────────────────────────────────────────┐
+│ ui                                                            │
+│ Qt widgets, models, actions, focus, semantic theme tokens      │
+├───────────────────────────────────────────────────────────────┤
+│ app                                                           │
+│ commands, active context, use cases, view-state orchestration  │
+├───────────────────────┬───────────────────────────────────────┤
+│ services              │ plugins                               │
+│ search/export/compare │ API, runner, manifests, built-ins     │
+├───────────────────────┼───────────────────────────────────────┤
+│ sources               │ workspace                             │
+│ adapters and sessions │ schema, persistence, relocation       │
+├───────────────────────┴───────────────────────────────────────┤
+│ tasks                                                         │
+│ cancellation, progress, leases, budgets, result generations   │
+├───────────────────────────────────────────────────────────────┤
+│ domain                                                        │
+│ identifiers, metadata, selections, patches, errors, results   │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-### 2. EventBus（解耦通信）
+Dependency rules:
 
-```python
-class EventBus:
-    FILE_OPENED = "file.opened"
-    NODE_SELECTED = "node.selected"
-    SLICE_CHANGED = "slice.changed"
-    SPLIT_REQUESTED = "split.requested"
-    PLUGIN_ACTIVATED = "plugin.activated"
+```text
+ui -> app -> domain
+app -> services/sources/plugins/workspace/tasks
+services/sources/plugins/workspace/tasks -> domain
+domain -> standard library + NumPy type definitions only
 ```
 
-### 3. 插件系统（三层）
+Forbidden dependencies:
 
-```python
-class SourcePlugin(ABC): ...      # 数据源插件
-class AnalyzePlugin(ABC): ...     # 统计分析插件
-class VisualizePlugin(ABC): ...   # 可视化插件
+- domain importing PyQt widgets or format libraries;
+- source adapters importing GUI modules;
+- plugins importing MainWindow or concrete workspace widgets;
+- widgets accessing adapter internals or another widget's private state;
+- format-specific conditions in generic views.
+
+## 5. Target package tree
+
+```text
+data_viewer/
+├── __init__.py
+├── __main__.py
+├── app/
+│   ├── bootstrap.py
+│   ├── commands.py
+│   ├── active_context.py
+│   ├── document_controller.py
+│   └── result_router.py
+├── domain/
+│   ├── identifiers.py
+│   ├── data.py
+│   ├── selections.py
+│   ├── capabilities.py
+│   ├── edits.py
+│   ├── results.py
+│   └── errors.py
+├── sources/
+│   ├── api.py
+│   ├── registry.py
+│   ├── sniffing.py
+│   ├── gzip_wrapper.py
+│   ├── hdf5.py
+│   ├── numpy_source.py
+│   ├── delimited.py
+│   ├── text_source.py
+│   ├── mat_source.py
+│   ├── nifti_source.py
+│   ├── xlsx_source.py
+│   └── structured_source.py
+├── tasks/
+│   ├── cancellation.py
+│   ├── progress.py
+│   ├── budgets.py
+│   ├── leases.py
+│   └── manager.py
+├── plugins/
+│   ├── api.py
+│   ├── manifests.py
+│   ├── parameters.py
+│   ├── registry.py
+│   ├── runner.py
+│   └── builtin/
+├── workspace/
+│   ├── schema.py
+│   ├── persistence.py
+│   ├── relocation.py
+│   └── session_restore.py
+├── services/
+│   ├── search.py
+│   ├── export.py
+│   ├── compare.py
+│   ├── edit_service.py
+│   └── diagnostics.py
+└── ui/
+    ├── shell/
+    ├── navigation/
+    ├── workspace/
+    ├── inspector/
+    ├── tasks_panel/
+    ├── views/
+    ├── dialogs/
+    └── theme/
 ```
 
-### 4. 异步加载
+Test packages mirror these boundaries under `tests/unit`, `tests/contract`, `tests/integration`, `tests/gui`, and `tests/performance`.
 
-- 打开文件只读 tree 结构（快）
-- 数据切片异步线程读取
-- LRU Cache 缓存最近切片
+## 6. Core domain model
 
-### 5. 大文件策略
+### 6.1 Data identity
 
-- 懒加载：h5py.File 只打开句柄
-- 分页：默认只显示前 N 行
-- 切片限制：超大数据集自动截断
-- 内存控制：单次读取不超过 maxPreviewBytes
+`ResourceId` is the only canonical resource identifier:
 
-## VSCode 风格布局
-
-| VSCode 概念 | 映射 |
-|------------|------|
-| Activity Bar | 左侧图标栏（Explorer/Search/Plugins） |
-| Secondary Bar | 右侧图标栏（Search/Plugins） |
-| Explorer | 文件树视图 + 文件夹浏览器 |
-| Editor Area | 数据表格区（多标签、Split、拖拽排序） |
-| Side Panel | 可视化插件结果展示 |
-| Bottom Panel | Properties/Attributes/Output |
-| Status Bar | 状态栏（路径、形状、类型、大小） |
-| Tab Bar | 标签页栏（含编辑模式工具栏） |
-| Command Palette | Ctrl+Shift+P 命令面板 |
-
-## 开发路线
-
-| 版本 | 目标 |
-|-------|------|
-| v0.1.0 | 骨架：打开 HDF5，树形浏览，多标签 Split，异步加载，插件框架 |
-| v0.2.0 | 插件面板 UI + Matplotlib 可视化 + Command Palette + 主题切换 + 数据编辑 + NetCDF/Zarr |
-| v0.2.1 | 编辑模式工具栏改进 + 插件追踪活跃数据集 + 右侧 Activity Bar 行为优化 |
-| v0.3.0 | 代码清理 + 标签拖出独立窗口 + 数据集对比 + 性能优化 |
-
-## 文件结构
-
+```text
+ResourceId = canonical source URI + adapter-stable node path
 ```
-hdf5-viewer/
-├── main.py                    # 入口
-├── config.json                # 统一配置
-├── build.py                   # 构建脚本
-├── build_windows.py           # Windows 构建脚本
-├── build_windows.bat          # Windows 构建入口
-├── HDF5Viewer.spec            # PyInstaller 打包配置
-├── requirements.txt           # 依赖列表
-├── LICENSE                    # MIT 许可证
-├── README.md                  # 中文说明
-├── README_EN.md               # English README
-├── RELEASE.md                 # 发布说明
-├── TEST_REPORT.md             # 测试报告
-├── TODO.md                    # 开发任务
-├── ARCHITECTURE.md            # 架构文档
-├── core/                      # 核心模块
-│   ├── __init__.py
-│   ├── datasource.py          # 数据源接口 + DataMeta/NodeType（支持写入）
-│   ├── h5_source.py           # HDF5 实现（H5Source + H5DataWriter）
-│   ├── registry.py            # 插件注册 + 条件注册
-│   ├── event_bus.py           # 事件总线
-│   ├── async_loader.py        # 异步加载器
-│   ├── cache.py               # LRU 缓存
-│   └── slicer.py              # 切片解析
-├── gui/                       # GUI 模块
-│   ├── __init__.py
-│   ├── main_window.py         # VSCode 风格主窗口（含右侧面板管理）
-│   ├── activity_bar.py        # 左侧 Activity Bar
-│   ├── command_palette.py     # Command Palette（Ctrl+Shift+P）
-│   ├── secondary_bar.py       # 右侧 Activity Bar
-│   ├── secondary_panel.py     # 右侧面板（Search + Plugins）
-│   ├── theme.py               # 主题管理（Dark/Light 切换 + 持久化）
-│   ├── sidebar/
-│   │   ├── __init__.py
-│   │   ├── explorer.py        # HDF5 文件树
-│   │   ├── folder_explorer.py # 本地文件夹浏览器
-│   │   └── plugin_panel.py    # 可视化插件面板
-│   ├── editor/
-│   │   ├── __init__.py
-│   │   ├── tab_manager.py     # 标签页管理（Split/拖拽/右键菜单）
-│   │   ├── file_panel.py      # 数据集面板
-│   │   ├── data_table.py      # 数据表格（支持编辑模式）
-│   │   ├── data_editor.py     # 编辑模式工具栏
-│   │   └── attr_panel.py      # 属性值面板
-│   ├── status_bar.py          # 状态栏
-│   └── bottom_panel.py        # 底部面板（Properties/Attributes/Output）
-├── plugins/                   # 插件系统
-│   ├── __init__.py
-│   ├── base.py                # 插件接口（Source/Analyze/Visualize）
-│   ├── builtin/               # 内置插件
-│   │   ├── __init__.py
-│   │   ├── statistics.py      # 基础统计
-│   │   ├── line_chart.py      # Matplotlib 折线图
-│   │   ├── histogram.py       # Matplotlib 直方图
-│   │   └── heatmap.py         # Matplotlib 热力图
-│   └── external/              # 外部数据源插件
-│       ├── __init__.py
-│       ├── netcdf_source.py   # NetCDF 数据源
-│       └── zarr_source.py     # Zarr 数据源
-├── services/                  # 服务
-│   ├── __init__.py
-│   ├── search.py              # 搜索服务
-│   └── exporter.py            # 导出服务（CSV + NumPy）
-├── utils/                     # 工具
-│   └── __init__.py
-└── tests/                     # 测试
-    ├── __init__.py
-    ├── test_core.py           # 核心模块测试（5 项）
-    ├── test_phase1.py         # 第一阶段测试（5 项）
-    ├── test_all_features.py   # 全面功能测试（7 项）
-    ├── test_edge_cases.py     # 边界情况测试（11 项）
-    ├── test_stress.py         # 压力测试（8 项）
-    ├── test_packaged.py       # 打包测试（7 项）
-    ├── test_integration.py    # 集成测试（6 项）
-    ├── test_final.py          # 最终集成测试（3 项）
-    ├── test_gui_interaction.py# GUI 交互测试（9 项）
-    └── test_comprehensive.py  # 综合测试（60 项：主题/编辑/标签/Command Palette/搜索/插件）
+
+Examples:
+
+- `file:///D:/data/run.h5` + `/results/fitness`;
+- `file:///home/user/table.csv` + `/table`;
+- `file:///data/book.xlsx` + `/sheets/Sheet1`;
+- `file:///data/image.nii.gz` + `/volume`.
+
+Display names, tab titles, and tree labels are never identifiers.
+
+### 6.2 Data domains
+
+- `HIERARCHICAL_ARRAY`
+- `ARRAY`
+- `TABLE`
+- `TEXT`
+- `STRUCTURED`
+- `WORKBOOK`
+- `VOLUME`
+- `METADATA`
+
+Adapters describe capabilities separately from domain. Two resources in the same domain may have different edit, slicing, streaming, or spatial capabilities.
+
+### 6.3 DatasetViewState
+
+Each open data view owns immutable identity plus replaceable state:
+
+```text
+DatasetViewState
+├── resource_id
+├── metadata_snapshot
+├── normalized_selection
+├── request_generation
+├── operation_scope: full | slice | page | sample
+├── source_payload_reference
+├── presentation_projection
+├── edit_patch_set
+├── dirty_state
+├── loading_state
+├── error_state
+└── view_configuration
 ```
+
+The presentation projection may add row headers, formatted strings, axis order, color mapping, or downsampling. It can never replace the source payload for editing or semantic export.
+
+## 7. Source architecture
+
+### 7.1 Registry
+
+The registry contains adapter descriptors, not open source instances. Adapter selection:
+
+1. unwrap outer gzip metadata;
+2. calculate candidate adapters from compound extension;
+3. run bounded, side-effect-free probes;
+4. reject ambiguous or malformed input with structured diagnostics;
+5. open one source session through the selected adapter.
+
+### 7.2 Source session ownership
+
+- `DocumentController` owns source sessions.
+- Views hold resource IDs, not file handles.
+- Background tasks obtain bounded I/O leases.
+- Closing a document transitions to `CLOSING`, cancels tasks, waits for leases, then closes the session.
+- A failed open is never cached as an active session.
+
+### 7.3 Source state machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> PROBING
+    PROBING --> OPENING: adapter selected
+    PROBING --> FAILED: invalid/unsupported
+    OPENING --> OPEN: session created
+    OPENING --> FAILED: open error
+    OPEN --> REFRESHING: external-change check
+    REFRESHING --> OPEN: unchanged/refreshed
+    OPEN --> CONFLICTED: source changed
+    CONFLICTED --> OPEN: reload
+    OPEN --> CLOSING: close requested
+    CONFLICTED --> CLOSING: close requested
+    CLOSING --> CLOSED: leases released
+    CLOSED --> [*]
+    FAILED --> [*]
+```
+
+## 8. Task and threading architecture
+
+### 8.1 Task contract
+
+Every background task has:
+
+- stable task ID;
+- operation kind;
+- owner document/workspace ID;
+- cancellation token;
+- progress reporter;
+- memory/disk budget;
+- request generation;
+- structured result or structured error;
+- timestamps and diagnostics context.
+
+### 8.2 Rules
+
+- Tasks never mutate widgets directly.
+- Results return to the GUI thread through typed Qt signals or an application dispatcher.
+- A result applies only when owner and generation still match.
+- Cancellation stops scheduling new chunks; native calls finish the current bounded chunk.
+- `QThread.terminate()` is forbidden.
+- I/O leases prevent source close while a task uses it.
+
+### 8.3 Task state machine
+
+```text
+QUEUED -> RUNNING -> SUCCEEDED
+                 -> FAILED
+                 -> CANCELLING -> CANCELLED
+QUEUED -> CANCELLED
+```
+
+Terminal states are immutable.
+
+## 9. Safe editing architecture
+
+Editing uses a patch set, not a mutable presentation array.
+
+```text
+Read snapshot
+  -> enter edit mode
+  -> add typed patches
+  -> validate values and coordinates
+  -> review save summary
+  -> compare source fingerprint
+  -> write staging file or bounded native patch plan
+  -> fsync/close
+  -> atomic replace or explicit Save As
+  -> refresh metadata and clear patches
+```
+
+HDF5 patch writes may target native hyperslabs after conflict validation. File-rewrite formats always write a sibling temporary file before replacement. Detailed behavior is normative in `docs/SAFE_EDITING.md`.
+
+## 10. Plugin architecture
+
+Plugins are pure domain/application extensions:
+
+```text
+PluginManifest + Plugin implementation
+                  ↓
+Capability matcher
+                  ↓
+Validated parameters
+                  ↓
+PluginContext + bounded data accessor
+                  ↓
+Background runner
+                  ↓
+Discriminated result
+                  ↓
+Result router -> workspace view / artifact / report
+```
+
+Plugins cannot choose arbitrary files, use widgets, or own source sessions. Built-in plugin discovery is an explicit packaged registry in v1.
+
+## 11. Workspace architecture
+
+The `.dvw` workspace is a versioned JSON manifest. It stores references and reproducible context, not source payloads.
+
+Workspace loading occurs in two passes:
+
+1. validate schema and migrate supported older schema versions;
+2. resolve references and restore available UI/application state.
+
+Missing references create degraded entries. They do not abort the workspace.
+
+## 12. UI architecture
+
+```text
+Application Shell
+├── Command Bar
+├── Left Navigation
+├── Workspace
+│   └── active split tree -> tab groups -> views/results
+├── Inspector
+├── Bottom Panel: Tasks / Problems / Output
+└── Status Bar
+```
+
+`ActiveContext` is the single source of truth for active split, tab, resource, selection, and view. Commands query ActiveContext; they do not scan tab widgets.
+
+UI view models translate domain state to Qt models. Domain and adapters never emit user-facing message strings as control flow.
+
+## 13. Cache and budget architecture
+
+### Memory cache
+
+Cache key includes:
+
+- canonical source URI;
+- source fingerprint;
+- node path;
+- normalized selection;
+- requested dtype/projection;
+- sampling parameters.
+
+Writes, reloads, and fingerprint changes invalidate matching entries.
+
+### Temporary extraction
+
+Binary gzip wrappers use a managed cache directory with:
+
+- per-task and total disk budgets;
+- source fingerprint in cache identity;
+- restricted permissions where supported;
+- cancellation cleanup;
+- startup cleanup for abandoned entries;
+- no reuse after source fingerprint mismatch.
+
+## 14. Error model
+
+Errors are structured and preserve causal context:
+
+```text
+DataViewerError
+├── code
+├── message
+├── operation
+├── resource_id (optional)
+├── retryable
+├── details (redacted structured data)
+└── cause (for logs, not raw UI rendering)
+```
+
+Adapters, task manager, plugin runner, workspace loader, and edit service use their defined error-code namespaces. UI maps codes to localized messages and recommended actions.
+
+## 15. Configuration
+
+- Defaults ship as packaged read-only resources.
+- User config lives under `QStandardPaths.AppConfigLocation`.
+- Workspace state is separate from preferences.
+- Config includes schema version and is validated before use.
+- Invalid config is backed up, reset to defaults, and reported in Problems.
+- Tests redirect config/temp/cache roots to temporary directories.
+
+## 16. Platform architecture
+
+Windows and Linux are equal targets. Platform abstraction is required for:
+
+- canonical paths and case sensitivity;
+- atomic replace semantics;
+- file-in-use behavior;
+- temporary/cache locations;
+- default fonts and shortcuts;
+- packaging and resource paths;
+- process launch and diagnostics.
+
+No platform branch is allowed inside domain logic.
+
+## 17. Migration strategy
+
+1. Establish reproducible tests and target package skeleton.
+2. Introduce domain contracts and adapter contract tests.
+3. Migrate one vertical read-only HDF5 flow into `data_viewer/`.
+4. Add task manager and active context.
+5. Migrate UI shell and view state.
+6. Add safe editing and export.
+7. Implement remaining adapters one at a time through shared contract tests.
+8. Stabilize Plugin API and add built-ins.
+9. Add workspace persistence and productivity features.
+10. remove legacy packages only after no target entrypoint imports them.
+
+At every step, `python -m data_viewer` must start and completed target flows must remain green.
+
+## 18. Architecture invariants
+
+- one active-context owner;
+- one source-session owner per open document;
+- no widget owns a data handle;
+- no force-killed I/O threads;
+- no presentation array used as source truth;
+- no implicit resampling or flattening;
+- no unbounded read without an approved budget;
+- no public interface change without contract tests and ADR review;
+- no release without Windows and Linux packaged smoke tests.

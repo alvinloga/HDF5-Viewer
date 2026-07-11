@@ -28,8 +28,7 @@ Thumbs.db
 # Logs
 *.log
 
-# OpenClaw agent workspace files (not part of HDF5 Viewer)
-AGENTS.md
+# OpenClaw agent workspace files (not part of Data Viewer)
 SOUL.md
 IDENTITY.md
 USER.md

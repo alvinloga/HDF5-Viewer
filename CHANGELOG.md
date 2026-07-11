@@ -1,0 +1,32 @@
+# Changelog
+
+All notable Data Viewer changes are recorded here.
+
+## Unreleased
+
+### Documentation
+
+- Renamed the target product to Data Viewer.
+- Defined the first-release multi-format scope.
+- Defined Windows and Linux as simultaneous release gates.
+- Added target architecture, product specification, public API contracts, workspace schema, UI specification, safe-editing protocol, testing policy, dependency policy, ADRs, and agent rules.
+- Reclassified the existing source as the legacy migration baseline.
+
+### Known legacy limitations
+
+- Full GUI test collection is not currently reproducible.
+- Editing and export do not preserve correct data semantics for all shapes.
+- Split focus and source ownership are ambiguous.
+- Async loading uses unsafe thread termination.
+- Existing NetCDF/Zarr registration does not match the target scope.
+
+## Legacy HDF5 Viewer v0.3.1
+
+- Theme initialization and toggle crash fixes.
+- Automated Windows and Linux build workflow added.
+
+## Legacy HDF5 Viewer v0.2.1
+
+- Embedded edit controls in file panels.
+- Added secondary panel behavior and plugin tracking.
+- This release's historical test claims are retained only as history and are not a current verification baseline.
