@@ -19,7 +19,7 @@ uv run ruff check .
 uv run mypy data_viewer
 ```
 
-The Windows lock has a clean-install/import/test evidence record. Linux clean-install evidence remains a release gate and is obtained through CI; do not claim cross-platform release readiness from a local Windows run.
+The locked environment has clean-install/import/test evidence from Windows and Ubuntu CI. This validates the dependency baseline only; do not claim release readiness until the remaining v1 artifact, safe-editing, format, workspace, plugin, performance, SBOM, and licensing gates are complete.
 
 ## Legacy environment
 

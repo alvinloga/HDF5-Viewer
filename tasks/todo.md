@@ -27,7 +27,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: one canonical package name/version source; Python 3.12 declared; runtime/dev/packaging groups separated; no NetCDF/Zarr dependency; `python -m data_viewer` exits with a clear development-shell message until bootstrap task.
 - Verify: `python -m pip install -e ".[dev]"`; `python -c "import data_viewer; print(data_viewer.__version__)"`; legacy compile command.
 
-### [ ] DV-0002 Resolve and lock Windows/Linux dependencies
+### [x] DV-0002 Resolve and lock Windows/Linux dependencies
 
 - Depends: DV-0001.
 - Read: Dependencies entire document, ADR-008.
@@ -35,7 +35,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: clean Windows and Linux Python 3.12 environments install from committed locks; all direct imports smoke; exact lock generation command documented; PyQt6 distribution license decision recorded or public packaging explicitly blocked.
 - Verify: fresh-venv locked install and import smoke for PyQt6, NumPy, h5py, pandas, SciPy, NiBabel, openpyxl, PyYAML, Matplotlib, jsonschema, platformdirs.
 
-### [ ] DV-0003 Repair and isolate pytest collection
+### [x] DV-0003 Repair and isolate pytest collection
 
 - Depends: DV-0001, DV-0002.
 - Read: Testing §1–4.

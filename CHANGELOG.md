@@ -8,6 +8,10 @@ All notable Data Viewer changes are recorded here.
 
 - Added the installable `data_viewer` package skeleton with one canonical development version and a migration-safe command-line entry point.
 
+### Fixed
+
+- Stabilized the legacy GUI regression suite on Windows and Linux by isolating process state, scoping themes to each main window, and closing data-load panels cooperatively before their shared HDF5 sessions close.
+
 ### Documentation
 
 - Renamed the target product to Data Viewer.
@@ -18,10 +22,8 @@ All notable Data Viewer changes are recorded here.
 
 ### Known legacy limitations
 
-- Full GUI test collection is not currently reproducible.
 - Editing and export do not preserve correct data semantics for all shapes.
 - Split focus and source ownership are ambiguous.
-- Async loading uses unsafe thread termination.
 - Existing NetCDF/Zarr registration does not match the target scope.
 
 ## Legacy HDF5 Viewer v0.3.1

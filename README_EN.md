@@ -112,12 +112,13 @@ The target commands will be established in Phase 0 and then maintained in `docs/
 
 ## Current verification baseline
 
-The initial read-only audit has been superseded by the current locked Windows baseline:
+The initial read-only audit has been superseded by the current locked Windows/Linux baseline:
 
-- `uv sync --locked --all-extras` passes in an independent CPython 3.12.13 environment;
-- all v1 direct dependencies, including PyQt6, import successfully;
-- full collection reports 134 tests and execution reports 133 passed, 1 skipped;
-- Linux clean locked installation and CI remain incomplete release gates;
+- `uv sync --locked --all-extras` passes in an independent CPython 3.12 environment and in Windows/Ubuntu CI;
+- all v1 direct dependencies, including PyQt6, import successfully on both platforms;
+- full collection reports 139 tests and execution reports 138 passed, 1 skipped;
+- CI now verifies locked installation, lint/type, compilation, collection, offscreen GUI regression, and sdist/wheel builds;
+- release remains gated on unimplemented v1 functionality, artifact smoke, SBOM, and licensing decisions;
 - static counts and the historical “121 tests / 100%” claim are still not current evidence.
 
 See [TEST_REPORT.md](TEST_REPORT.md). Future agents must replace this baseline only with reproducible CI evidence.

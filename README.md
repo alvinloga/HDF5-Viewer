@@ -148,12 +148,13 @@ QT_QPA_PLATFORM=xcb python main.py
 
 ## 当前验证基线
 
-初始只读审查已经被当前锁定 Windows 基线取代：
+初始只读审查已经被当前锁定的 Windows/Linux 基线取代：
 
-- `uv sync --locked --all-extras` 在独立 CPython 3.12.13 环境通过；
-- 首版直接依赖（包括 PyQt6）导入通过；
-- 全量 `pytest --collect-only -q` 收集 134 项；全量执行为 133 passed、1 skipped；
-- Linux 的干净锁定安装与 CI 仍是未完成的发布门禁；
+- `uv sync --locked --all-extras` 在独立 CPython 3.12 环境与 Windows/Ubuntu CI 均通过；
+- 首版直接依赖（包括 PyQt6）在两端导入通过；
+- 全量 `pytest --collect-only -q` 收集 139 项；全量执行为 138 passed、1 skipped；
+- 当前 CI 已验证锁定安装、lint/type、编译、collection、offscreen GUI 回归及源码包/wheel 构建；
+- 发布仍受未实现的 v1 功能、artifact smoke、SBOM/许可证决策等门禁约束；
 - 静态计数与历史“121 tests / 100%”宣传仍不可作为当前证据。
 
 当前证据见 [测试状态](TEST_REPORT.md)。任何后续 agent 都不得把旧报告复制为新结论。
