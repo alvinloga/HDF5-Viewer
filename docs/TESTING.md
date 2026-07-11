@@ -163,6 +163,8 @@ Pull requests run:
 - dependency/lock consistency;
 - documentation link/schema checks.
 
+During migration, the lint/type gate is scoped to `data_viewer/` and the test-isolation/package harness that accompanies it; the legacy application remains protected by full compile and behavioral regression runs. The current 171-finding legacy Ruff baseline is tracked as migration debt, not hidden with global ignores. Each migrated module joins the strict lint/type scope in the same task that moves it into the target architecture.
+
 Tag/release workflow additionally builds each platform artifact, installs/launches it in a clean runner, opens representative HDF5/CSV/NIfTI/workspace fixtures, captures diagnostics, and uploads checksums. Release creation depends on all tests and both package smoke jobs; build success alone is insufficient.
 
 ## 13. Definition of done for a task
