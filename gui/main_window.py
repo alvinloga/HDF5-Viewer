@@ -273,14 +273,13 @@ class MainWindow(QMainWindow):
         self._event_bus.on(EventBus.NODE_SELECTED, self._on_node_selected_for_plugins)
 
     def _apply_style(self):
-        """应用全局样式"""
+        """Apply the active theme to this window and its descendants."""
         theme = self._config.get('ui', {}).get('theme', 'dark')
         colors = get_theme_colors(theme)
-        from PyQt6.QtWidgets import QApplication
 
         self.setUpdatesEnabled(False)
         try:
-            QApplication.instance().setStyleSheet(_build_global_style(colors, theme))
+            self.setStyleSheet(_build_global_style(colors, theme))
 
             # 同步更新组件主题
             if hasattr(self, 'activity_bar'):

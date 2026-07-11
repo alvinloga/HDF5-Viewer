@@ -90,9 +90,8 @@ class DraggableTabBar(QTabBar):
 class DetachedWindow(QMainWindow):
     """拖拽出去的独立窗口
 
-    关键：不在此窗口级别设置全局 stylesheet。
-    QApplication 级别的全局样式（由 MainWindow._apply_style 设置）
-    会自动传播到所有顶级窗口的子组件。
+    关键：不依赖 QApplication 的进程级 stylesheet。
+    主窗口主题只作用于其自身及子组件，因此分离窗口显式应用调色板，
     子组件通过各自的 apply_theme() 设置更具体的样式。
     """
 

@@ -37,6 +37,26 @@ def test_gui_config_writes_do_not_modify_repository_config(qapp) -> None:
     assert repository_config.read_bytes() == before
 
 
+def test_main_window_does_not_mutate_application_stylesheet(qapp) -> None:
+    """Each window must own its theme without replacing Qt's process-wide style."""
+    from gui.main_window import MainWindow
+
+    original_style = qapp.styleSheet()
+    sentinel_style = "QWidget { color: magenta; }"
+    window = None
+    qapp.setStyleSheet(sentinel_style)
+    try:
+        window = MainWindow({"ui": {"theme": "dark"}})
+
+        assert qapp.styleSheet() == sentinel_style
+        assert "QMainWindow" in window.styleSheet()
+    finally:
+        if window is not None:
+            window.close()
+            window.deleteLater()
+        qapp.setStyleSheet(original_style)
+
+
 def test_registry_cleanup_releases_open_hdf5_sources(tmp_path) -> None:
     """Legacy per-test cleanup must release handles before temp files are removed."""
     from core.h5_source import H5Source
