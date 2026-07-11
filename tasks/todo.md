@@ -19,7 +19,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 
 ## P0 — Trustworthy baseline
 
-### [ ] DV-0001 Create canonical project metadata and package skeleton
+### [x] DV-0001 Create canonical project metadata and package skeleton
 
 - Depends: none.
 - Read: Product Spec §2, Dependencies §1–4, Migration §3 Stage A.

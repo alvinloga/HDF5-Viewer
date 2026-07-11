@@ -40,6 +40,27 @@ Verification run in the workspace on 2026-07-11:
 
 These checks validate documentation structure and consistency only. They do not validate product behavior.
 
+## DV-0001 package skeleton — 2026-07-11
+
+Revision: `c7852ab` (`chore: add installable Data Viewer package skeleton`).
+
+| Check | Command | Observed result |
+|---|---|---|
+| Editable package install | `venv\Scripts\python.exe -m pip install -e ".[dev]"` | passed after installing a locally hash-verified PyQt6 wheel set into the project virtual environment |
+| Package behavior | `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 venv\Scripts\python.exe -m pytest tests/test_data_viewer_package.py -q` | 2 passed |
+| Version source | `importlib.metadata.version("data-viewer") == data_viewer.__version__` | passed; both report `1.0.0.dev0` |
+| Static checks | `venv\Scripts\ruff.exe check data_viewer tests/test_data_viewer_package.py`; `venv\Scripts\mypy.exe data_viewer` | passed |
+| Wheel metadata | `PIP_NO_CACHE_DIR=1 venv\Scripts\python.exe -m pip wheel --no-deps --no-build-isolation .` | passed; wheel metadata has the canonical version, Python constraint, runtime/dev/packaging groups |
+| Legacy compilation | `venv\Scripts\python.exe -m compileall -q core gui plugins services utils main.py` | passed |
+
+Known limits carried into DV-0002/DV-0003:
+
+- this virtual environment temporarily inherits the pre-existing Conda base packages and is not a clean lock-validation environment;
+- normal pytest autoload reaches `pytest-qt` but `PyQt6.QtCore` fails to load a Windows DLL in this environment;
+- `python -m build` is shadowed by the legacy root `build.py`; metadata validation uses `pip wheel` until the legacy build entry is migrated.
+
+DV-0001 is complete because its explicit package/metadata/install/version/legacy-compile acceptance checks pass. The known environment and collection failures remain release blockers and are not reported as passing tests.
+
 ## Checkpoint record format
 
 For each checkpoint append:
