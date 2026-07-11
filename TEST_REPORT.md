@@ -124,6 +124,22 @@ The test fixture now fixes `TZ=UTC` and locale `C`, config writes are redirected
 
 DV-0002 and DV-0003 are complete. The public binary release remains blocked by the unresolved PyQt6 GPL/commercial distribution decision and all later v1 acceptance tasks. DV-0005 remains open because artifact-report upload, release dependency enforcement, and its deliberate-failure verification are not complete.
 
+## DV-0004 legacy-test consolidation and deterministic fixtures — 2026-07-11
+
+Revision: `d7ab9f5` (`test: add deterministic fixture factories`).
+
+| Check | Command | Observed result |
+|---|---|---|
+| Exact-duplicate audit | AST-normalized body SHA-256 scan across `tests/test_*.py` | passed; the only exact duplicate was `tests/test_packaged.py::test_event_bus`, whose event registration, emitted value, deregistration, and two assertions exactly matched the retained `tests/test_all_features.py::test_event_bus` coverage |
+| Fixture conformance | `python -m pytest tests/test_fixture_factories.py tests/test_all_features.py tests/test_packaged.py -q` | 16 passed; generated HDF5 reopens with hierarchy/attributes, NPY round-trips without pickle, and CSV bytes/rows are deterministic |
+| Fixture quality | `python -m ruff check tests/fixtures tests/test_fixture_factories.py`; `python -m compileall -q tests/fixtures tests/test_fixture_factories.py` | passed |
+| Local collection | `python -m pytest --collect-only -q` | 141 tests collected; command exited 0 |
+| Local full execution | `python -m pytest -q` | 140 passed, 1 skipped, 3 pre-existing NumPy NaN/Inf warnings; command exited 0 |
+| Windows CI | [GitHub Actions run 29151383533](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29151383533) | CPython 3.12.10: locked install, direct imports, target lint/type, compile, 141-test collection, 140 passed / 1 skipped, and sdist/wheel build all passed |
+| Ubuntu CI | [GitHub Actions run 29151383533](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29151383533) | CPython 3.12.13: the same locked gate passed; 141-test collection and 140 passed / 1 skipped |
+
+The reusable factories in `tests/fixtures/` generate only tiny test-owned HDF5, NPY, and UTF-8 CSV files and return immutable creation metadata. No opaque binary fixture was added. Similar-looking legacy tests remain because the AST audit found different executable bodies or assertions; only the proven duplicate was removed. The three NumPy warnings exercise intentional NaN/Inf input and remain visible rather than being suppressed.
+
 ## Checkpoint record format
 
 For each checkpoint append:

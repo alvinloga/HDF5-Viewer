@@ -43,7 +43,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: full collection succeeds; Qt uses offscreen in headless runs; tests write only temporary dirs; locale/theme/config/singletons reset; static and collected counts are reported distinctly.
 - Verify: `python -m pytest --collect-only -q`; run twice in different order/seed if configured; assert repository `config.json` unchanged.
 
-### [ ] DV-0004 Consolidate legacy tests and establish fixture factories
+### [x] DV-0004 Consolidate legacy tests and establish fixture factories
 
 - Depends: DV-0003.
 - Read: Testing §3, §5.
