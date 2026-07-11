@@ -27,3 +27,16 @@ def isolate_legacy_config_writes(monkeypatch: pytest.MonkeyPatch, tmp_path):
         )
 
     monkeypatch.setattr(MainWindow, "_save_config", save_config_to_test_path)
+
+
+@pytest.fixture(autouse=True)
+def reset_legacy_process_state():
+    """Release legacy global state before it can escape an individual test."""
+    from core.event_bus import EventBus
+    from core.registry import DataSourceRegistry
+
+    DataSourceRegistry.close_all()
+    EventBus.get_instance().clear()
+    yield
+    DataSourceRegistry.close_all()
+    EventBus.get_instance().clear()

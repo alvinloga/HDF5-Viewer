@@ -44,6 +44,13 @@ def _create_writable_h5():
     return f.name
 
 
+def _close_registered_source(path: str) -> None:
+    """Release the legacy registry's cached source before deleting a fixture file."""
+    from core.registry import DataSourceRegistry
+
+    DataSourceRegistry.remove_instance(path)
+
+
 # ============================================================
 # 5.1 主题切换
 # ============================================================
@@ -339,6 +346,7 @@ class TestTabOperations:
         self.test_file = _create_test_h5()
 
     def teardown_method(self):
+        _close_registered_source(self.test_file)
         if os.path.exists(self.test_file):
             os.unlink(self.test_file)
 
@@ -486,6 +494,7 @@ class TestFileOperations:
         self.test_file = _create_test_h5()
 
     def teardown_method(self):
+        _close_registered_source(self.test_file)
         if os.path.exists(self.test_file):
             os.unlink(self.test_file)
 
@@ -542,6 +551,7 @@ class TestDataNavigation:
         self.test_file = _create_test_h5()
 
     def teardown_method(self):
+        _close_registered_source(self.test_file)
         if os.path.exists(self.test_file):
             os.unlink(self.test_file)
 

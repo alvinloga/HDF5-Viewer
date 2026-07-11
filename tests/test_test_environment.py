@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import h5py
 import pytest
 
 
@@ -34,6 +35,24 @@ def test_gui_config_writes_do_not_modify_repository_config(qapp) -> None:
     window._toggle_theme()
 
     assert repository_config.read_bytes() == before
+
+
+def test_registry_cleanup_releases_open_hdf5_sources(tmp_path) -> None:
+    """Legacy per-test cleanup must release handles before temp files are removed."""
+    from core.h5_source import H5Source
+    from core.registry import DataSourceRegistry
+
+    file_path = tmp_path / "cleanup.h5"
+    with h5py.File(file_path, "w") as file:
+        file.create_dataset("values", data=[1, 2, 3])
+
+    DataSourceRegistry.register(H5Source)
+    source = DataSourceRegistry.get(str(file_path))
+    source.open(str(file_path))
+
+    DataSourceRegistry.close_all()
+
+    assert not source.is_open()
 
 
 def test_gui_module_collection_exits_after_importing_multiple_modules() -> None:
