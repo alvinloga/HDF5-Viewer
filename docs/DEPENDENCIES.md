@@ -2,7 +2,7 @@
 
 ## 1. Principles
 
-- Python 3.12 is the initial baseline; `.python-version` pins the clean-environment interpreter to `3.12.13` while `pyproject.toml` permits compatible 3.12 patch releases.
+- Python 3.12 is the initial baseline; `.python-version` pins clean environments to the supported `3.12` series while `pyproject.toml` permits compatible 3.12 patch releases.
 - Runtime and development dependencies are separated and locked reproducibly.
 - Direct dependencies have a named purpose and owner; transient packages are not imported directly.
 - Adding or upgrading a dependency requires license, security, platform-wheel, maintenance, size, startup, and packaging review.
@@ -73,7 +73,7 @@ packaging = ["pyinstaller"]
 ## 5. Lock and upgrade process
 
 1. Install the pinned resolver: `uv 0.11.28`.
-2. Install the pinned interpreter when necessary: `uv python install 3.12.13`.
+2. Install a supported interpreter when necessary: `uv python install 3.12`.
 3. Change only declared direct requirements in `pyproject.toml`, then run `uv lock` to update `uv.lock`.
 4. Verify metadata/lock agreement with `uv lock --check`.
 5. In a fresh environment run `uv sync --locked --all-extras`, then run direct-import, collection, test, lint, type, and packaging smoke gates.

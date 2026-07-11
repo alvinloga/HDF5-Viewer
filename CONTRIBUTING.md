@@ -11,7 +11,7 @@ Choose exactly one task from `tasks/todo.md`. If the task is too large for one f
 Use the committed `uv.lock` for all target-package work. Install uv `0.11.28`, use the repository's `.python-version`, and do not replace a locked sync with an unconstrained pip install.
 
 ```bash
-uv python install 3.12.13
+uv python install 3.12
 uv sync --locked --all-extras
 uv run python -m data_viewer
 uv run pytest -q
