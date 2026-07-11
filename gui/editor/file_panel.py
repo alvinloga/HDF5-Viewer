@@ -29,12 +29,18 @@ class DataLoadThread(QThread):
         self._slices = slices
 
     def run(self):
+        if self.isInterruptionRequested():
+            return
         try:
             with FilePanel._h5_lock:
+                if self.isInterruptionRequested():
+                    return
                 data = self._source.read_slice(self._path, self._slices)
-            self.finished.emit(data)
+            if not self.isInterruptionRequested():
+                self.finished.emit(data)
         except Exception as e:
-            self.error.emit(str(e))
+            if not self.isInterruptionRequested():
+                self.error.emit(str(e))
 
 
 class SliceInput(QWidget):
@@ -262,6 +268,7 @@ class FilePanel(QWidget):
     """单文件面板"""
 
     _h5_lock = threading.Lock()
+    _LOAD_THREAD_WAIT_MS = 5_000
 
     def __init__(self, source: DataSource, parent=None):
         super().__init__(parent)
@@ -364,9 +371,12 @@ class FilePanel(QWidget):
         if not self._current_path:
             return
 
-        if self._load_thread and self._load_thread.isRunning():
-            self._load_thread.terminate()
-            self._load_thread.wait()
+        if not self.stop_loading():
+            self._event_bus.emit(
+                EventBus.ERROR_OCCURRED,
+                "The previous data load did not stop before starting a new request.",
+            )
+            return
 
         self._loading_label.show()
         self._loading_label.setText(f"Loading {self._current_path}...")
@@ -428,10 +438,18 @@ class FilePanel(QWidget):
         """获取当前切片字符串"""
         return self.slice_input.input.text().strip()
 
+    def stop_loading(self) -> bool:
+        """Request cooperative load cancellation and wait for a bounded shutdown."""
+        if not self._load_thread or not self._load_thread.isRunning():
+            return True
+
+        self._load_thread.requestInterruption()
+        return self._load_thread.wait(self._LOAD_THREAD_WAIT_MS)
+
     def closeEvent(self, event):
-        if self._load_thread and self._load_thread.isRunning():
-            self._load_thread.terminate()
-            self._load_thread.wait()
+        if not self.stop_loading():
+            event.ignore()
+            return
         super().closeEvent(event)
 
     def apply_theme(self, theme: str):

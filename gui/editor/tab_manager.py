@@ -228,10 +228,20 @@ class TabManager(QWidget):
             for dk in dataset_keys:
                 self.close_file(dk)
 
+            if any(k.startswith(f"{panel_key}::") for k in self._panels):
+                return
+
         if panel_key not in self._panels:
             return
 
         panel = self._panels[panel_key]
+        if isinstance(panel, FilePanel) and not panel.stop_loading():
+            self._event_bus.emit(
+                EventBus.ERROR_OCCURRED,
+                f"Cannot close {panel_key}: a data load is still running.",
+            )
+            return
+        panel.close()
 
         for i, tab_widget in enumerate(self._tab_groups):
             idx = tab_widget.indexOf(panel)
