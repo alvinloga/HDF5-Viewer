@@ -78,7 +78,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: canonical ResourceId/path/domain/capability/metadata types match the contract; JSON-safe serialization is explicit; equality/hash behavior stable; no GUI/library-specific object fields.
 - Verify: domain unit tests, mypy, API import test.
 
-### [ ] DV-0102 Implement normalized selections and payload values
+### [x] DV-0102 Implement normalized selections and payload values
 
 - Depends: DV-0101.
 - Read: DataSource API selection/payload sections, Safe Editing coordinates.

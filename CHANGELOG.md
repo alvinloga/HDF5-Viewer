@@ -10,6 +10,7 @@ All notable Data Viewer changes are recorded here.
 - Added deterministic, generated HDF5, NPY, and CSV fixture factories with recorded creation parameters for reusable scientific-data tests.
 - Added Windows/Ubuntu quality evidence artifacts with JUnit reports, CI manifests, and sdist/wheel outputs before any release job.
 - Added immutable Data Viewer domain values for resource identity, domains, capabilities, metadata, fingerprints, and hierarchy nodes.
+- Added normalized selection, table-page, payload, scope, sampling, and read-result domain values with coordinate provenance.
 
 ### Fixed
 

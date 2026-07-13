@@ -246,7 +246,33 @@ Local Windows verification on Windows 11 `10.0.22621`, CPython `3.12.13` from `v
 | Full collection | `venv\lock-verify-cpython\Scripts\python.exe -m pytest --collect-only -q` | 155 tests collected |
 | Full execution | `venv\lock-verify-cpython\Scripts\python.exe -m pytest -q` | 154 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
-Known limits: selections, payload values, structured errors, task state, and adapter/session protocols remain unimplemented and are owned by DV-0102 through DV-0105.
+Known limits at revision `6f99d0a`: selections, payload values, structured errors, task state, and adapter/session protocols remained unimplemented and were owned by DV-0102 through DV-0105.
+
+## DV-0102 normalized selections and payload values - 2026-07-13
+
+Revision: `8f54af6` (`feat: add normalized selection payload values`). Scope: `data_viewer/domain/selection.py`, `data_viewer/domain/payload.py`, public exports, DataSource API clarification, CI lint scope, and focused selection/payload tests.
+
+Implemented public values:
+
+- `AxisSelection`, `SelectionSpec`, `NormalizedSelection`, and `NormalizedAxisSelection` for all/index/slice/hyperslab selections with original-coordinate mapping;
+- `SelectionValidationError` and `SelectionValidationResult` for structured shape/page-specific validation failures;
+- `TablePageSelection` and `NormalizedTablePage` for row paging, negative-offset normalization, total-row clipping, and selected columns;
+- `ArrayPayload`, `TablePayload`, `TextPayload`, `StructuredPayload`, `VolumePayload`, `OperationScope`, `SampleSpec`, and `ReadResult`.
+
+Local Windows verification on Windows 11 `10.0.22621`, CPython `3.12.13` from `venv\lock-verify-cpython`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Red test | `venv\lock-verify-cpython\Scripts\python.exe -m pytest tests/test_selection_payload_types.py -q` before implementation | failed during collection with `ImportError: cannot import name 'ArrayPayload' from 'data_viewer.domain'` |
+| Selection/payload, domain, and CI reporting tests | `venv\lock-verify-cpython\Scripts\python.exe -m pytest tests/test_selection_payload_types.py tests/test_domain_types.py tests/test_ci_reporting.py -q` | 26 passed |
+| Scoped lint | `venv\lock-verify-cpython\Scripts\ruff.exe check data_viewer .github/scripts tests/conftest.py tests/fixtures tests/test_ci_reporting.py tests/test_data_viewer_package.py tests/test_domain_types.py tests/test_fixture_factories.py tests/test_selection_payload_types.py tests/test_test_environment.py` | passed |
+| Scoped type check | `venv\lock-verify-cpython\Scripts\mypy.exe data_viewer .github/scripts/write_quality_manifest.py` | passed; no issues in 10 source files |
+| Workflow syntax | `C:\tmp\actionlint-1.7.12\extracted\actionlint.exe .github\workflows\ci.yml .github\workflows\build.yml` | passed |
+| Compile target and legacy compatibility paths | `venv\lock-verify-cpython\Scripts\python.exe -m compileall -q data_viewer .github/scripts core gui plugins services utils main.py tests/test_selection_payload_types.py` | passed |
+| Full collection | `venv\lock-verify-cpython\Scripts\python.exe -m pytest --collect-only -q` | 167 tests collected |
+| Full execution | `venv\lock-verify-cpython\Scripts\python.exe -m pytest -q` | 166 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known limits: structured error taxonomy, task state, adapter/session protocols, DocumentController ownership, and platform/cache/config primitives remain unimplemented and are owned by DV-0103 through DV-0107.
 
 ## Checkpoint record format
 
