@@ -368,6 +368,14 @@ The application validates and normalizes user syntax before calling the adapter:
 
 Adapters may reject a normalized selection only for a documented capability limitation.
 
+The concrete `data_viewer.domain` implementation exposes additive helper values for this contract:
+
+- `SelectionValidationError` and `SelectionValidationResult` carry stable, JSON-compatible validation failures for shape/page-specific errors such as duplicate axes, out-of-bounds indices, and invalid table pages.
+- `NormalizedSelection` and `NormalizedAxisSelection` store one normalized entry per original dimension, provide the adapter key, and map display coordinates back to original coordinates.
+- `TablePageSelection` and `NormalizedTablePage` normalize row offsets, limits, and selected column names without injecting row numbers into data columns.
+
+`AxisSelection` construction still validates structural API mistakes such as mixing `index` with range fields or using step `0`. Shape-specific compatibility errors are reported through the structured normalization result.
+
 ## 6. Pagination
 
 - Hierarchy pages default to 500 children.
