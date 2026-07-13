@@ -59,7 +59,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: Windows/Ubuntu matrices run locked install, collection, lint, types, compile, unit/integration/offscreen GUI; reports uploaded; build/release cannot run past failed tests; dependency caches key on lock hash.
 - Verify: workflow syntax validation; CI run on both platforms; deliberate test failure proves build/release blocked, then revert deliberate failure.
 
-### [ ] DV-0006 Record Checkpoint 0 evidence
+### [x] DV-0006 Record Checkpoint 0 evidence
 
 - Depends: DV-0001 through DV-0005.
 - Scope: update `TEST_REPORT.md` only with actual commands/results/environment/lock hash.

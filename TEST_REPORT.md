@@ -185,7 +185,42 @@ Deliberate failure verification:
 | [Release gate run 29229983175](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29229983175) | same temporary failure commit | reusable `quality / Windows quality` and `quality / Ubuntu quality` failed; downstream `blocked` job was skipped, proving release jobs cannot run past failed quality |
 | Revert commit | `d045ae4` | removed the intentional failing test with `git revert`; final run `29230119484` returned the branch to green |
 
-DV-0005 is complete. DV-0006 remains open because Checkpoint 0 still needs a separate consolidated evidence record and baseline gap review across DV-0001 through DV-0005.
+DV-0005 is complete. The separate consolidated Checkpoint 0 record follows in the next section.
+
+## Checkpoint 0 trustworthy-baseline evidence - 2026-07-13
+
+Revision: `58756db` (`docs: record quality gate evidence`). Lock SHA-256 after LF normalization: `f44c592658057904746d776129076715cde998fb699a797e256f432fa2c07734`.
+
+Scope covered: DV-0001 through DV-0005 are complete. This checkpoint proves the reproducible baseline, package skeleton, dependency lock, pytest isolation, deterministic fixture factories, and dual-platform quality/release gate. It does not claim any P1+ Data Viewer product feature is implemented.
+
+Local Windows verification on Windows 11 `10.0.22621`, CPython `3.12.13` from `venv\lock-verify-cpython`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Scoped lint | `venv\lock-verify-cpython\Scripts\ruff.exe check data_viewer .github/scripts tests/conftest.py tests/fixtures tests/test_ci_reporting.py tests/test_data_viewer_package.py tests/test_fixture_factories.py tests/test_test_environment.py` | passed |
+| Scoped type check | `venv\lock-verify-cpython\Scripts\mypy.exe data_viewer .github/scripts/write_quality_manifest.py` | passed; no issues in 4 source files |
+| Workflow syntax | `C:\tmp\actionlint-1.7.12\extracted\actionlint.exe .github\workflows\ci.yml .github\workflows\build.yml` | passed |
+| Compile target and legacy compatibility paths | `venv\lock-verify-cpython\Scripts\python.exe -m compileall -q data_viewer .github/scripts core gui plugins services utils main.py` | passed |
+| Full collection | `venv\lock-verify-cpython\Scripts\python.exe -m pytest --collect-only -q` | 145 tests collected |
+| Full execution | `venv\lock-verify-cpython\Scripts\python.exe -m pytest -q` | 144 passed, 1 skipped, 3 NumPy NaN/Inf warnings from intentional edge-case tests |
+
+Dual-platform CI evidence: [GitHub Actions run 29230437164](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29230437164), revision `58756dbb198d06fc022ec0ae3e00ce16d75c4deb`.
+
+| Platform | CI result | Artifact verification |
+|---|---|---|
+| Windows | locked install, direct dependency import smoke, scoped lint/type, compile, 145-test collection, 144 passed / 1 skipped, sdist/wheel build, and quality evidence upload all passed | artifact `data-viewer-quality-Windows-29230437164-1`; manifest commit `58756dbb198d06fc022ec0ae3e00ce16d75c4deb`; lock hash matches local normalized hash; JUnit has 145 tests, 0 failures, 0 errors, 1 skipped |
+| Ubuntu | the same quality gate passed | artifact `data-viewer-quality-Ubuntu-29230437164-1`; manifest commit `58756dbb198d06fc022ec0ae3e00ce16d75c4deb`; lock hash matches local normalized hash; JUnit has 145 tests, 0 failures, 0 errors, 1 skipped |
+
+Known baseline gaps and owners:
+
+| Gap | Status / owner task |
+|---|---|
+| `tests.test_comprehensive.TestTabOperations::test_detach_tab` is skipped because `TabManager._detach_tab` is not implemented | legacy limitation; target split/tab behavior is owned by P6 UI tasks, especially DV-0603 |
+| Public binary release remains blocked by packaged smoke tests, SBOM/license evidence, and PyQt6 distribution decision | owned by P10/P11 release tasks, especially DV-1005 through DV-1104 |
+| Target Data Viewer source adapters, plugin runtime, safe editing, workspace, comparison, performance, and packaging are not implemented by Checkpoint 0 | owned by P1 through P11 tasks in `tasks/todo.md` |
+| Full-repository legacy Ruff debt is not eliminated | tracked as migration debt in `docs/TESTING.md` section 12; migrated modules join strict scope task-by-task |
+
+Checkpoint 0 is complete. The next executable task is DV-0101, which begins P1 domain and runtime kernel work.
 
 ## Checkpoint record format
 
