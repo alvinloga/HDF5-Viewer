@@ -76,3 +76,7 @@ def test_workflows_upload_quality_evidence_and_release_requires_quality() -> Non
     assert "hashFiles('uv.lock')" in quality_workflow
     assert "uses: ./.github/workflows/ci.yml" in release_workflow
     assert "needs: quality" in release_workflow
+
+
+def test_deliberate_quality_gate_failure_for_dv0005_release_block() -> None:
+    assert False, "DV-0005 intentional quality-gate failure verification"
