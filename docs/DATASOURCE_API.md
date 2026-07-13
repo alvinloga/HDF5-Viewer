@@ -354,6 +354,12 @@ All source errors derive from `DataViewerError` and use one of these stable code
 
 Error `details` must be JSON-compatible and may include adapter ID, format, selection summary, and redacted path. It must not include raw payload values.
 
+The concrete `data_viewer.domain` implementation exposes additive helper values for this contract:
+
+- `ErrorCode`, `ErrorCategory`, `ErrorSeverity`, `ErrorTarget`, and `ErrorTargetKind` define stable routing and target semantics across source, plugin, task, workspace, editing, config, and internal errors.
+- `DataViewerError` stores the safe user message, operation, optional resource ID, retryability, remediation, JSON-compatible details, and an optional `cause_id`.
+- Raw exception causes are available only to diagnostic log records. `DataViewerError.to_json()` and `to_user_message()` do not include traceback or raw cause text.
+
 ## 5. Selection normalization
 
 The application validates and normalizes user syntax before calling the adapter:
