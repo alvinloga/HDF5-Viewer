@@ -11,6 +11,7 @@ All notable Data Viewer changes are recorded here.
 - Added Windows/Ubuntu quality evidence artifacts with JUnit reports, CI manifests, and sdist/wheel outputs before any release job.
 - Added immutable Data Viewer domain values for resource identity, domains, capabilities, metadata, fingerprints, and hierarchy nodes.
 - Added normalized selection, table-page, payload, scope, sampling, and read-result domain values with coordinate provenance.
+- Added structured error taxonomy, safe user messages, diagnostic snapshots, and path redaction values.
 
 ### Fixed
 

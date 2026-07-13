@@ -86,11 +86,11 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: All/Index/Slice/Hyperslab/table-page selections normalize bounds/negative indices/steps without implicit flattening; payload maps display values to original coordinates; invalid selections return structured validation errors.
 - Verify: parametrized and property tests for scalar through high-dimensional shapes; mypy.
 
-### [ ] DV-0103 Implement structured error taxonomy and diagnostics values
+### [x] DV-0103 Implement structured error taxonomy and diagnostics values
 
 - Depends: DV-0101.
 - Read: DataSource API structured errors, Architecture error handling.
-- Scope: `data_viewer/domain/errors.py`, `data_viewer/application/diagnostics.py`, tests.
+- Scope: `data_viewer/domain/errors.py`, `data_viewer/app/diagnostics.py`, tests.
 - Acceptance: stable error code/category/severity/target/remediation/details/cause ID; safe user message separated from traceback; source/plugin/task/workspace errors map consistently.
 - Verify: mapping/serialization/redaction tests and exception-chain tests.
 
