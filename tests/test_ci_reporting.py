@@ -77,5 +77,6 @@ def test_workflows_upload_quality_evidence_and_release_requires_quality() -> Non
     assert "tests/test_domain_types.py" in quality_workflow
     assert "tests/test_error_diagnostics.py" in quality_workflow
     assert "tests/test_selection_payload_types.py" in quality_workflow
+    assert "tests/test_task_lifecycle.py" in quality_workflow
     assert "uses: ./.github/workflows/ci.yml" in release_workflow
     assert "needs: quality" in release_workflow
