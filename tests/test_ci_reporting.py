@@ -74,5 +74,6 @@ def test_workflows_upload_quality_evidence_and_release_requires_quality() -> Non
     assert "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" in quality_workflow
     assert "if: ${{ always() }}" in quality_workflow
     assert "hashFiles('uv.lock')" in quality_workflow
+    assert "tests/test_domain_types.py" in quality_workflow
     assert "uses: ./.github/workflows/ci.yml" in release_workflow
     assert "needs: quality" in release_workflow
