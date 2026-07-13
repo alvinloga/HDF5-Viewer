@@ -12,6 +12,7 @@ All notable Data Viewer changes are recorded here.
 - Added immutable Data Viewer domain values for resource identity, domains, capabilities, metadata, fingerprints, and hierarchy nodes.
 - Added normalized selection, table-page, payload, scope, sampling, and read-result domain values with coordinate provenance.
 - Added structured error taxonomy, safe user messages, diagnostic snapshots, and path redaction values.
+- Added cooperative task lifecycle primitives with cancellation tokens, thread-safe progress, snapshots, and injectable callback dispatching.
 
 ### Fixed
 

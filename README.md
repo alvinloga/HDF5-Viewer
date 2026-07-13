@@ -152,7 +152,7 @@ QT_QPA_PLATFORM=xcb python main.py
 
 - `uv sync --locked --all-extras` 在独立 CPython 3.12 环境与 Windows/Ubuntu CI 均通过；
 - 首版直接依赖（包括 PyQt6）在两端导入通过；
-- 全量 `pytest --collect-only -q` 收集 177 项；全量执行为 176 passed、1 skipped；
+- 全量 `pytest --collect-only -q` 收集 183 项；全量执行为 182 passed、1 skipped；
 - 当前 CI 已验证锁定安装、lint/type、编译、collection、offscreen GUI 回归、JUnit/manifest 证据上传及源码包/wheel 构建；
 - release gate 已验证质量测试失败会阻断后续发版 job；
 - 发布仍受未实现的 v1 功能、artifact smoke、SBOM/许可证决策等门禁约束；

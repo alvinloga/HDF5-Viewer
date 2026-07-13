@@ -298,7 +298,33 @@ Local Windows verification on Windows 11 `10.0.22621`, CPython `3.12.13` from `v
 | Full collection | `venv\lock-verify-cpython\Scripts\python.exe -m pytest --collect-only -q` | 177 tests collected |
 | Full execution | `venv\lock-verify-cpython\Scripts\python.exe -m pytest -q` | 176 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
-Known limits: task state, adapter/session protocols, DocumentController ownership, and platform/cache/config primitives remain unimplemented and are owned by DV-0104 through DV-0107.
+Known limits at revision `b48d476`: task state, adapter/session protocols, DocumentController ownership, and platform/cache/config primitives remained unimplemented and were owned by DV-0104 through DV-0107.
+
+## DV-0104 cooperative task lifecycle primitives - 2026-07-13
+
+Revision: `268f6fd` (`feat: add cooperative task lifecycle primitives`). Scope: `data_viewer/tasks/state.py`, `data_viewer/tasks/cancellation.py`, `data_viewer/tasks/dispatcher.py`, public task exports, CI lint scope, and focused task lifecycle tests.
+
+Implemented public values:
+
+- `TaskState`, `TaskProgress`, `TaskSnapshot`, `TaskRecord`, and `TaskTransitionError` with legal queued/running/cancelling/terminal transitions;
+- `CancellationToken` with cooperative cancellation and `DataViewerError(TASK_CANCELLED)` checkpoints;
+- `CallbackDispatcher` for injectable callback marshalling without importing Qt;
+- immutable snapshots with owner/request-generation matching for later stale-result rejection.
+
+Local Windows verification on Windows 11 `10.0.22621`, CPython `3.12.13` from `venv\lock-verify-cpython`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Red test | `venv\lock-verify-cpython\Scripts\python.exe -m pytest tests/test_task_lifecycle.py -q` before implementation | failed during collection with `ModuleNotFoundError: No module named 'data_viewer.tasks'` |
+| Task lifecycle, error/diagnostics, selection/payload, domain, and CI reporting tests | `venv\lock-verify-cpython\Scripts\python.exe -m pytest tests/test_task_lifecycle.py tests/test_error_diagnostics.py tests/test_selection_payload_types.py tests/test_domain_types.py tests/test_ci_reporting.py -q` | 42 passed |
+| Scoped lint | `venv\lock-verify-cpython\Scripts\ruff.exe check data_viewer .github/scripts tests/conftest.py tests/fixtures tests/test_ci_reporting.py tests/test_data_viewer_package.py tests/test_domain_types.py tests/test_error_diagnostics.py tests/test_fixture_factories.py tests/test_selection_payload_types.py tests/test_task_lifecycle.py tests/test_test_environment.py` | passed |
+| Scoped type check | `venv\lock-verify-cpython\Scripts\mypy.exe data_viewer .github/scripts/write_quality_manifest.py` | passed; no issues in 17 source files |
+| Workflow syntax | `C:\tmp\actionlint-1.7.12\extracted\actionlint.exe .github\workflows\ci.yml .github\workflows\build.yml` | passed |
+| Compile target and legacy compatibility paths | `venv\lock-verify-cpython\Scripts\python.exe -m compileall -q data_viewer .github/scripts core gui plugins services utils main.py tests/test_task_lifecycle.py` | passed |
+| Full collection | `venv\lock-verify-cpython\Scripts\python.exe -m pytest --collect-only -q` | 183 tests collected |
+| Full execution | `venv\lock-verify-cpython\Scripts\python.exe -m pytest -q` | 182 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known limits: SourceAdapter/Session registry, DocumentController ownership, and platform/cache/config primitives remain unimplemented and are owned by DV-0105 through DV-0107.
 
 ## Checkpoint record format
 

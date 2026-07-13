@@ -94,11 +94,11 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: stable error code/category/severity/target/remediation/details/cause ID; safe user message separated from traceback; source/plugin/task/workspace errors map consistently.
 - Verify: mapping/serialization/redaction tests and exception-chain tests.
 
-### [ ] DV-0104 Implement Task state machine and cooperative cancellation
+### [x] DV-0104 Implement Task state machine and cooperative cancellation
 
 - Depends: DV-0103.
 - Read: Architecture task model, ADR-003, Testing determinism.
-- Scope: `data_viewer/application/tasks.py`, `cancellation.py`, executor adapter, tests.
+- Scope: `data_viewer/tasks/state.py`, `cancellation.py`, `dispatcher.py`, tests.
 - Acceptance: legal queued/running/cancelling/terminal transitions; thread-safe progress; cooperative token; exactly one terminal result; no `QThread.terminate`; callbacks marshal to GUI thread through an injectable dispatcher.
 - Verify: transition/race/cancel/error tests, repeated stress, GUI-thread dispatch test.
 
