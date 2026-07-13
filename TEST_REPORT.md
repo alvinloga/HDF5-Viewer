@@ -326,6 +326,34 @@ Local Windows verification on Windows 11 `10.0.22621`, CPython `3.12.13` from `v
 
 Known limits: SourceAdapter/Session registry, DocumentController ownership, and platform/cache/config primitives remain unimplemented and are owned by DV-0105 through DV-0107.
 
+## DV-0105 SourceAdapter registry and conformance harness - 2026-07-13
+
+Revision: `49a034d` (`feat: add source adapter registry contract`). Scope: `data_viewer/sources/api.py`, `data_viewer/sources/registry.py`, public source exports, reusable fake adapter conformance helpers, CI lint scope, and focused source registry tests.
+
+Implemented public values and behavior:
+
+- `ReadRequest`, `ProbeResult`, `NodePage`, `SourceAdapter`, and `SourceSession` for DataSource API v1;
+- `SourceRegistry` with bounded header reads, deterministic probe ordering, unsupported-source diagnostics, ambiguous top-confidence diagnostics, duplicate adapter-ID/extension diagnostics, and API-version validation;
+- `ManagedSourceSession` with close idempotence and method-level `SOURCE_CLOSED` enforcement after close;
+- reusable fake adapter conformance coverage for metadata/list/read/cancel/error/close behavior without exposing raw format-library objects.
+
+Local Windows verification using the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Red test | `python -m pytest tests/test_source_registry.py tests/test_ci_reporting.py -q` before implementation | failed during collection with `ModuleNotFoundError: No module named 'data_viewer.sources'` |
+| Source registry and CI reporting tests | `venv\Scripts\python.exe -m pytest tests/test_source_registry.py tests/test_ci_reporting.py -q` | 10 passed |
+| P1 focused regression subset | `venv\Scripts\python.exe -m pytest tests/test_domain_types.py tests/test_error_diagnostics.py tests/test_task_lifecycle.py tests/test_source_registry.py tests/test_ci_reporting.py -q` | 36 passed |
+| Compile target and conformance paths | `venv\Scripts\python.exe -m compileall -q data_viewer .github/scripts core gui plugins services utils main.py tests/conformance tests/test_source_registry.py` | passed |
+
+Local limitations for this workstation environment:
+
+- `uv` is not on the current PowerShell PATH;
+- `.venv` exists but does not contain pytest;
+- repository `venv` contains pytest and PyQt6 but lacks `hypothesis`, `ruff`, and `mypy`, so local full collection, full execution, lint, and type checks are deferred to the locked GitHub Actions matrix for the final DV-0105 revision.
+
+Known limits: DocumentController source-session ownership, source close waiting on explicit I/O leases, and platform/cache/config primitives remain unimplemented and are owned by DV-0106 and DV-0107.
+
 ## Checkpoint record format
 
 For each checkpoint append:

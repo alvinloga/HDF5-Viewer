@@ -13,6 +13,7 @@ All notable Data Viewer changes are recorded here.
 - Added normalized selection, table-page, payload, scope, sampling, and read-result domain values with coordinate provenance.
 - Added structured error taxonomy, safe user messages, diagnostic snapshots, and path redaction values.
 - Added cooperative task lifecycle primitives with cancellation tokens, thread-safe progress, snapshots, and injectable callback dispatching.
+- Added DataSource API v1 source adapter/session protocols, bounded source registry probe arbitration, managed session lifecycle checks, and a reusable fake adapter conformance harness.
 
 ### Fixed
 

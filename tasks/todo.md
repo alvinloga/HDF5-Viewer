@@ -102,7 +102,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: legal queued/running/cancelling/terminal transitions; thread-safe progress; cooperative token; exactly one terminal result; no `QThread.terminate`; callbacks marshal to GUI thread through an injectable dispatcher.
 - Verify: transition/race/cancel/error tests, repeated stress, GUI-thread dispatch test.
 
-### [ ] DV-0105 Implement SourceAdapter/Session registry and conformance harness
+### [x] DV-0105 Implement SourceAdapter/Session registry and conformance harness
 
 - Depends: DV-0101 through DV-0104.
 - Read: DataSource API entire document, ADR-002.

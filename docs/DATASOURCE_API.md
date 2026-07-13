@@ -409,6 +409,12 @@ Every adapter must pass shared tests for:
 
 Format-specific requirements are defined in `docs/FORMAT_SUPPORT.md`.
 
+The concrete v1 contract entry points are implemented in:
+
+- `data_viewer.sources.api` for `ReadRequest`, `ProbeResult`, `NodePage`, `SourceAdapter`, and `SourceSession`;
+- `data_viewer.sources.registry` for bounded probe arbitration, duplicate ID/extension diagnostics, and managed close/idempotence checks;
+- `tests/conformance/source_adapter.py` for the reusable fake adapter harness that future format adapters must satisfy before adding format-specific cases.
+
 ## 8. Compatibility policy
 
 - `api_version` is `1` for all v1 adapters.
