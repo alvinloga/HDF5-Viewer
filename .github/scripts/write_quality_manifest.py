@@ -15,8 +15,12 @@ def _repository_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def _lock_file_sha256(path: Path) -> str:
+    """Return a stable lock-file hash independent of checkout line endings."""
+    normalized_text = (
+        path.read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    )
+    return hashlib.sha256(normalized_text.encode("utf-8")).hexdigest()
 
 
 def build_manifest(platform_name: str) -> dict[str, object]:
@@ -32,7 +36,7 @@ def build_manifest(platform_name: str) -> dict[str, object]:
         "git_sha": os.environ.get("GITHUB_SHA", ""),
         "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT", ""),
         "run_id": os.environ.get("GITHUB_RUN_ID", ""),
-        "uv_lock_sha256": _sha256(lock_path),
+        "uv_lock_sha256": _lock_file_sha256(lock_path),
     }
 
 

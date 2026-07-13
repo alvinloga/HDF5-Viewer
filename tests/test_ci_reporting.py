@@ -36,8 +36,29 @@ def test_quality_manifest_records_platform_lock_and_safe_ci_metadata(tmp_path, m
     assert manifest["run_id"] == "42"
     assert manifest["run_attempt"] == "3"
     assert manifest["uv_lock_sha256"] == hashlib.sha256(
-        (ROOT / "uv.lock").read_bytes()
+        (ROOT / "uv.lock").read_text(encoding="utf-8")
+        .replace("\r\n", "\n")
+        .replace("\r", "\n")
+        .encode("utf-8")
     ).hexdigest()
+
+
+def test_lock_hash_normalizes_checkout_line_endings(tmp_path) -> None:
+    manifest_writer = _load_manifest_writer()
+    lf_lock = tmp_path / "lf.lock"
+    crlf_lock = tmp_path / "crlf.lock"
+    lf_lock.write_bytes(b"version = 1\nrequires-python = '>=3.12'\n")
+    crlf_lock.write_bytes(b"version = 1\r\nrequires-python = '>=3.12'\r\n")
+
+    assert manifest_writer._lock_file_sha256(
+        lf_lock
+    ) == manifest_writer._lock_file_sha256(crlf_lock)
+
+
+def test_lock_file_checkout_uses_lf_for_cross_platform_ci_evidence() -> None:
+    attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8").splitlines()
+
+    assert "uv.lock text eol=lf" in attributes
 
 
 def test_workflows_upload_quality_evidence_and_release_requires_quality() -> None:
