@@ -140,6 +140,53 @@ Revision: `d7ab9f5` (`test: add deterministic fixture factories`).
 
 The reusable factories in `tests/fixtures/` generate only tiny test-owned HDF5, NPY, and UTF-8 CSV files and return immutable creation metadata. No opaque binary fixture was added. Similar-looking legacy tests remain because the AST audit found different executable bodies or assertions; only the proven duplicate was removed. The three NumPy warnings exercise intentional NaN/Inf input and remain visible rather than being suppressed.
 
+## DV-0005 quality CI and release-gate evidence - 2026-07-13
+
+Revision: `d045ae4` (`Revert "test: verify release gate blocks failed quality"`), after temporary failure commit `3f667e6` was reverted. Lock SHA-256 after LF normalization: `f44c592658057904746d776129076715cde998fb699a797e256f432fa2c07734`.
+
+Implementation evidence:
+
+- `.github/workflows/ci.yml` runs Windows and Ubuntu quality jobs with locked install, direct dependency smoke, scoped Ruff, scoped mypy, compile, collection, full offscreen pytest, sdist/wheel build, and always-uploaded quality evidence.
+- `.github/workflows/build.yml` is a manual release gate that depends on the reusable quality workflow and remains intentionally blocked until packaged smoke tests and PyQt licensing are complete.
+- `.github/scripts/write_quality_manifest.py` records secret-free CI metadata and hashes `uv.lock` after normalizing checkout line endings. `.gitattributes` pins `uv.lock` to LF for cross-platform consistency.
+
+Local verification on Windows 11 `10.0.22621`, CPython `3.12.13` from `venv\lock-verify-cpython`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Regression proof before fix | `venv\lock-verify-cpython\Scripts\python.exe -m pytest tests/test_ci_reporting.py -q` | failed as expected before the script fix: raw-byte lock hashes differed for LF and CRLF fixtures |
+| CI reporting contract | `venv\lock-verify-cpython\Scripts\python.exe -m pytest tests/test_ci_reporting.py -q` | 4 passed |
+| Scoped lint | `venv\lock-verify-cpython\Scripts\ruff.exe check data_viewer .github/scripts tests/conftest.py tests/fixtures tests/test_ci_reporting.py tests/test_data_viewer_package.py tests/test_fixture_factories.py tests/test_test_environment.py` | passed |
+| Scoped type check | `venv\lock-verify-cpython\Scripts\mypy.exe data_viewer .github/scripts/write_quality_manifest.py` | passed; no issues in 4 source files |
+| Workflow syntax | `C:\tmp\actionlint-1.7.12\extracted\actionlint.exe .github\workflows\ci.yml .github\workflows\build.yml` | passed |
+| Target and legacy compile | `venv\lock-verify-cpython\Scripts\python.exe -m compileall -q data_viewer .github/scripts core gui plugins services utils main.py` | passed |
+| Full collection | `venv\lock-verify-cpython\Scripts\python.exe -m pytest --collect-only -q` | 145 tests collected |
+| Full execution | `venv\lock-verify-cpython\Scripts\python.exe -m pytest -q` | 144 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Final successful CI evidence: [GitHub Actions run 29230119484](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29230119484), revision `d045ae4c83eb81e90316387b92603747bca04a27`.
+
+| Platform | Result |
+|---|---|
+| Windows | locked install, direct imports, scoped lint/type, compile, 145-test collection, 144 passed / 1 skipped, sdist/wheel build, and quality evidence upload all passed |
+| Ubuntu | locked install, direct imports, scoped lint/type, compile, 145-test collection, 144 passed / 1 skipped, sdist/wheel build, and quality evidence upload all passed |
+
+Downloaded artifact verification from run `29230119484`:
+
+| Artifact | Manifest result | JUnit result | Package outputs |
+|---|---|---|---|
+| `data-viewer-quality-Windows-29230119484-1` | `git_sha=d045ae4c83eb81e90316387b92603747bca04a27`; `uv_lock_sha256=f44c592658057904746d776129076715cde998fb699a797e256f432fa2c07734`; matches local normalized hash | 145 tests, 0 failures, 0 errors, 1 skipped | `data_viewer-1.0.0.dev0.tar.gz`; `data_viewer-1.0.0.dev0-py3-none-any.whl` |
+| `data-viewer-quality-Ubuntu-29230119484-1` | same commit and lock hash; matches local normalized hash | 145 tests, 0 failures, 0 errors, 1 skipped | `data_viewer-1.0.0.dev0.tar.gz`; `data_viewer-1.0.0.dev0-py3-none-any.whl` |
+
+Deliberate failure verification:
+
+| Run | Commit | Observed result |
+|---|---|---|
+| [Quality run 29229961154](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29229961154) | temporary commit `3f667e6` (`test: verify release gate blocks failed quality`) | Windows and Ubuntu both failed at `Run full offscreen regression suite`; each skipped `Build source distribution and wheel`; each still uploaded quality evidence |
+| [Release gate run 29229983175](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29229983175) | same temporary failure commit | reusable `quality / Windows quality` and `quality / Ubuntu quality` failed; downstream `blocked` job was skipped, proving release jobs cannot run past failed quality |
+| Revert commit | `d045ae4` | removed the intentional failing test with `git revert`; final run `29230119484` returned the branch to green |
+
+DV-0005 is complete. DV-0006 remains open because Checkpoint 0 still needs a separate consolidated evidence record and baseline gap review across DV-0001 through DV-0005.
+
 ## Checkpoint record format
 
 For each checkpoint append:

@@ -51,7 +51,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: every removed test is proven duplicate; tiny HDF5/NPY/CSV fixture factories are deterministic; no large opaque binary added; current baseline failures are classified, not hidden.
 - Verify: full non-GUI suite; fixture creation/reopen smoke; `git diff` review for assertion loss.
 
-### [ ] DV-0005 Add quality and dual-platform CI before build/release
+### [x] DV-0005 Add quality and dual-platform CI before build/release
 
 - Depends: DV-0002, DV-0003.
 - Read: Testing §12, ADR-008, Release.

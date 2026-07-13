@@ -116,8 +116,9 @@ The initial read-only audit has been superseded by the current locked Windows/Li
 
 - `uv sync --locked --all-extras` passes in an independent CPython 3.12 environment and in Windows/Ubuntu CI;
 - all v1 direct dependencies, including PyQt6, import successfully on both platforms;
-- full collection reports 139 tests and execution reports 138 passed, 1 skipped;
-- CI now verifies locked installation, lint/type, compilation, collection, offscreen GUI regression, and sdist/wheel builds;
+- full collection reports 145 tests and execution reports 144 passed, 1 skipped;
+- CI now verifies locked installation, lint/type, compilation, collection, offscreen GUI regression, JUnit/manifest evidence upload, and sdist/wheel builds;
+- the release gate has been verified to stop when quality tests fail;
 - release remains gated on unimplemented v1 functionality, artifact smoke, SBOM, and licensing decisions;
 - static counts and the historical “121 tests / 100%” claim are still not current evidence.
 

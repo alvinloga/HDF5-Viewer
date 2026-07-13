@@ -8,11 +8,13 @@ All notable Data Viewer changes are recorded here.
 
 - Added the installable `data_viewer` package skeleton with one canonical development version and a migration-safe command-line entry point.
 - Added deterministic, generated HDF5, NPY, and CSV fixture factories with recorded creation parameters for reusable scientific-data tests.
+- Added Windows/Ubuntu quality evidence artifacts with JUnit reports, CI manifests, and sdist/wheel outputs before any release job.
 
 ### Fixed
 
 - Stabilized the legacy GUI regression suite on Windows and Linux by isolating process state, scoping themes to each main window, and closing data-load panels cooperatively before their shared HDF5 sessions close.
 - Removed one structurally proven duplicate legacy event-bus test while retaining its canonical regression coverage.
+- Normalized lock-file evidence across Windows and Linux checkouts and verified release jobs stop when quality tests fail.
 
 ### Documentation
 
