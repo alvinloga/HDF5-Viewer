@@ -70,7 +70,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 
 ## P1 — Domain and runtime kernel
 
-### [ ] DV-0101 Implement immutable resource/domain/capability types
+### [x] DV-0101 Implement immutable resource/domain/capability types
 
 - Depends: DV-0006.
 - Read: Architecture §5, DataSource API §3, ADR-002.

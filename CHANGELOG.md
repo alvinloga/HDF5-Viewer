@@ -9,6 +9,7 @@ All notable Data Viewer changes are recorded here.
 - Added the installable `data_viewer` package skeleton with one canonical development version and a migration-safe command-line entry point.
 - Added deterministic, generated HDF5, NPY, and CSV fixture factories with recorded creation parameters for reusable scientific-data tests.
 - Added Windows/Ubuntu quality evidence artifacts with JUnit reports, CI manifests, and sdist/wheel outputs before any release job.
+- Added immutable Data Viewer domain values for resource identity, domains, capabilities, metadata, fingerprints, and hierarchy nodes.
 
 ### Fixed
 
