@@ -350,7 +350,14 @@ Local limitations for this workstation environment:
 
 - `uv` is not on the current PowerShell PATH;
 - `.venv` exists but does not contain pytest;
-- repository `venv` contains pytest and PyQt6 but lacks `hypothesis`, `ruff`, and `mypy`, so local full collection, full execution, lint, and type checks are deferred to the locked GitHub Actions matrix for the final DV-0105 revision.
+- repository `venv` contains pytest and PyQt6 but lacks `hypothesis`, `ruff`, and `mypy`, so local full collection, full execution, lint, and type checks were deferred to the locked GitHub Actions matrix for the final DV-0105 revision.
+
+Final CI evidence: [GitHub Actions run 29238330052](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29238330052), revision `41ef91dd1c3801d6efda719660a28465513f9a0a` (`docs: record source registry evidence`).
+
+| Platform | CI result | Artifact verification |
+|---|---|---|
+| Windows | locked install, direct dependency import smoke, scoped lint/type, compile, 189-test collection, 188 passed / 1 skipped, sdist/wheel build, and quality evidence upload all passed | artifact `data-viewer-quality-Windows-29238330052-1`; manifest commit `41ef91dd1c3801d6efda719660a28465513f9a0a`; lock hash `f44c592658057904746d776129076715cde998fb699a797e256f432fa2c07734`; JUnit has 189 tests, 0 failures, 0 errors, 1 skipped |
+| Ubuntu | the same quality gate passed | artifact `data-viewer-quality-Ubuntu-29238330052-1`; manifest commit `41ef91dd1c3801d6efda719660a28465513f9a0a`; lock hash `f44c592658057904746d776129076715cde998fb699a797e256f432fa2c07734`; JUnit has 189 tests, 0 failures, 0 errors, 1 skipped |
 
 Known limits: DocumentController source-session ownership, source close waiting on explicit I/O leases, and platform/cache/config primitives remain unimplemented and are owned by DV-0106 and DV-0107.
 
