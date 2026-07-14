@@ -166,7 +166,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: target app launches; Open command creates controller asynchronously; shell has navigation/workspace/inspector/bottom/status regions; legacy bootstrap remains available only as explicit development fallback.
 - Verify: offscreen launch/open/cancel/close tests; GUI-thread responsiveness probe.
 
-### [ ] DV-0205 Build HDF5 structure, array/table, and metadata vertical views
+### [x] DV-0205 Build HDF5 structure, array/table, and metadata vertical views
 
 - Depends: DV-0202 through DV-0204.
 - Read: UI/UX core views/states.

@@ -49,6 +49,7 @@ from data_viewer.domain import (
     DataDomain,
     DataMetadata,
     DataViewerError,
+    OperationScope,
     ReadResult,
     ResourceId,
     SelectionSpec,
@@ -432,11 +433,17 @@ class DataViewerShell(QMainWindow):
         self._status_bar.setObjectName("status_bar")
         self.setStatusBar(self._status_bar)
         self._status_label = QLabel("Ready", self)
+        self._status_label.setObjectName("status_label")
         self._status_path = QLabel("Path: -", self)
+        self._status_path.setObjectName("status_path")
         self._status_shape = QLabel("shape: -", self)
+        self._status_shape.setObjectName("status_shape")
         self._status_dtype = QLabel("dtype: -", self)
+        self._status_dtype.setObjectName("status_dtype")
         self._status_scope = QLabel("slice: -", self)
+        self._status_scope.setObjectName("status_scope")
         self._status_readonly = QLabel("mode: -", self)
+        self._status_readonly.setObjectName("status_readonly")
         self._status_bar.addWidget(self._status_label)
         self._status_bar.addPermanentWidget(self._status_path)
         self._status_bar.addPermanentWidget(self._status_shape)
@@ -795,15 +802,10 @@ class DataViewerShell(QMainWindow):
             return
         self._set_status_scope(read_spec)
 
-        if metadata.shape == ():
-            scope = "FULL"
-        else:
-            scope = "SLICE"
-
         request_obj = ReadRequest(
             resource_id=resource_id,
             selection=read_spec,
-            scope="SLICE" if scope == "SLICE" else "FULL",
+            scope=OperationScope.FULL if metadata.shape == () else OperationScope.SLICE,
             max_bytes=8 * 1024 * 1024,
         )
 
@@ -1272,6 +1274,13 @@ class DataViewerShell(QMainWindow):
             metadata = document.get_metadata(resource_id, cancellation=CancellationToken())
             self._active_metadata = metadata
             self._render_metadata(metadata)
+            self._status_shape.setText(f"shape: {metadata.shape or '(scalar)'}")
+            self._status_dtype.setText(f"dtype: {metadata.dtype or '-'}")
+            self._status_path.setText(f"path: {metadata.resource_id.node_path}")
+            self._status_scope.setText("slice: pending")
+            self._status_readonly.setText(
+                "mode: read-only" if DataDomain(metadata.domain) in {DataDomain.ARRAY} else "mode: inspect"
+            )
             if metadata.domain == DataDomain.ARRAY:
                 self._schedule_read(document, resource_id, metadata, force_refresh_axes=True)
             else:

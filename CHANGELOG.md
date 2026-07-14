@@ -22,6 +22,7 @@ All notable Data Viewer changes are recorded here.
   - `data_viewer/gui/commands.py` implements asynchronous open + cancellation command handling.
   - `data_viewer/gui/shell.py` provides regioned shell scaffolding and lifecycle-safe open/close handling.
   - `data_viewer/__main__.py` dispatches to target bootstrap by default with `--legacy` fallback and `--version` support.
+- Added vertical shell behaviors for the target Data Viewer (DV-0205): lazy tree expansion/load-more behavior, dataset activation path/shape/dtype/slice status synchronization, and object-name wiring for status labels used by automation and tests.
 - Added DocumentController ownership and request-generation tracking (`data_viewer/app/documents.py` and `data_viewer/app/active_context.py`), including close/wait lifecycle cleanup and non-GUI dirty/active-task state hooks.
 - Added platform path resolution and bounded temporary cache primitives (`data_viewer/infrastructure/paths.py`, `cache.py`), with atomic read/write configuration handling and log redaction support for diagnostics in `data_viewer/infrastructure/config.py` and `data_viewer/infrastructure/logging.py`.
 
