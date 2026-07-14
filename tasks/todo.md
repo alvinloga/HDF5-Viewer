@@ -376,7 +376,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: light/dark roles centralized; 4 px scale and compact metrics; system/monospace roles; one monochrome SVG set; no emoji/Unicode pseudo-icons/hard-coded component colors.
 - Verify: token completeness, contrast calculation, icon accessibility, repository palette/icon scan.
 
-### [ ] DV-0602 Implement command registry and ActiveContext
+### [x] DV-0602 Implement command registry and ActiveContext
 
 - Depends: DV-0106, DV-0601.
 - Scope: command definitions, shortcuts, context predicates, tests.

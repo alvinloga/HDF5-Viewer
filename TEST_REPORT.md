@@ -1316,7 +1316,16 @@ Local Windows verification in the repository `venv`:
 | Compile | `venv\Scripts\python.exe -m compileall -q data_viewer\app data_viewer\gui tests\test_command_registry.py tests\test_gui_theme.py` | passed |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 387 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `9d4788700d3ceffd23b3c47da7de1cc38eaaddea` |
+| GitHub Actions run | `gh run watch 29370245596 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29370245596 --json status,conclusion,headSha,jobs,url` | head SHA `9d4788700d3ceffd23b3c47da7de1cc38eaaddea`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29370245596` |
+| Windows quality job | GitHub Actions run `29370245596` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 2m1s |
+| Ubuntu quality job | GitHub Actions run `29370245596` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m36s |
+
 Known gaps:
 
-- This is local Windows task evidence only; DV-0602 remains unchecked until the commit is pushed and the dual-platform GitHub Actions matrix succeeds.
 - The command registry is not yet fully bound into the rebuilt shell command bar; broader shell panel/layout work remains DV-0603.

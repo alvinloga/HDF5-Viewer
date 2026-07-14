@@ -45,7 +45,7 @@ All notable Data Viewer changes are recorded here.
 - Added managed random-access gzip extraction cache (DV-0502) with canonical fingerprint cache keys, budget/ratio/free-disk preflight, cancellation cleanup, expired/incomplete startup cleanup, and random-access NPY gzip fixture coverage.
 - Added full v1 gzip registry integration (DV-0503): every v1 gzip wrapper opens through the default target registry, generic gzip metadata is read-only, `.npz.gz`/`.xlsx.gz` report inefficient nested-compression warnings, native `.nii.gz` remains a NIfTI source, and nested-compression targets are not inferred as export formats.
 - Added the semantic Qt theme foundation (DV-0601): centralized light/dark color roles, compact 4 px metrics, platform typography roles, bundled monochrome SVG icon definitions, generated application stylesheet, and palette/icon scan tests.
-- Added the application command registry and expanded ActiveContext (DV-0602 in progress): stable command IDs, labels, shortcuts, semantic actions, enabled/disabled reasons, and explicit split/view/resource/selection/task/dirty state without widget coupling.
+- Added the application command registry and expanded ActiveContext (DV-0602): stable command IDs, labels, shortcuts, semantic actions, enabled/disabled reasons, and explicit split/view/resource/selection/task/dirty state without widget coupling.
 
 ### Fixed
 
