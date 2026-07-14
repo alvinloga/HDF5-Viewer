@@ -1207,3 +1207,46 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - This is DV-0503 task evidence, not consolidated Checkpoint 5 evidence. Checkpoint 5 recording remains DV-0504.
+
+## Checkpoint 5 gzip evidence - 2026-07-15
+
+Checkpoint 5 is recorded against GitHub Actions run [29368227262](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29368227262), head `ff641e528f55f4098b5e7086a0b3a3bf186f9b83` on branch `codex/data-viewer-foundation`.
+
+Scope covered:
+
+- DV-0501 implemented bounded compound gzip detection and stream-capable wrappers for text-like formats.
+- DV-0502 implemented managed random-access gzip extraction with cache identity, budget, cancellation, invalidation, and cleanup coverage.
+- DV-0503 integrated the default registry matrix for every v1 gzip form while preserving native NIfTI `.nii.gz` routing.
+- Generic gzip wrappers are read-only in v1 and preserve outer `.gz` resource identity.
+- `.npz.gz` and `.xlsx.gz` are readable but flagged as inefficient nested compression and are not inferred as export formats.
+- Random-access gzip cache creation is lazy; constructing the default registry does not touch platform cache directories.
+- Windows mmap cleanup for NPY gzip temp views is covered by the DV-0503 regression path.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Full gzip matrix regression | `venv\Scripts\python.exe -m pytest tests\test_gzip_adapter.py::test_default_registry_opens_every_v1_gzip_form -q` | 1 passed |
+| Gzip/read-only/export/GUI subset | `venv\Scripts\python.exe -m pytest tests\test_gzip_adapter.py tests\test_gzip_extraction_cache.py tests\test_exporting.py tests\test_gui_shell.py -q` | 37 passed |
+| Target lint | `venv\Scripts\python.exe -m ruff check data_viewer tests\test_gzip_adapter.py tests\test_gzip_extraction_cache.py tests\test_exporting.py tests\test_gui_shell.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 78 source files |
+| Full compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 377 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Latest branch run | `gh run list --branch codex/data-viewer-foundation --limit 3` | latest run `29368227262` for `ff641e5` started after the DV-0503 evidence commit |
+| CI watch | `gh run watch 29368227262 --exit-status --interval 10` | completed successfully |
+| Artifact download | `gh run download 29368227262 --dir .tmp\ci-29368227262` | downloaded Windows and Ubuntu quality artifacts |
+| Windows manifest | downloaded `ci-reports\Windows\manifest.json` | CPython 3.12.10, Windows/AMD64, run attempt 1, lock SHA-256 `f44c592658057904746d776129076715cde998fb699a797e256f432fa2c07734`, git SHA `ff641e528f55f4098b5e7086a0b3a3bf186f9b83` |
+| Ubuntu manifest | downloaded `ci-reports\Ubuntu\manifest.json` | CPython 3.12.13, Linux/x86_64, run attempt 1, same lock SHA-256 and git SHA |
+| Windows pytest XML | downloaded `ci-reports\Windows\pytest.xml` | 378 tests, 0 failures, 0 errors, 1 skipped, 56.585 seconds |
+| Ubuntu pytest XML | downloaded `ci-reports\Ubuntu\pytest.xml` | 378 tests, 0 failures, 0 errors, 1 skipped, 48.142 seconds |
+| Build artifacts | downloaded `artifacts\Windows` and `artifacts\Ubuntu` | both platforms produced `data_viewer-1.0.0.dev0.tar.gz` and `data_viewer-1.0.0.dev0-py3-none-any.whl` |
+
+Known gaps:
+
+- This is a Checkpoint 5 gzip evidence gate, not a v1 release gate.
+- UI system rebuild, plugin platform/catalog, workspace/compare features, hardening, packaged application installers, SBOM/license evidence, manual Windows/Linux acceptance, and public GitHub release artifacts remain later tasks.

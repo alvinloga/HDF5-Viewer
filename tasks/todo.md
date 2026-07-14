@@ -359,7 +359,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: gzip form of every v1 extension opens; generic wrapper read-only; `.npz.gz`/`.xlsx.gz` inefficient warning; native NIfTI labeling; output dialogs do not propose nested compression.
 - Verify: generated matrix across extensions on both platforms plus UI state tests.
 
-### [ ] DV-0504 Record Checkpoint 5 gzip evidence
+### [x] DV-0504 Record Checkpoint 5 gzip evidence
 
 - Depends: DV-0501 through DV-0503.
 - Verify: complete gzip/security/cleanup/performance suite and ledger update.

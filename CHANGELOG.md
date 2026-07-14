@@ -61,6 +61,7 @@ All notable Data Viewer changes are recorded here.
 - Reclassified the existing source as the legacy migration baseline.
 - Recorded Checkpoint 3 persistence evidence for HDF5 safe edits, generic transactions, export provenance, and edit/export UI flows on Windows and Ubuntu CI.
 - Recorded Checkpoint 4 uncompressed format evidence for all v1 first-release adapters on Windows and Ubuntu CI.
+- Recorded Checkpoint 5 gzip evidence for stream wrappers, managed random-access extraction, full gzip registry integration, read-only/nested-compression UX metadata, and Windows/Ubuntu CI.
 
 ### Known legacy limitations
 
