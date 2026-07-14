@@ -1522,3 +1522,29 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - DV-0607 is not complete yet: base data view labels, plot screen-reader summary contracts, automated missing-string scans beyond the new catalog gate, and DPI screenshot evidence remain follow-up work before `tasks/todo.md` can be checked.
+
+## DV-0607 base-view and plot accessibility contract slice - 2026-07-15
+
+Revision: working tree based on `db7b1e3` before committing the second DV-0607 implementation slice.
+
+Implementation evidence:
+
+- `data_viewer/gui/views.py` now accepts a locale for base table/array/text/image view chrome and routes initial scope/coordinate/shape/slice labels through the centralized UI string catalog.
+- `data_viewer/gui/accessibility.py` adds `PlotAccessibilitySummary`, establishing the v1 screen-reader summary contract for future PlotSpec renderers: title, axes, series, range, warnings, and data-table availability.
+- `data_viewer/gui/i18n.py` adds English and Simplified Chinese entries for base-view chrome and plot accessibility summary text.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing base-view/plot accessibility test | `venv\Scripts\python.exe -m pytest tests\test_gui_i18n_accessibility.py -q` | failed as expected before implementation: `ImportError: cannot import name 'PlotAccessibilitySummary'` |
+| Focused localization/accessibility tests | `venv\Scripts\python.exe -m pytest tests\test_gui_i18n_accessibility.py -q` | 7 passed |
+| GUI localization/base-view/state/shell regression subset | `venv\Scripts\python.exe -m pytest tests\test_gui_i18n_accessibility.py tests\test_gui_base_views.py tests\test_gui_state_components.py tests\test_gui_shell.py -q` | 33 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\gui tests\test_gui_i18n_accessibility.py tests\test_gui_base_views.py tests\test_gui_state_components.py tests\test_gui_shell.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\gui tests\test_gui_i18n_accessibility.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 85 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 408 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- DV-0607 is still not checked: an automated missing-string scan for remaining shell/runtime literals and DPI screenshot evidence are still required before marking the task complete.

@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import QApplication, QLabel, QLineEdit, QPushButton, QTreeW
 
 from data_viewer.gui.accessibility import (
     AccessibilityIssue,
+    PlotAccessibilitySummary,
     audit_accessible_widgets,
     focus_chain_names,
     scaled_metric,
@@ -16,6 +17,7 @@ from data_viewer.gui.dialogs import SaveSummaryDialog
 from data_viewer.gui.i18n import Locale, UiStringKey, missing_catalog_entries, tr
 from data_viewer.gui.shell import DataViewerShell
 from data_viewer.gui.state_components import StateKind, default_state_model
+from data_viewer.gui.views import TableViewWidget
 from data_viewer.sources import SourceRegistry
 from data_viewer.sources.hdf5 import HDF5Adapter
 
@@ -94,6 +96,38 @@ def test_dialog_and_state_defaults_are_localized_from_catalog() -> None:
     model = default_state_model(StateKind.READ_ONLY, target="Workspace", locale=Locale.ZH_CN)
     assert model.title == tr(UiStringKey.STATE_READ_ONLY_TITLE, Locale.ZH_CN)
     assert model.actions[0].label == tr(UiStringKey.COMMAND_SAVE_AS, Locale.ZH_CN)
+
+
+def test_base_view_chrome_and_plot_summary_contract_are_localized() -> None:
+    """Base views and plot descriptions have a localized accessibility contract."""
+
+    app = _qapp()
+    view = TableViewWidget(locale=Locale.ZH_CN)
+    app.processEvents()
+
+    assert view.findChild(QLabel, "view_scope_label").text() == tr(
+        UiStringKey.VIEW_SCOPE_EMPTY,
+        Locale.ZH_CN,
+    )
+    assert view.findChild(QLabel, "view_coordinates_label").text() == tr(
+        UiStringKey.VIEW_COORDINATES_EMPTY,
+        Locale.ZH_CN,
+    )
+
+    summary = PlotAccessibilitySummary(
+        title="Intensity histogram",
+        axes=("Intensity", "Count"),
+        series=("foreground",),
+        value_range="0 to 255",
+        warnings=("sampled 10%",),
+        data_table_available=True,
+    )
+    assert summary.to_accessible_description(Locale.EN_US) == (
+        "Plot: Intensity histogram. Axes: Intensity, Count. "
+        "Series: foreground. Range: 0 to 255. Warnings: sampled 10%. "
+        "Data table available."
+    )
+    assert "图表：" in summary.to_accessible_description(Locale.ZH_CN)
 
 
 def test_shell_focus_order_starts_with_command_path_then_primary_actions() -> None:

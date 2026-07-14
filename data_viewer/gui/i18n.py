@@ -110,6 +110,13 @@ class UiStringKey(StrEnum):
     STATE_CONFLICTED_SUMMARY = "state.conflicted.summary"
     STATE_STALE_TITLE = "state.stale.title"
     STATE_STALE_SUMMARY = "state.stale.summary"
+    VIEW_SCOPE_EMPTY = "view.scope.empty"
+    VIEW_SCOPE_VALUE = "view.scope.value"
+    VIEW_COORDINATES_EMPTY = "view.coordinates.empty"
+    VIEW_SHAPE_EMPTY = "view.shape.empty"
+    VIEW_SLICE_EMPTY = "view.slice.empty"
+    PLOT_SUMMARY_WITH_TABLE = "plot.summary.with_table"
+    PLOT_SUMMARY_NO_TABLE = "plot.summary.no_table"
 
 
 _CATALOG: dict[Locale, dict[UiStringKey, str]] = {
@@ -209,6 +216,13 @@ _CATALOG: dict[Locale, dict[UiStringKey, str]] = {
         UiStringKey.STATE_CONFLICTED_SUMMARY: "Saving is blocked until the source is reloaded or changes are saved elsewhere.",
         UiStringKey.STATE_STALE_TITLE: "Stale result",
         UiStringKey.STATE_STALE_SUMMARY: "The source, parameters, or selection changed after this result was produced.",
+        UiStringKey.VIEW_SCOPE_EMPTY: "scope: -",
+        UiStringKey.VIEW_SCOPE_VALUE: "scope: {scope}",
+        UiStringKey.VIEW_COORDINATES_EMPTY: "coordinates: -",
+        UiStringKey.VIEW_SHAPE_EMPTY: "shape: -",
+        UiStringKey.VIEW_SLICE_EMPTY: "slice: -",
+        UiStringKey.PLOT_SUMMARY_WITH_TABLE: "Plot: {title}. Axes: {axes}. Series: {series}. Range: {range}. Warnings: {warnings}. Data table available.",
+        UiStringKey.PLOT_SUMMARY_NO_TABLE: "Plot: {title}. Axes: {axes}. Series: {series}. Range: {range}. Warnings: {warnings}. Data table unavailable.",
     },
     Locale.ZH_CN: {
         UiStringKey.APP_TITLE: "Data Viewer",
@@ -306,6 +320,13 @@ _CATALOG: dict[Locale, dict[UiStringKey, str]] = {
         UiStringKey.STATE_CONFLICTED_SUMMARY: "必须重新加载数据源或另存更改后才能保存。",
         UiStringKey.STATE_STALE_TITLE: "结果已过期",
         UiStringKey.STATE_STALE_SUMMARY: "此结果生成后，数据源、参数或选择范围已经变化。",
+        UiStringKey.VIEW_SCOPE_EMPTY: "范围：-",
+        UiStringKey.VIEW_SCOPE_VALUE: "范围：{scope}",
+        UiStringKey.VIEW_COORDINATES_EMPTY: "坐标：-",
+        UiStringKey.VIEW_SHAPE_EMPTY: "形状：-",
+        UiStringKey.VIEW_SLICE_EMPTY: "切片：-",
+        UiStringKey.PLOT_SUMMARY_WITH_TABLE: "图表：{title}。坐标轴：{axes}。序列：{series}。范围：{range}。警告：{warnings}。可用数据表。",
+        UiStringKey.PLOT_SUMMARY_NO_TABLE: "图表：{title}。坐标轴：{axes}。序列：{series}。范围：{range}。警告：{warnings}。无可用数据表。",
     },
 }
 

@@ -14,6 +14,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from data_viewer.gui.i18n import Locale, UiStringKey, tr
+
 
 @dataclass(frozen=True, slots=True)
 class AccessibilityIssue:
@@ -22,6 +24,36 @@ class AccessibilityIssue:
     object_name: str
     widget_class: str
     problem: str
+
+
+@dataclass(frozen=True, slots=True)
+class PlotAccessibilitySummary:
+    """Screen-reader summary contract for declarative plot renderers."""
+
+    title: str
+    axes: tuple[str, ...]
+    series: tuple[str, ...]
+    value_range: str
+    warnings: tuple[str, ...] = ()
+    data_table_available: bool = False
+
+    def to_accessible_description(self, locale: Locale = Locale.EN_US) -> str:
+        """Render a concise localized description for assistive technology."""
+
+        key = (
+            UiStringKey.PLOT_SUMMARY_WITH_TABLE
+            if self.data_table_available
+            else UiStringKey.PLOT_SUMMARY_NO_TABLE
+        )
+        return tr(
+            key,
+            locale,
+            title=self.title,
+            axes=", ".join(self.axes) if self.axes else "-",
+            series=", ".join(self.series) if self.series else "-",
+            range=self.value_range or "-",
+            warnings=", ".join(self.warnings) if self.warnings else "none",
+        )
 
 
 _AUDITED_CLASSES = (QPushButton, QLineEdit, QPlainTextEdit, QTreeWidget, QTabWidget)
@@ -97,6 +129,7 @@ def scaled_metric(value: int, *, scale_factor: float = 1.0, grid: int = 4) -> in
 
 __all__ = [
     "AccessibilityIssue",
+    "PlotAccessibilitySummary",
     "audit_accessible_widgets",
     "focus_chain_names",
     "scaled_metric",

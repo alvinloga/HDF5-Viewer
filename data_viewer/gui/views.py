@@ -30,6 +30,7 @@ from data_viewer.domain import (
     TextPayload,
 )
 from data_viewer.domain.selection import NormalizedSelection
+from data_viewer.gui.i18n import Locale, UiStringKey, tr
 
 
 class ViewKind(StrEnum):
@@ -139,19 +140,23 @@ class _PayloadTableModel(QAbstractTableModel):
 class _BaseDataView(QWidget):
     """Common labels for scope/provenance visible in every base view."""
 
-    def __init__(self, contract: BaseViewContract) -> None:
+    def __init__(self, contract: BaseViewContract, *, locale: Locale = Locale.EN_US) -> None:
         super().__init__()
         self._contract = contract
+        self._locale = Locale(locale)
         self._layout = QVBoxLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(8)
-        self._scope_label = QLabel("scope: -", self)
+        self._scope_label = QLabel(tr(UiStringKey.VIEW_SCOPE_EMPTY, self._locale), self)
         self._scope_label.setObjectName("view_scope_label")
-        self._coordinates_label = QLabel("coordinates: -", self)
+        self._coordinates_label = QLabel(
+            tr(UiStringKey.VIEW_COORDINATES_EMPTY, self._locale),
+            self,
+        )
         self._coordinates_label.setObjectName("view_coordinates_label")
-        self._shape_label = QLabel("shape: -", self)
+        self._shape_label = QLabel(tr(UiStringKey.VIEW_SHAPE_EMPTY, self._locale), self)
         self._shape_label.setObjectName("view_shape_label")
-        self._slice_label = QLabel("slice: -", self)
+        self._slice_label = QLabel(tr(UiStringKey.VIEW_SLICE_EMPTY, self._locale), self)
         self._slice_label.setObjectName("view_slice_label")
         for label in (
             self._scope_label,
@@ -177,20 +182,27 @@ class _BaseDataView(QWidget):
         return self._contract
 
     def _set_scope(self, result: ReadResult) -> None:
-        self._scope_label.setText(f"scope: {OperationScope(result.scope).value}")
+        self._scope_label.setText(
+            tr(
+                UiStringKey.VIEW_SCOPE_VALUE,
+                self._locale,
+                scope=OperationScope(result.scope).value,
+            )
+        )
 
 
 class TableViewWidget(_BaseDataView):
     """Virtual table/page view using source rows as headers."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, locale: Locale = Locale.EN_US) -> None:
         super().__init__(
             BaseViewContract(
                 kind=ViewKind.TABLE,
                 result_channel="workspace.table",
                 supports_selection=True,
                 supports_export=True,
-            )
+            ),
+            locale=locale,
         )
         self._model = _PayloadTableModel()
         self._table = QTableView(self)
@@ -214,14 +226,15 @@ class TableViewWidget(_BaseDataView):
 class ArrayViewWidget(_BaseDataView):
     """Array view that renders only explicit bounded projections."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, locale: Locale = Locale.EN_US) -> None:
         super().__init__(
             BaseViewContract(
                 kind=ViewKind.ARRAY,
                 result_channel="workspace.array",
                 supports_selection=True,
                 supports_export=True,
-            )
+            ),
+            locale=locale,
         )
         self._model = _PayloadTableModel()
         self._table = QTableView(self)
@@ -248,14 +261,15 @@ class ArrayViewWidget(_BaseDataView):
 class TextViewWidget(_BaseDataView):
     """Paged/streamed text view with explicit partial banner."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, locale: Locale = Locale.EN_US) -> None:
         super().__init__(
             BaseViewContract(
                 kind=ViewKind.TEXT,
                 result_channel="workspace.text",
                 supports_selection=True,
                 supports_export=True,
-            )
+            ),
+            locale=locale,
         )
         self._partial_banner = QLabel("", self)
         self._partial_banner.setObjectName("text_partial_banner")
@@ -291,14 +305,15 @@ class TextViewWidget(_BaseDataView):
 class ImageViewWidget(_BaseDataView):
     """Image-like array view preserving aspect and cursor provenance."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, locale: Locale = Locale.EN_US) -> None:
         super().__init__(
             BaseViewContract(
                 kind=ViewKind.IMAGE,
                 result_channel="workspace.image",
                 supports_selection=True,
                 supports_export=True,
-            )
+            ),
+            locale=locale,
         )
         self._payload: ArrayPayload | None = None
         self._image_label = QLabel("Image preview", self)
