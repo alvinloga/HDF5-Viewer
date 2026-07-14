@@ -248,7 +248,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: `allow_pickle=False`; mmap when valid; scalar/empty/structured/order/byte-order preserved; object arrays rejected; replacement save validates header/shape/dtype/patches.
 - Verify: shared conformance, security fixtures, round-trip/property/fault tests.
 
-### [ ] DV-0402 Implement NPZ adapter and archive-rebuild writer
+### [x] DV-0402 Implement NPZ adapter and archive-rebuild writer
 
 - Depends: DV-0401.
 - Read: Format Support §4.3.

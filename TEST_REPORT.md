@@ -743,3 +743,31 @@ Known gaps:
 
 - This is DV-0401 task evidence only, not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0402 through DV-0411 finish.
 - Scalar cell editing is still constrained by the current `CellPatch` coordinate contract, which disallows empty coordinates; scalar read/metadata behavior is covered here, and scalar edit support should be handled by a later edit-contract refinement if required.
+
+## DV-0402 NPZ adapter and archive-rebuild writer - 2026-07-15
+
+Revision: working tree on `codex/data-viewer-foundation` with task-local additions in `data_viewer/sources/npz/`, default registry wiring in `data_viewer/gui/shell.py`, and `tests/test_npz_adapter.py`.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Focused NPZ adapter/writer suite | `venv\Scripts\python.exe -m pytest tests\test_npz_adapter.py -q` | 11 passed |
+| NPY plus NPZ source regression subset | `venv\Scripts\python.exe -m pytest tests\test_numpy_adapter.py tests\test_npz_adapter.py -q` | 18 passed |
+| Source registry/controller/GUI/NPY/NPZ regression subset | `venv\Scripts\python.exe -m pytest tests\test_source_registry.py tests\test_document_controller.py tests\test_gui_shell.py tests\test_numpy_adapter.py tests\test_npz_adapter.py -q` | 45 passed |
+| Lint gate | `venv\Scripts\ruff.exe check data_viewer\sources\npz data_viewer\gui\shell.py tests\test_npz_adapter.py` | passed |
+| Type check | `venv\Scripts\python.exe -m mypy data_viewer tests\test_npz_adapter.py` | Success: no issues found in 52 source files |
+| Syntax check | `venv\Scripts\python.exe -m compileall data_viewer\sources\npz data_viewer\gui\shell.py tests\test_npz_adapter.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 314 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Notes:
+
+- Added `NPZAdapter` and `NPZSourceSession` with one synthetic root, derived container nodes for slash-delimited member paths, and stable array resources such as `/array` and `/group/a`.
+- NPZ open validates ZIP metadata before exposing resources: empty archives, non-`.npy` members, path traversal, absolute paths, duplicate normalized paths, encrypted entries, per-member size budget, total size budget, and extreme compression ratios fail with structured errors.
+- Member header inspection rejects object dtypes before data reads; every member load uses `np.load(..., allow_pickle=False)`.
+- Read behavior covers shared conformance, synthetic hierarchy listing, metadata provenance, normalized selections, and per-request byte budgets.
+- NPZ save uses reviewed `CellPatch` change sets, source-fingerprint conflict detection, full temporary archive rebuild, `allow_pickle=False` reopen validation, changed-coordinate verification, representative unchanged-value verification, and atomic replacement through `AtomicReplacementService`.
+- The default target shell registry now registers HDF5, NPY, and NPZ adapters.
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending the committed branch run.
+- This is DV-0402 task evidence only, not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0403 through DV-0411 finish.

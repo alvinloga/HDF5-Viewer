@@ -32,6 +32,7 @@ All notable Data Viewer changes are recorded here.
 - Added export planning, execution, and receipt primitives (DV-0305) covering explicit full/slice/selection/filtered/result/rendered scopes, raw/display/scaled value modes, overwrite/cancel/failure receipts, CSV formula-cell escaping, and JSON receipt round trips.
 - Added edit review, save/conflict, and export UI wiring (DV-0306): the shell now exposes textual dirty/read-only/conflict states, review/save/export command controls, real HDF5 patch save execution through `DocumentController`, conflict-safe disabled save behavior, and receipt-backed active-payload export.
 - Added the NPY adapter and verified replacement writer (DV-0401): `.npy` sources now probe/open through DataSource API v1, load with `allow_pickle=False`, reject object arrays, preserve scalar/empty/structured/order/byte-order metadata, support bounded selection reads, and save reviewed cell patches through atomic replacement validation.
+- Added the NPZ adapter and archive-rebuild writer (DV-0402): `.npz` sources now expose synthetic member hierarchies, reject unsafe archive members and object arrays, enforce ZIP size/compression safety budgets, support bounded member selection reads, and save reviewed cell patches by rebuilding and validating the archive.
 
 ### Fixed
 
