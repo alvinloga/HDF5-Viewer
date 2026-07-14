@@ -55,6 +55,16 @@ from data_viewer.domain import (
     SelectionSpec,
 )
 from data_viewer.domain.payload import TablePayload
+from data_viewer.editing.patches import EditPatch
+from data_viewer.editing.review import SaveReview, SaveStrategy
+from data_viewer.editing.session import EditSessionState
+from data_viewer.exporting import (
+    ExportReceipt,
+    ExportScope,
+    ExportService,
+    ExportValueMode,
+    build_export_plan,
+)
 from data_viewer.tasks import CancellationToken
 from data_viewer.sources import (
     NodePage,
@@ -284,6 +294,7 @@ class DataViewerShell(QMainWindow):
         self._active_document_token: int | None = None
         self._active_resource: ResourceId | None = None
         self._active_metadata: DataMetadata | None = None
+        self._active_read_result: ReadResult | None = None
         self._active_request_generation_by_resource: dict[TreeNodeKey, int] = {}
         self._active_read_generation_by_resource: dict[TreeNodeKey, int] = {}
         self._tree_node_map: dict[TreeNodeKey, QTreeWidgetItem] = {}
@@ -325,6 +336,35 @@ class DataViewerShell(QMainWindow):
         self._cancel_open_button.setObjectName("cancel_open_button")
         self._cancel_open_button.clicked.connect(self._handle_cancel_open)
         self._cancel_open_button.setEnabled(False)
+
+        self._review_changes_button = QPushButton("Review Changes", self)
+        self._review_changes_button.setObjectName("review_changes_button")
+        self._review_changes_button.clicked.connect(self.review_active_edits)
+        self._review_changes_button.setEnabled(False)
+
+        self._save_button = QPushButton("Save", self)
+        self._save_button.setObjectName("save_button")
+        self._save_button.clicked.connect(self.save_active_edits)
+        self._save_button.setEnabled(False)
+
+        self._save_as_button = QPushButton("Save As", self)
+        self._save_as_button.setObjectName("save_as_button")
+        self._save_as_button.setEnabled(False)
+        self._save_as_button.clicked.connect(
+            lambda: self._append_bottom("Save As requires a target path in this shell build.")
+        )
+
+        self._export_button = QPushButton("Export", self)
+        self._export_button.setObjectName("export_button")
+        self._export_button.setEnabled(False)
+        self._export_button.clicked.connect(
+            lambda: self._append_bottom("Export requires a target path. Use export_active_to_path(path).")
+        )
+
+        self._edit_state_label = QLabel("edit: clean (0 pending)", self)
+        self._edit_state_label.setObjectName("edit_state_label")
+        self._readonly_hint_label = QLabel("No source loaded", self)
+        self._readonly_hint_label.setObjectName("readonly_hint_label")
 
         self._navigation = QTreeWidget(self)
         self._navigation.setObjectName("navigation_region")
@@ -450,8 +490,10 @@ class DataViewerShell(QMainWindow):
         self._status_bar.addPermanentWidget(self._status_dtype)
         self._status_bar.addPermanentWidget(self._status_scope)
         self._status_bar.addPermanentWidget(self._status_readonly)
+        self._status_bar.addPermanentWidget(self._edit_state_label)
         self._append_bottom("Ready")
         self._set_workspace_state("initial", "No source opened yet.")
+        self._refresh_edit_actions()
 
     def _build_layout(self) -> None:
         command_row = QWidget(self)
@@ -462,12 +504,17 @@ class DataViewerShell(QMainWindow):
         command_layout.addWidget(self._path_input, 1)
         command_layout.addWidget(self._open_button)
         command_layout.addWidget(self._cancel_open_button)
+        command_layout.addWidget(self._review_changes_button)
+        command_layout.addWidget(self._save_button)
+        command_layout.addWidget(self._save_as_button)
+        command_layout.addWidget(self._export_button)
 
         workspace_container = QWidget(self)
         workspace_layout = QVBoxLayout(workspace_container)
         workspace_layout.setContentsMargins(0, 0, 0, 0)
         workspace_layout.setSpacing(8)
         workspace_layout.addWidget(self._workspace_status)
+        workspace_layout.addWidget(self._readonly_hint_label)
         workspace_layout.addWidget(self._axis_area)
         workspace_layout.addWidget(self._workspace_view, 1)
 
@@ -629,6 +676,7 @@ class DataViewerShell(QMainWindow):
         self._active_document_token = id(document)
         self._active_resource = None
         self._active_metadata = None
+        self._active_read_result = None
         self._active_request_generation_by_resource = {}
         self._active_read_generation_by_resource = {}
         self._tree_node_map = {}
@@ -646,6 +694,7 @@ class DataViewerShell(QMainWindow):
         self._status_dtype.setText("dtype: -")
         self._status_scope.setText("slice: /")
         self._status_readonly.setText("mode: read-only")
+        self._refresh_edit_actions()
         self._append_bottom(f"Opened {snapshot.source_uri}")
         self._set_workspace_state("loading", "Loading structure root...")
 
@@ -675,6 +724,174 @@ class DataViewerShell(QMainWindow):
     # ----------------------------- background dispatch helpers -----------------------------
     def _append_bottom(self, message: str) -> None:
         self._bottom.appendPlainText(message)
+
+    # ----------------------------- edit/save/export actions -----------------------------
+    def record_edit_patch(self, patch: EditPatch) -> None:
+        """Record one typed edit patch from an editor delegate or plugin-owned UI."""
+
+        if self._active_document is None:
+            self._append_bottom("Edit ignored: no active document.")
+            return
+        snapshot = self._active_document.apply_edit_patch(patch)
+        self._append_bottom(
+            "Edit recorded: "
+            f"{patch.resource_id.node_path} -> {type(patch).__name__}; "
+            f"{snapshot.edit_patch_count} pending patch(es)."
+        )
+        self._refresh_edit_actions()
+
+    def review_active_edits(self) -> str:
+        """Build and display the current save review summary."""
+
+        if self._active_document is None:
+            message = "No active document to review."
+            self._append_bottom(message)
+            return message
+        try:
+            review = self._active_document.build_edit_save_review(
+                target_uri=self._active_document.source_uri,
+                strategy=SaveStrategy.IN_PLACE,
+            )
+        except Exception as exc:
+            message = f"Save review unavailable: {exc}"
+            self._append_bottom(message)
+            return message
+        text = self._format_save_review(review)
+        self._append_bottom(text)
+        self._refresh_edit_actions()
+        return text
+
+    def save_active_edits(self) -> bool:
+        """Persist pending edits for the active document and update user-visible state."""
+
+        if self._active_document is None:
+            self._append_bottom("Save skipped: no active document.")
+            return False
+        snapshot = self._active_document.snapshot()
+        if snapshot.edit_state is EditSessionState.CONFLICTED:
+            self.display_edit_conflict("source changed before save")
+            return False
+        if snapshot.edit_patch_count == 0:
+            self._append_bottom("Save skipped: no pending edits.")
+            self._refresh_edit_actions()
+            return False
+
+        self.review_active_edits()
+        self._append_bottom("Save task: running.")
+        try:
+            result = self._active_document.save_edits(cancellation=CancellationToken())
+        except DataViewerError as error:
+            if error.code.value in {"SOURCE_CHANGED", "EDIT_CONFLICT"}:
+                self.display_edit_conflict(error.message)
+            else:
+                self._append_bottom(f"Save failed: {error.code.value}: {error.message}")
+                self._refresh_edit_actions()
+            return False
+
+        strategy = getattr(result, "strategy", "adapter-selected")
+        self._append_bottom(f"Save succeeded: strategy={strategy}.")
+        self._refresh_edit_actions()
+        if self._active_document is not None and self._active_resource is not None:
+            self._active_document.refresh_edit_fingerprint(cancellation=CancellationToken())
+        return True
+
+    def display_edit_conflict(self, message: str) -> None:
+        """Display a non-color-only conflict state with explicit safe choices."""
+
+        self._edit_state_label.setText("edit: conflicted (save blocked)")
+        self._save_button.setEnabled(False)
+        self._review_changes_button.setEnabled(True)
+        self._save_as_button.setEnabled(self._active_document is not None)
+        self._append_bottom(
+            "Edit conflict: "
+            f"{message}. Safe choices: Reload source, Save As to a new target, or Cancel and keep patches."
+        )
+
+    def export_active_to_path(self, target_path: Path, *, overwrite: bool = False) -> ExportReceipt | None:
+        """Export the active workspace payload to a reviewed target path."""
+
+        if self._active_document is None or self._active_resource is None:
+            self._append_bottom("Export skipped: no active resource.")
+            return None
+        if self._active_read_result is None:
+            self._append_bottom("Export skipped: no active payload loaded.")
+            return None
+        payload = self._active_read_result.payload
+        selection = payload.selection if isinstance(payload, ArrayPayload) else None
+        plan = build_export_plan(
+            source_fingerprint=self._active_document.snapshot().fingerprint,
+            resource_id=self._active_resource,
+            selection=selection,
+            target_path=target_path,
+            scope=ExportScope.CURRENT_SLICE if selection is not None else ExportScope.FULL_RESOURCE,
+            value_mode=ExportValueMode.RAW,
+            overwrite=overwrite,
+            parameters={
+                "ui_surface": "workspace",
+                "resource_path": self._active_resource.node_path,
+            },
+        )
+        self._append_bottom(f"Export task: running -> {target_path}")
+        receipt = ExportService().export_payload(
+            plan,
+            payload,
+            cancellation=CancellationToken(),
+        )
+        if receipt.outcome.value == "succeeded":
+            self._append_bottom(
+                f"Export succeeded: {receipt.target_path} ({receipt.bytes_written} bytes)."
+            )
+        else:
+            self._append_bottom(
+                f"Export {receipt.outcome.value}: {receipt.error_code}: {receipt.error_message}"
+            )
+        return receipt
+
+    def _refresh_edit_actions(self) -> None:
+        if self._active_document is None:
+            self._edit_state_label.setText("edit: clean (0 pending)")
+            self._readonly_hint_label.setText("No source loaded")
+            self._review_changes_button.setEnabled(False)
+            self._save_button.setEnabled(False)
+            self._save_as_button.setEnabled(False)
+            self._export_button.setEnabled(False)
+            return
+        snapshot = self._active_document.snapshot()
+        pending = snapshot.edit_patch_count
+        self._edit_state_label.setText(f"edit: {snapshot.edit_state.value} ({pending} pending)")
+        can_save = pending > 0 and snapshot.edit_state in {
+            EditSessionState.DIRTY,
+            EditSessionState.SAVE_FAILED,
+        }
+        self._review_changes_button.setEnabled(pending > 0)
+        self._save_button.setEnabled(can_save)
+        self._save_as_button.setEnabled(self._active_resource is not None)
+        self._export_button.setEnabled(self._active_read_result is not None)
+        if self._active_metadata is None:
+            self._readonly_hint_label.setText("Source opened. Select a resource to inspect or export.")
+        elif DataDomain(self._active_metadata.domain) is DataDomain.ARRAY:
+            self._readonly_hint_label.setText(
+                "read-only source view: edits are pending patches; use Save, Save As, or Export."
+            )
+        else:
+            self._readonly_hint_label.setText("Inspect-only resource: use Export or Save As where supported.")
+
+    def _format_save_review(self, review: SaveReview) -> str:
+        lines = [
+            "Save review",
+            f"target: {review.target_uri}",
+            f"strategy: {review.strategy.value}",
+            f"patches: {review.patch_count}",
+            f"estimated patch bytes: {review.estimated_size_bytes}",
+            "resources:",
+        ]
+        lines.extend(f"  - {resource.node_path}" for resource in review.resources)
+        lines.append("patch kinds:")
+        lines.extend(f"  - {kind}: {count}" for kind, count in review.changed_patch_kinds)
+        if review.warnings:
+            lines.append("warnings:")
+            lines.extend(f"  - {warning}" for warning in review.warnings)
+        return "\n".join(lines)
 
     def _run_with_cancel_token(
         self,
@@ -727,9 +944,10 @@ class DataViewerShell(QMainWindow):
         request_generation = document.request_generation
         source_uri = document.source_uri
         root_resource = ResourceId(source_uri, "/")
-        self._active_request_generation_by_resource[_node_key_for(root_resource)] = (
-            request_generation
-        )
+        root_key = _node_key_for(root_resource)
+        if root_key is None:
+            return
+        self._active_request_generation_by_resource[root_key] = request_generation
 
         def action(_: CancellationToken) -> ResourceId:
             _ = document.root(cancellation=CancellationToken())
@@ -923,14 +1141,15 @@ class DataViewerShell(QMainWindow):
         if document is None:
             return
         request_generation = document.request_generation
-        self._active_request_generation_by_resource[_node_key_for(parent_resource)] = (
-            request_generation
-        )
+        parent_key = _node_key_for(parent_resource)
+        if parent_key is None:
+            return
+        self._active_request_generation_by_resource[parent_key] = request_generation
         self._run_with_cancel_token(
             "children",
             document=document,
             request_generation=request_generation,
-            parent_key=_node_key_for(parent_resource),
+            parent_key=parent_key,
             action=lambda token: document.list_children(
                 parent_resource,
                 cursor=cursor,
@@ -1001,7 +1220,7 @@ class DataViewerShell(QMainWindow):
         if parent_item.childCount() == 0:
             no_child = self._new_placeholder_item("(empty)")
             no_child.setData(0, ROLE_LOAD_MORE, True)
-            no_child.setData(0, ROLE_NODE_KEY, _node_key_for(document.root().resource_id))
+            no_child.setData(0, ROLE_NODE_KEY, result.parent_key)
             no_child.setFlags(no_child.flags() & ~no_child.flags())
             parent_item.addChild(no_child)
         self._set_workspace_state("ready", "Structure loaded.")
@@ -1019,8 +1238,10 @@ class DataViewerShell(QMainWindow):
         if not isinstance(metadata, DataMetadata):
             return
         key = _node_key_for(metadata.resource_id)
+        if key is None:
+            return
         generation = self._active_generation_for(key)
-        if key is not None and generation != result.request_generation:
+        if generation != result.request_generation:
             return
 
         self._active_metadata = metadata
@@ -1034,6 +1255,7 @@ class DataViewerShell(QMainWindow):
         self._status_readonly.setText(
             "mode: read-only" if DataDomain(metadata.domain) in {DataDomain.ARRAY} else "mode: inspect"
         )
+        self._refresh_edit_actions()
         self._set_workspace_state("ready", f"Metadata ready: {metadata.name}")
 
         # auto-load if this is an array.
@@ -1047,8 +1269,10 @@ class DataViewerShell(QMainWindow):
         if document is None or result.resource is None:
             return
         key = _node_key_for(result.resource)
+        if key is None:
+            return
         generation = self._active_read_generation_for(key)
-        if key is not None and generation != result.request_generation:
+        if generation != result.request_generation:
             return
 
         if result.failed:
@@ -1060,6 +1284,7 @@ class DataViewerShell(QMainWindow):
         if not isinstance(read_result, ReadResult):
             self._set_workspace_state("error", "Unexpected read result payload.")
             return
+        self._active_read_result = read_result
         if result.selection is not None:
             self._set_status_scope(result.selection)
 
@@ -1071,6 +1296,7 @@ class DataViewerShell(QMainWindow):
                 "ready",
                 f"Workspace ready: {self._counted_rows(self._workspace_model)} rows, {self._counted_cols(self._workspace_model)} cols",
             )
+            self._refresh_edit_actions()
             return
         self._set_workspace_state("error", "Unsupported payload type.")
 
@@ -1265,10 +1491,14 @@ class DataViewerShell(QMainWindow):
 
     def _open_resource_in_workspace(self, resource_id: ResourceId, document: DocumentController) -> None:
         self._active_resource = resource_id
+        self._active_read_result = None
         document_snapshot = document.snapshot()
         if document_snapshot.active_resource_id != resource_id:
             request = document.navigate_to(resource_id)
-            self._active_read_generation_by_resource[_node_key_for(resource_id)] = request.request_generation
+            resource_key = _node_key_for(resource_id)
+            if resource_key is None:
+                return
+            self._active_read_generation_by_resource[resource_key] = request.request_generation
         self._set_workspace_state("loading", f"Loading resource: {resource_id.node_path}")
         try:
             metadata = document.get_metadata(resource_id, cancellation=CancellationToken())
@@ -1281,6 +1511,7 @@ class DataViewerShell(QMainWindow):
             self._status_readonly.setText(
                 "mode: read-only" if DataDomain(metadata.domain) in {DataDomain.ARRAY} else "mode: inspect"
             )
+            self._refresh_edit_actions()
             if metadata.domain == DataDomain.ARRAY:
                 self._schedule_read(document, resource_id, metadata, force_refresh_axes=True)
             else:
@@ -1333,9 +1564,12 @@ class DataViewerShell(QMainWindow):
         self._active_document = None
         self._active_document_token = None
         self._active_resource = None
+        self._active_metadata = None
+        self._active_read_result = None
         self._active_request_generation_by_resource.clear()
         self._active_read_generation_by_resource.clear()
         self._workspace_model.clear()
+        self._refresh_edit_actions()
         for document in list(self._open_documents):
             try:
                 document.close(timeout=0.2)

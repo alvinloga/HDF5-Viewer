@@ -222,7 +222,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: full/slice/selection/filtered/result/rendered scopes explicit; raw/display/scaled semantics; conversion warnings before write; receipt includes fingerprint/resource/selection/parameters/version/result.
 - Verify: scope coordinate golden tests, cancel/failure/overwrite tests, receipt schema/round trip.
 
-### [ ] DV-0306 Build edit review, save, conflict, and export UI
+### [x] DV-0306 Build edit review, save, conflict, and export UI
 
 - Depends: DV-0302 through DV-0305.
 - Read: UI/UX state/dialog rules.

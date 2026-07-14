@@ -18,6 +18,7 @@ from data_viewer.domain import (
     SourceCapability,
     SourceFingerprint,
 )
+from data_viewer.editing.patches import ChangeSet
 
 from .api import (
     DATASOURCE_API_VERSION,
@@ -351,6 +352,30 @@ class ManagedSourceSession:
             self._ensure_open("source.refresh_fingerprint")
             self._fingerprint = self._inner.refresh_fingerprint()
             return self._fingerprint
+
+    def apply_change_set(
+        self,
+        changeset: ChangeSet,
+        *,
+        cancellation: CancellationToken,
+    ) -> object:
+        """Apply a reviewed change set when the wrapped adapter supports persistence."""
+
+        with self._lock:
+            self._ensure_open("source.apply_change_set")
+            apply_change_set = getattr(self._inner, "apply_change_set", None)
+            if not callable(apply_change_set):
+                raise DataViewerError(
+                    code=ErrorCode.CAPABILITY_UNAVAILABLE,
+                    message="Source adapter does not support edit persistence.",
+                    operation="source.apply_change_set",
+                    details={"source_uri": self._source_uri},
+                )
+            result = apply_change_set(changeset, cancellation=cancellation)
+            source_fingerprint = getattr(result, "source_fingerprint", None)
+            if isinstance(source_fingerprint, SourceFingerprint):
+                self._fingerprint = source_fingerprint
+            return result
 
     def close(self) -> None:
         with self._lock:

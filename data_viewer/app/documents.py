@@ -222,6 +222,50 @@ class DocumentController:
             self._condition.notify_all()
             return self._snapshot_locked()
 
+    def save_edits(self, *, cancellation: CancellationToken) -> object:
+        """Persist the current edit changeset through the owned source session.
+
+        The controller owns the save lifecycle: it moves the edit session into
+        SAVING, holds an I/O lease while the source adapter writes, clears
+        patches only after the adapter reports a new source fingerprint, and
+        preserves patches on failure.
+        """
+
+        with self._condition:
+            self._ensure_open_locked("document.save_edits")
+            changeset = self._edit_session.history.changeset
+            self._edit_session = self._edit_session.begin_save()
+            self._condition.notify_all()
+        try:
+            with self.acquire_io_lease(cancellation=cancellation):
+                result = self._session.apply_change_set(
+                    changeset,
+                    cancellation=cancellation,
+                )
+            source_fingerprint = getattr(result, "source_fingerprint", None)
+            if not isinstance(source_fingerprint, SourceFingerprint):
+                raise DataViewerError(
+                    code=ErrorCode.SOURCE_MALFORMED,
+                    message="Persistence result did not include a source fingerprint.",
+                    operation="document.save_edits",
+                    details={"document_id": self._document_id},
+                )
+        except DataViewerError as error:
+            self.mark_edit_save_failed(error)
+            raise
+        except Exception as exc:
+            save_error = DataViewerError(
+                code=ErrorCode.WORKSPACE_IO_FAILED,
+                message="Edit persistence failed.",
+                operation="document.save_edits",
+                details={"document_id": self._document_id},
+                cause=exc,
+            )
+            self.mark_edit_save_failed(save_error)
+            raise save_error from exc
+        self.mark_edit_save_success(source_fingerprint)
+        return result
+
     def build_edit_save_review(
         self,
         *,

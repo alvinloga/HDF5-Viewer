@@ -31,6 +31,7 @@ from data_viewer.domain import (
 )
 from data_viewer.domain.errors import DataViewerError
 from data_viewer.domain import ErrorCode
+from data_viewer.editing.patches import CellPatch, fingerprint_value
 from data_viewer.sources import SourceRegistry
 from data_viewer.sources.hdf5 import HDF5Adapter
 from data_viewer.gui.shell import DataViewerShell
@@ -442,3 +443,161 @@ def test_enter_open_updates_workspace_and_active_status(qapp: QApplication, tmp_
     assert shell.findChild(QTableView, "workspace_region").model().rowCount() == 3
 
     shell.close()
+
+
+def _open_values_dataset(shell: DataViewerShell, fixture_path: Path) -> None:
+    handle = shell.open_file(fixture_path)
+    assert handle is not None
+    assert _pump_until(
+        lambda: shell.findChild(QTreeWidget, "navigation_region").topLevelItemCount() == 1,
+        cycles=240,
+    )
+    tree = shell.findChild(QTreeWidget, "navigation_region")
+    assert tree is not None
+    root = tree.topLevelItem(0)
+    assert root is not None
+    shell._on_navigation_item_expanded(root)
+    assert _pump_until(lambda: root.childCount() > 0, cycles=240)
+    dataset_node = _find_node_by_name(root, "values")
+    assert isinstance(dataset_node, shell_module.QTreeWidgetItem)
+    shell._on_navigation_item_activated(dataset_node, 0)
+    assert _pump_until(
+        lambda: shell.findChild(QTableView, "workspace_region").model().rowCount() > 0,
+        cycles=240,
+    )
+
+
+def test_edit_review_save_and_export_controls_are_textual_and_actionable(
+    qapp: QApplication,
+    tmp_path: Path,
+) -> None:
+    """Dirty/read-only save and export UI exposes non-color state and receipts."""
+
+    fixture_path = tmp_path / "edit_export.h5"
+    with h5py.File(fixture_path, "w") as handle:
+        handle.create_dataset("values", data=np.arange(6, dtype=np.int64).reshape(2, 3))
+
+    shell = DataViewerShell(source_registry=SourceRegistry([HDF5Adapter()]))
+    _open_values_dataset(shell, fixture_path)
+
+    edit_state = shell.findChild(QLabel, "edit_state_label")
+    readonly_hint = shell.findChild(QLabel, "readonly_hint_label")
+    save_button = shell.findChild(QPushButton, "save_button")
+    review_button = shell.findChild(QPushButton, "review_changes_button")
+    export_button = shell.findChild(QPushButton, "export_button")
+    assert edit_state is not None
+    assert readonly_hint is not None
+    assert save_button is not None
+    assert review_button is not None
+    assert export_button is not None
+    assert "read-only source view" in readonly_hint.text()
+    assert export_button.isEnabled()
+
+    assert shell._active_resource is not None
+    shell.record_edit_patch(
+        CellPatch(
+            resource_id=shell._active_resource,
+            coordinate=(0, 1),
+            old_value_fingerprint=fingerprint_value(1),
+            new_value=41,
+        )
+    )
+    assert "dirty" in edit_state.text()
+    assert "1 pending" in edit_state.text()
+    assert save_button.isEnabled()
+    assert review_button.isEnabled()
+
+    review_text = shell.review_active_edits()
+    assert "target:" in review_text
+    assert "/values" in review_text
+    assert "cell: 1" in review_text
+
+    assert shell.save_active_edits()
+    assert "clean" in edit_state.text()
+    assert not save_button.isEnabled()
+    with h5py.File(fixture_path, "r") as handle:
+        assert int(handle["values"][0, 1]) == 41
+
+    target_path = tmp_path / "values.npy"
+    receipt = shell.export_active_to_path(target_path)
+    assert target_path.exists()
+    assert receipt is not None
+    assert receipt.outcome.value == "succeeded"
+    bottom = shell.findChild(QPlainTextEdit, "bottom_region")
+    assert bottom is not None
+    assert "Export succeeded" in bottom.toPlainText()
+    shell.close()
+
+
+def test_conflict_state_disables_invalid_save_and_names_safe_choices(
+    qapp: QApplication,
+    tmp_path: Path,
+) -> None:
+    """Conflicted edits are not color-only and offer Reload/Save As/Cancel wording."""
+
+    fixture_path = tmp_path / "conflict.h5"
+    with h5py.File(fixture_path, "w") as handle:
+        handle.create_dataset("values", data=np.arange(4, dtype=np.int64).reshape(2, 2))
+
+    shell = DataViewerShell(source_registry=SourceRegistry([HDF5Adapter()]))
+    _open_values_dataset(shell, fixture_path)
+    assert shell._active_resource is not None
+    shell.record_edit_patch(
+        CellPatch(
+            resource_id=shell._active_resource,
+            coordinate=(0, 0),
+            old_value_fingerprint=fingerprint_value(0),
+            new_value=9,
+        )
+    )
+
+    shell.display_edit_conflict("file changed outside Data Viewer")
+    edit_state = shell.findChild(QLabel, "edit_state_label")
+    save_button = shell.findChild(QPushButton, "save_button")
+    bottom = shell.findChild(QPlainTextEdit, "bottom_region")
+    assert edit_state is not None
+    assert save_button is not None
+    assert bottom is not None
+    assert "conflicted" in edit_state.text()
+    assert not save_button.isEnabled()
+    assert "Reload" in bottom.toPlainText()
+    assert "Save As" in bottom.toPlainText()
+    assert "Cancel" in bottom.toPlainText()
+    shell.close()
+
+
+def test_dirty_close_flow_and_shell_screenshot_render(
+    qapp: QApplication,
+    tmp_path: Path,
+) -> None:
+    """Pending edits keep close deterministic and the shell renders offscreen."""
+
+    fixture_path = tmp_path / "close_screenshot.h5"
+    with h5py.File(fixture_path, "w") as handle:
+        handle.create_dataset("values", data=np.arange(4, dtype=np.int64).reshape(2, 2))
+
+    shell = DataViewerShell(source_registry=SourceRegistry([HDF5Adapter()]))
+    shell.resize(1280, 820)
+    shell.show()
+    _open_values_dataset(shell, fixture_path)
+    assert shell._active_resource is not None
+    shell.record_edit_patch(
+        CellPatch(
+            resource_id=shell._active_resource,
+            coordinate=(1, 1),
+            old_value_fingerprint=fingerprint_value(3),
+            new_value=33,
+        )
+    )
+
+    screenshot = shell.grab()
+    screenshot_path = tmp_path / "data-viewer-shell-dirty.png"
+    assert not screenshot.isNull()
+    assert screenshot.save(str(screenshot_path))
+    assert screenshot_path.stat().st_size > 0
+    assert shell.findChild(QPushButton, "save_button").isVisible()
+    assert shell.findChild(QPushButton, "export_button").isVisible()
+
+    shell.close()
+    _pump_until(lambda: len(shell._open_documents) == 0, cycles=120)
+    assert len(shell._open_documents) == 0
