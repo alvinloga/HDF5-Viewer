@@ -1096,3 +1096,38 @@ Known gaps:
 
 - This is a Checkpoint 4 uncompressed-format evidence gate, not a v1 release gate.
 - Outer gzip composition, UI redesign/workspace/compare, plugin infrastructure and catalog, packaged application installers, SBOM/license evidence, and public GitHub release artifacts remain later tasks.
+
+## DV-0501 compound format detection and gzip stream wrapper - 2026-07-15
+
+Revision: working tree based on `b150ad2` before committing `feat: add gzip stream wrapper`.
+
+Implementation evidence:
+
+- `data_viewer/sources/gzip` adds a composable generic gzip wrapper adapter for stream-capable inner formats.
+- The default target registry registers generic gzip for `.csv.gz`, `.tsv.gz`, `.txt.gz`, `.json.gz`, `.yaml.gz`, and `.yml.gz`.
+- `.nii.gz` remains native NIfTI and is not claimed by the generic gzip wrapper.
+- Probing validates gzip framing, reads a bounded decompressed prefix, and then delegates validation to the inner adapter using the virtual inner suffix.
+- Opening a stream-capable gzip source creates a lifecycle-bound decompressed stream session and maps all inner `ResourceId` values back to the original `.gz` source URI.
+- Generic gzip results are read-only in v1; read results carry a gzip wrapper warning.
+- Corrupt/truncated gzip and false-extension inputs return structured source errors.
+- Random-access gzip wrappers such as HDF5/NPY/NPZ/MAT/XLSX remain outside DV-0501 and are owned by DV-0502.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing gzip wrapper test | `venv\Scripts\python.exe -m pytest tests\test_gzip_adapter.py -q` | failed as expected before implementation: collection failed because `data_viewer.sources.gzip` did not exist |
+| Gzip focused tests | `venv\Scripts\python.exe -m pytest tests\test_gzip_adapter.py -q` | 5 passed |
+| Gzip related regression subset | `venv\Scripts\python.exe -m pytest tests\test_gzip_adapter.py tests\test_json_adapter.py tests\test_source_registry.py tests\test_gui_shell.py -q` | 33 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\sources\gzip data_viewer\sources\json\adapter.py data_viewer\sources\delimited\adapter.py data_viewer\gui\shell.py tests\test_gzip_adapter.py` | passed |
+| Gzip type check | `venv\Scripts\python.exe -m mypy data_viewer\sources\gzip` | passed |
+| Compile | `venv\Scripts\python.exe -m compileall -q data_viewer\sources\gzip data_viewer\sources\json data_viewer\sources\delimited data_viewer\gui\shell.py tests\test_gzip_adapter.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 369 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Target lint | `venv\Scripts\python.exe -m ruff check data_viewer tests\test_gzip_adapter.py tests\test_gui_shell.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 77 source files |
+| Full compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests` | passed |
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending after commit/push.
+- This is not Checkpoint 5 evidence. Random-access gzip extraction, full gzip matrix integration, UI read-only messaging, and checkpoint ledger remain DV-0502 through DV-0504.

@@ -337,7 +337,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 
 ## P5 — Gzip composition
 
-### [ ] DV-0501 Implement compound format detection and gzip stream wrapper
+### [x] DV-0501 Implement compound format detection and gzip stream wrapper
 
 - Depends: DV-0412.
 - Read: Format Support §5, ADR-007.

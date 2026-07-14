@@ -74,6 +74,7 @@ from data_viewer.sources import (
     SourceRegistry,
 )
 from data_viewer.sources.delimited import DelimitedTextAdapter
+from data_viewer.sources.gzip import GzipAdapter
 from data_viewer.sources.hdf5 import HDF5Adapter
 from data_viewer.sources.json import JSONAdapter
 from data_viewer.sources.mat import MATAdapter
@@ -100,18 +101,23 @@ ROLE_LOAD_MORE = Qt.ItemDataRole.UserRole + 5
 def create_source_registry() -> SourceRegistry:
     """Build a bootstrap registry for the current task profile."""
 
+    delimited = DelimitedTextAdapter()
+    text = TXTAdapter()
+    json = JSONAdapter()
+    yaml = YAMLAdapter()
     return SourceRegistry(
         [
             HDF5Adapter(),
             NPYAdapter(),
             NPZAdapter(),
-            DelimitedTextAdapter(),
-            TXTAdapter(),
-            JSONAdapter(),
-            YAMLAdapter(),
+            delimited,
+            text,
+            json,
+            yaml,
             MATAdapter(),
             XLSXAdapter(),
             NIFTIAdapter(),
+            GzipAdapter([delimited, text, json, yaml]),
         ]
     )
 

@@ -21,8 +21,6 @@ class DelimitedTextAdapter:
     def probe(self, path: Path, header: bytes) -> ProbeResult | None:
         """Accept only known extensions whose bounded header decodes strictly."""
 
-        if not path.exists() or not path.is_file():
-            return None
         suffix = path.suffix.lower()
         if suffix not in self.extensions:
             return None

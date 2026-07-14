@@ -30,6 +30,12 @@ class JSONAdapter:
         stripped = decoded.lstrip()
         if not stripped or stripped[0] not in '{["-0123456789tfn':
             return None
+        if stripped[0] == "t" and not "true".startswith(stripped[:4]):
+            return None
+        if stripped[0] == "f" and not "false".startswith(stripped[:5]):
+            return None
+        if stripped[0] == "n" and not "null".startswith(stripped[:4]):
+            return None
         return ProbeResult(
             adapter_id=self.adapter_id,
             confidence=75,
