@@ -407,7 +407,23 @@ Known gaps:
 
 - This workspace still reports three NumPy NaN/Inf warnings from `test_edge_cases.py::test_nan_inf_data` (intentionally preserved for coverage).
 - `save_config` merge utility currently serializes `AppConfig` as v1 without unknown-key passthrough in this pass.
-- `save_config` merge utility currently serializes `AppConfig` as v1 without unknown-key passthrough in this pass.
+
+## DV-0108 checkpoint 1 kernel evidence - 2026-07-14
+
+Revision: `5678bc9` (`test: refresh DV-0107 verification evidence with full local run`)
+
+| Check | Command | Observed result |
+|---|---|---|
+| Focused kernel/ownership slice | `.venv\\Scripts\\python.exe -m pytest tests/test_document_controller.py tests/test_source_registry.py tests/test_task_lifecycle.py tests/test_integration.py -q` | 24 passed |
+| Compile | `.venv\\Scripts\\python.exe -m compileall -q data_viewer tests` | passed |
+| Lint | `.venv\\Scripts\\ruff.exe check data_viewer tests/test_infrastructure_cache.py tests/test_infrastructure_config.py tests/test_infrastructure_logging.py tests/test_infrastructure_paths.py tests/test_document_controller.py tests/test_source_registry.py tests/test_task_lifecycle.py tests/test_integration.py` | passed |
+| Type check | `.venv\\Scripts\\mypy.exe data_viewer tests/test_infrastructure_cache.py tests/test_infrastructure_config.py tests/test_infrastructure_logging.py tests/test_infrastructure_paths.py tests/test_document_controller.py tests/test_source_registry.py tests/test_task_lifecycle.py tests/test_integration.py` | passed |
+| Full collection | `.venv\\Scripts\\python.exe -m pytest --collect-only -q` | 208 tests collected |
+| Full execution | `.venv\\Scripts\\python.exe -m pytest -q` | 207 passed, 1 skipped |
+
+Known gaps:
+
+- This checkpoint is based on local Windows `CPython 3.12` in `.venv`; Linux parity evidence is still pending in CI before release gating.
 
 ## Checkpoint record format
 

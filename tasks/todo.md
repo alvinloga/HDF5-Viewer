@@ -126,7 +126,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: platform-standard locations; versioned validated config; byte/entry/age cache limits and eviction; test override; logs redact configured sensitive paths/values; no repository config writes.
 - Verify: Windows/Linux CI path tests, corrupt config recovery, cache eviction/cleanup, redaction tests.
 
-### [ ] DV-0108 Record Checkpoint 1 kernel evidence
+### [x] DV-0108 Record Checkpoint 1 kernel evidence
 
 - Depends: DV-0101 through DV-0107.
 - Acceptance: fake vertical flow proves open/list/read/cancel/stale/close; imports obey layers; full existing suite remains green.
