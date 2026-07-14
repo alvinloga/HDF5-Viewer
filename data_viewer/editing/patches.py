@@ -136,7 +136,7 @@ class ChangeSet:
         )
 
 
-def fingerprint_value(value: ScalarValue | MappingRow | None) -> str:
+def fingerprint_value(value: Any) -> str:
     """Create a deterministic fingerprint for immutable patch values."""
 
     payload = _normalize_value_for_fingerprint(value)
@@ -147,7 +147,7 @@ def fingerprint_value(value: ScalarValue | MappingRow | None) -> str:
 
 
 def _normalize_value_for_fingerprint(
-    value: ScalarValue | MappingRow | None,
+    value: Any,
 ) -> Any:
     if isinstance(value, dict):
         return {"__dict__": {key: _normalize_value_for_fingerprint(value[key]) for key in sorted(value)}}

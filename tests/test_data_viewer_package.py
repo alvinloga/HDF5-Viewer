@@ -73,4 +73,4 @@ def test_cli_legacy_is_explicit() -> None:
         run_legacy=fake_legacy,
     )
     assert exit_code == 7
-    fake_legacy.assert_called_once_with("legacy.h5")
+    fake_legacy.assert_called_once_with(path="legacy.h5")

@@ -9,7 +9,7 @@ import numpy as np
 
 from data_viewer.domain import DataViewerError, ErrorCode
 
-from .patches import ScalarValue
+from .patches import PatchValue, ScalarValue
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,7 +26,7 @@ def validate_edit_value(
     *,
     dtype: str | np.dtype,
     policy: ValidationPolicy | None = None,
-) -> ScalarValue:
+) -> PatchValue:
     """Validate and normalize a user-provided value for a target dtype."""
 
     policy = ValidationPolicy() if policy is None else policy
@@ -350,7 +350,7 @@ def _validate_structured(
     target: np.dtype,
     *,
     policy: ValidationPolicy,
-) -> ScalarValue:
+) -> PatchValue:
     if not isinstance(raw_value, dict):
         raise DataViewerError(
             code=ErrorCode.EDIT_VALIDATION_FAILED,
@@ -359,7 +359,16 @@ def _validate_structured(
             details={"dtype": target.str, "raw_value_type": type(raw_value).__name__},
         )
 
-    expected_fields = tuple(sorted(field for field in target.fields.keys()))
+    fields = target.fields
+    if fields is None:
+        raise DataViewerError(
+            code=ErrorCode.EDIT_VALIDATION_FAILED,
+            message="Structured dtype metadata is missing field definitions.",
+            operation="validation._validate_structured",
+            details={"dtype": target.str},
+        )
+
+    expected_fields = tuple(sorted(field for field in fields.keys()))
     if tuple(sorted(raw_value.keys())) != expected_fields:
         raise DataViewerError(
             code=ErrorCode.EDIT_VALIDATION_FAILED,
@@ -373,12 +382,20 @@ def _validate_structured(
 
     normalized: dict[str, ScalarValue] = {}
     for field_name in expected_fields:
-        field_type = target.fields[field_name][0]
-        normalized[field_name] = validate_edit_value(
+        field_type = fields[field_name][0]
+        field_value = validate_edit_value(
             raw_value[field_name],
             dtype=field_type,
             policy=policy,
         )
+        if isinstance(field_value, dict):
+            raise DataViewerError(
+                code=ErrorCode.EDIT_VALIDATION_FAILED,
+                message="Nested structured edit values are not supported in v1.",
+                operation="validation._validate_structured",
+                details={"field_name": field_name, "dtype": str(field_type)},
+            )
+        normalized[field_name] = field_value
 
     return normalized
 

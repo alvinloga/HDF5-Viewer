@@ -9,6 +9,7 @@ import posixpath
 from pathlib import Path
 import shutil
 import tempfile
+from typing import cast
 
 import h5py
 import numpy as np
@@ -19,6 +20,7 @@ from data_viewer.domain import (
     DataMetadata,
     DataViewerError,
     ErrorCode,
+    JsonValue,
     NodeKind,
     NormalizedSelection,
     OperationScope,
@@ -36,6 +38,7 @@ from data_viewer.editing import (
 )
 from data_viewer.editing.review import SaveStrategy
 from data_viewer.persistence.transaction import AtomicReplacementService
+from data_viewer.tasks import CancellationToken as TaskCancellationToken
 from data_viewer.sources.api import NodePage, ProgressCallback, ReadRequest, ResourceNode
 
 type HDF5PersistenceFailureInjector = Callable[[str], None]
@@ -651,7 +654,7 @@ class HDF5SourceSession:
                 validate_payload=validate_payload,
                 expected_source_fingerprint=changeset.source_fingerprint,
                 estimated_output_bytes=estimated_output_bytes,
-                cancellation=cancellation,
+                cancellation=cast(TaskCancellationToken, cancellation),
             )
         finally:
             self._open_file("r")
@@ -820,6 +823,7 @@ def _validate_coordinate(
 def _verify_old_values(file: h5py.File, patches: tuple[EditPatch, ...]) -> None:
     for patch_index, patch in enumerate(patches):
         observed: str | None
+        expected: str | None
         if isinstance(patch, CellPatch):
             dataset = _require_direct_dataset(
                 file,
@@ -991,8 +995,14 @@ def _cast_cell_value(value: object, dtype: np.dtype) -> object:
                 message="Compound HDF5 patch fields do not match target dtype.",
                 operation="source.hdf5.cast_cell_value",
                 details={
-                    "expected_fields": list(field_names),
-                    "received_fields": sorted(str(key) for key in value),
+                    "expected_fields": cast(
+                        list[JsonValue],
+                        [str(field_name) for field_name in field_names],
+                    ),
+                    "received_fields": cast(
+                        list[JsonValue],
+                        sorted(str(key) for key in value),
+                    ),
                 },
             )
         return np.array(tuple(value[name] for name in field_names), dtype=target)[()]
@@ -1214,11 +1224,11 @@ def _read_dataset_values(
     return np.asarray(data)
 
 
-def _read_attributes(attributes: h5py.AttributeManager) -> dict[str, object]:
+def _read_attributes(attributes: h5py.AttributeManager) -> dict[str, JsonValue]:
     return {key: _serialize_attribute(value) for key, value in attributes.items()}
 
 
-def _read_dataset_layout(dataset: h5py.Dataset) -> dict[str, object]:
+def _read_dataset_layout(dataset: h5py.Dataset) -> dict[str, JsonValue]:
     return {
         "chunks": _serialize_shape(dataset.chunks),
         "compression": _serialize_attribute(dataset.compression),
@@ -1227,7 +1237,7 @@ def _read_dataset_layout(dataset: h5py.Dataset) -> dict[str, object]:
     }
 
 
-def _serialize_shape(shape: tuple[int, ...] | None) -> list[int] | None:
+def _serialize_shape(shape: tuple[int, ...] | None) -> list[JsonValue] | None:
     if shape is None:
         return None
     return [int(dim) for dim in shape]
@@ -1333,12 +1343,12 @@ def _join_h5_paths(*parts: str) -> str:
     return _normalize_h5_path(joined)
 
 
-def _serialize_attribute(value: object) -> object:
+def _serialize_attribute(value: object) -> JsonValue:
     if isinstance(value, np.ndarray):
         if value.ndim == 0:
             value = value.item()
         else:
-            return value.tolist()
+            return [_serialize_attribute(item) for item in value.tolist()]
 
     if isinstance(value, np.generic):
         try:
@@ -1375,9 +1385,9 @@ def _resource_not_found(
     resource_id: ResourceId,
     *,
     operation: str,
-    details: dict[str, object] | None = None,
+    details: dict[str, JsonValue] | None = None,
 ) -> DataViewerError:
-    payload = {"resource_id": resource_id.to_json()}
+    payload: dict[str, JsonValue] = {"resource_id": resource_id.to_json()}
     if details is not None:
         payload.update(details)
     return DataViewerError(

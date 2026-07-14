@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 import argparse
 import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import Protocol
 
 from . import __version__
 from .gui import run_data_viewer
 from .domain import DataViewerError, ErrorCode
+
+
+class DataViewerRunner(Protocol):
+    def __call__(self, *, path: str | None = None) -> int: ...
 
 
 def main() -> int:
@@ -25,8 +29,8 @@ def main() -> int:
 
 def main_with_handlers(
     *,
-    run_data_viewer: Callable[[str | None], int] = run_data_viewer,
-    run_legacy: Callable[[str | None], int] | None = None,
+    run_data_viewer: DataViewerRunner = run_data_viewer,
+    run_legacy: DataViewerRunner | None = None,
 ) -> int:
     """Run the CLI with injectable handlers for testability."""
     if run_legacy is None:
@@ -54,12 +58,12 @@ def main_with_handlers(
         return 0
 
     if args.legacy or os.getenv("DATA_VIEWER_LEGACY") == "1":
-        return run_legacy(args.path)
+        return run_legacy(path=args.path)
 
     return run_data_viewer(path=args.path)  # noqa: TRY300
 
 
-def _run_legacy_bootstrap(path: str | None) -> int:
+def _run_legacy_bootstrap(*, path: str | None = None) -> int:
     """Run the legacy bootstrap in a subprocess so process lifecycle is isolated."""
 
     command = [sys.executable, str(_legacy_entrypoint())]

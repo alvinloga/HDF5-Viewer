@@ -52,7 +52,9 @@ from data_viewer.domain import (
     OperationScope,
     ReadResult,
     ResourceId,
+    NormalizedSelection,
     SelectionSpec,
+    ErrorCode,
 )
 from data_viewer.domain.payload import TablePayload
 from data_viewer.editing.patches import EditPatch
@@ -174,7 +176,7 @@ class _ArrayTableModel(QAbstractTableModel):
                 for row in range(row_count)
             ]
             for row in range(row_count):
-                self._row_source_coords.append(payload.source_row(row))
+                self._row_source_coords.append((payload.source_row(row),))
             self._col_source_coords = [(idx,) for idx in range(len(columns))]
             self.endResetModel()
             return
@@ -817,7 +819,12 @@ class DataViewerShell(QMainWindow):
             self._append_bottom("Export skipped: no active payload loaded.")
             return None
         payload = self._active_read_result.payload
-        selection = payload.selection if isinstance(payload, ArrayPayload) else None
+        selection = (
+            payload.selection
+            if isinstance(payload, ArrayPayload)
+            and isinstance(payload.selection, NormalizedSelection)
+            else None
+        )
         plan = build_export_plan(
             source_fingerprint=self._active_document.snapshot().fingerprint,
             resource_id=self._active_resource,
@@ -915,7 +922,7 @@ class DataViewerShell(QMainWindow):
                 payload = error
             except Exception as error:  # pragma: no cover - defensive shell boundary
                 payload = DataViewerError(
-                    code=DataViewerError.__name__,
+                    code=ErrorCode.INTERNAL_ERROR,
                     message="Unexpected shell background error.",
                     operation=f"shell.{kind}",
                     cause=error,  # type: ignore[arg-type]
@@ -949,8 +956,8 @@ class DataViewerShell(QMainWindow):
             return
         self._active_request_generation_by_resource[root_key] = request_generation
 
-        def action(_: CancellationToken) -> ResourceId:
-            _ = document.root(cancellation=CancellationToken())
+        def action(token: CancellationToken) -> ResourceId:
+            document.root(cancellation=token)
             return root_resource
 
         self._run_with_cancel_token(

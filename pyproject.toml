@@ -60,3 +60,6 @@ version = { attr = "data_viewer._version.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["data_viewer*"]
+
+[tool.mypy]
+ignore_missing_imports = true
