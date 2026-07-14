@@ -37,6 +37,7 @@ All notable Data Viewer changes are recorded here.
 - Added the CSV/TSV verified writer (DV-0404): reviewed table cell patches now rewrite the full delimited file through the atomic replacement service, preserve confirmed encoding/dialect and line-ending/final-newline state, validate row/column counts and patched values before replacement, and reject stale source fingerprints.
 - Added the TXT text/table dual-mode adapter and writer (DV-0405): `.txt` opens as strict UTF-8/BOM text by default with bounded text previews and atomic `TextPatch` replacement, while explicitly configured table mode reuses confirmed delimited parsing/writing without silent whitespace inference.
 - Added the read-only JSON structured adapter (DV-0406): `.json` sources now parse strict UTF-8/BOM input, expose JSON Pointer resource paths, support scalar roots, detect duplicate object keys with warnings, enforce size/depth/collection/string budgets, and render structured previews in the target shell.
+- Added the read-only restricted YAML adapter (DV-0407): `.yaml` and `.yml` sources now parse strict UTF-8/BOM input with `yaml.safe_load`, reject unsafe/custom tags, expose JSON Pointer resource paths, surface alias/merge semantics and typed nonstring key metadata, enforce size/depth/collection/string/alias budgets, and render structured previews in the target shell.
 
 ### Fixed
 

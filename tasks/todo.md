@@ -287,7 +287,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: UTF-8/BOM, JSON Pointer paths, scalar root, duplicate-key warning, byte/depth/collection/string budgets; read-only capability.
 - Verify: conformance plus duplicate/deep/large/malformed/unicode fixtures.
 
-### [ ] DV-0407 Implement restricted YAML adapter
+### [x] DV-0407 Implement restricted YAML adapter
 
 - Depends: DV-0406.
 - Read: Format Support §4.10.

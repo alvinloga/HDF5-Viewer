@@ -891,3 +891,35 @@ Known gaps:
 
 - This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token.
 - This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0407 through DV-0411 finish.
+
+## DV-0407 restricted YAML adapter - 2026-07-15
+
+Revision: working tree based on `2abf707` before committing `feat: add yaml structured adapter`.
+
+Implementation evidence:
+
+- `data_viewer/sources/yaml` adds a read-only YAML/YML adapter and source session using `yaml.safe_load` only.
+- The adapter exposes structured resources through JSON Pointer paths, maps nonstring YAML keys to display-safe path tokens, and records original key type/display metadata.
+- Unsafe/custom tags, malformed YAML, recursive aliases, over-budget file size, nesting depth, collection length, scalar length, and alias counts fail with structured `DataViewerError` values.
+- Alias and merge-key counts are exposed in metadata so the resolved safe-load tree is not mistaken for original YAML spelling.
+- The target shell registry includes `YAMLAdapter`, and GUI smoke coverage proves YAML structured payloads render through the existing structured preview path.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Existing dependency sync | `venv\Scripts\python.exe -m pip install PyYAML==6.0.3` | passed; installed the version already present in `uv.lock` because the local `venv` lacked the declared dependency |
+| YAML focused tests | `venv\Scripts\python.exe -m pytest tests\test_yaml_adapter.py -q` | 5 passed |
+| YAML GUI smoke | `venv\Scripts\python.exe -m pytest tests\test_gui_shell.py::test_opening_yaml_file_updates_structured_workspace -q` | 1 passed |
+| Structured-source regression subset | `venv\Scripts\python.exe -m pytest tests\test_yaml_adapter.py tests\test_json_adapter.py tests\test_gui_shell.py::test_opening_json_file_updates_structured_workspace tests\test_gui_shell.py::test_opening_yaml_file_updates_structured_workspace -q` | 12 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\sources\yaml data_viewer\gui\shell.py tests\test_yaml_adapter.py tests\test_gui_shell.py` | passed |
+| YAML type check | `venv\Scripts\python.exe -m mypy data_viewer\sources\yaml` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 347 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Target lint | `venv\Scripts\python.exe -m ruff check data_viewer tests\test_yaml_adapter.py tests\test_gui_shell.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 65 source files |
+| Compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests` | passed |
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token even though SSH git push works.
+- This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0408 through DV-0411 finish.

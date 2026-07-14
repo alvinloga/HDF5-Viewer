@@ -206,6 +206,40 @@ def test_opening_json_file_updates_structured_workspace(
     shell.close()
 
 
+def test_opening_yaml_file_updates_structured_workspace(
+    qapp: QApplication,
+    tmp_path: Path,
+) -> None:
+    """Opening a YAML file renders a restricted structured payload preview."""
+
+    from data_viewer.sources.yaml import YAMLAdapter
+
+    fixture_path = tmp_path / "sample.yaml"
+    fixture_path.write_text("alpha: 1\nbeta:\n  - true\n", encoding="utf-8")
+
+    shell = DataViewerShell(source_registry=SourceRegistry([YAMLAdapter()]))
+    handle = shell.open_file(fixture_path)
+    assert handle is not None
+    _pump_events(cycles=120)
+
+    tree = shell.findChild(QTreeWidget, "navigation_region")
+    assert tree is not None
+    root_item = tree.topLevelItem(0)
+    assert root_item is not None
+    shell._on_navigation_item_clicked(root_item, 0)
+    _pump_events(cycles=120)
+
+    assert shell._active_metadata is not None
+    assert shell._active_metadata.domain is DataDomain.STRUCTURED
+    assert shell._workspace_model.rowCount() == 1
+    assert shell._workspace_model.columnCount() == 1
+    rendered = shell._workspace_model.data(shell._workspace_model.index(0, 0))
+    assert '"alpha": 1' in rendered
+    assert '"beta": [' in rendered
+    assert "structured preview" in shell.findChild(QLabel, "workspace_status").text()
+    shell.close()
+
+
 def test_open_can_be_cancelled_during_open(qapp: QApplication, tmp_path: Path) -> None:
     """Cancel Open interrupts an in-flight open and keeps shell state clean."""
 
