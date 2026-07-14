@@ -1194,7 +1194,16 @@ Local Windows verification in the repository `venv`:
 | Full compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests` | passed |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 377 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `5e83dca73b910a6dea61d20b3f6a5757905cc75c` |
+| GitHub Actions run | `gh run watch 29367905118 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29367905118 --json status,conclusion,headSha,jobs,url` | head SHA `5e83dca73b910a6dea61d20b3f6a5757905cc75c`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29367905118` |
+| Windows quality job | GitHub Actions run `29367905118` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 2m37s |
+| Ubuntu quality job | GitHub Actions run `29367905118` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m39s |
+
 Known gaps:
 
-- This is local Windows task evidence only; DV-0503 remains unchecked until the commit is pushed and the dual-platform GitHub Actions matrix succeeds.
-- This is not Checkpoint 5 evidence. Checkpoint 5 recording remains DV-0504 after DV-0503 has dual-platform evidence.
+- This is DV-0503 task evidence, not consolidated Checkpoint 5 evidence. Checkpoint 5 recording remains DV-0504.

@@ -352,7 +352,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: free-disk/size/ratio/budget preflight; progress/cancel; canonical fingerprint cache keys; incomplete cleanup; expired startup cleanup; extracted handles obey source lifetime.
 - Verify: random-access gzip fixtures, bomb-like limits, disk/cancel/crash-recovery simulation, cache invalidation.
 
-### [ ] DV-0503 Integrate every gzip format and read-only UX
+### [x] DV-0503 Integrate every gzip format and read-only UX
 
 - Depends: DV-0502.
 - Scope: adapter registry capability wrapping, Open/Save As UI messages, tests.
