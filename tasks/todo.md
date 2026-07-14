@@ -383,7 +383,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: one source for label/shortcut/enabled reason/action; correct active split/view/resource/selection/task/dirty targeting; disabled reason visible; Linux conflicts have documented alternate.
 - Verify: context matrix and rapid focus/split tests.
 
-### [ ] DV-0603 Rebuild navigation, tabs/splits, inspector, bottom panel, status bar
+### [x] DV-0603 Rebuild navigation, tabs/splits, inspector, bottom panel, status bar
 
 - Depends: DV-0205, DV-0602.
 - Scope: shell panels/models/layout persistence hooks and tests.

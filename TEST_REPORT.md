@@ -1356,7 +1356,16 @@ Local Windows verification in the repository `venv`:
 | Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 80 source files |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 388 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `5dcb3944f6fca0513323562e0362bfa856f674a9` |
+| GitHub Actions run | `gh run watch 29371379700 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29371379700 --json status,conclusion,headSha,jobs,url` | head SHA `5dcb3944f6fca0513323562e0362bfa856f674a9`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29371379700` |
+| Windows quality job | GitHub Actions run `29371379700` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m57s |
+| Ubuntu quality job | GitHub Actions run `29371379700` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m37s |
+
 Known gaps:
 
-- CI Windows/Ubuntu evidence is not recorded yet for this DV-0603 implementation commit.
-- Layout persistence hooks, screenshot matrix expansion, and richer split/tab behavior remain later DV-0603 follow-up or dependent P6 tasks.
+- Layout persistence hooks, screenshot matrix expansion, and richer split/tab behavior remain dependent P6/P9 tasks.
