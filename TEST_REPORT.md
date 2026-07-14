@@ -862,3 +862,32 @@ Known gaps:
 
 - This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token.
 - This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0406 through DV-0411 finish.
+
+## DV-0406 JSON structured adapter - 2026-07-15
+
+Revision: working tree on `codex/data-viewer-foundation` with task-local additions in `data_viewer/sources/json/`, JSON registration and structured-preview rendering in `data_viewer/gui/shell.py`, and tests in `tests/test_json_adapter.py` plus `tests/test_gui_shell.py`.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing JSON adapter test | `venv\Scripts\python.exe -m pytest tests\test_json_adapter.py -q` | failed as expected before implementation: collection failed because `data_viewer.sources.json` did not exist |
+| Focused JSON adapter suite | `venv\Scripts\python.exe -m pytest tests\test_json_adapter.py -q` | 5 passed |
+| JSON plus GUI smoke | `venv\Scripts\python.exe -m pytest tests\test_json_adapter.py tests\test_gui_shell.py::test_opening_json_file_updates_structured_workspace -q` | 6 passed |
+| JSON/registry/GUI regression subset | `venv\Scripts\python.exe -m pytest tests\test_json_adapter.py tests\test_source_registry.py tests\test_gui_shell.py -q` | 27 passed |
+| Lint gate | `venv\Scripts\ruff.exe check data_viewer\sources\json data_viewer\gui\shell.py tests\test_json_adapter.py tests\test_gui_shell.py` | passed |
+| Type check | `venv\Scripts\python.exe -m mypy data_viewer tests\test_json_adapter.py tests\test_gui_shell.py` | Success: no issues found in 64 source files |
+| Syntax check | `venv\Scripts\python.exe -m compileall data_viewer\sources\json data_viewer\gui\shell.py tests\test_json_adapter.py tests\test_gui_shell.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 341 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Notes:
+
+- Added `JSONAdapter` and `JSONSourceSession`; `.json` opens as read-only `STRUCTURED` data using strict UTF-8 or UTF-8-BOM only.
+- Stable resource paths use JSON Pointer escaping for object keys and array indices, including `/` as `~1` and `~` as `~0`.
+- Scalar JSON roots are valid structured resources, and object/array nodes expose direct children through paginated hierarchy listing.
+- Duplicate object keys are detected while parsing; Data Viewer uses Python/std-json last-value semantics and surfaces a warning instead of claiming duplicate keys were losslessly represented.
+- File-size, nesting-depth, collection-length, and string-length budgets raise structured `BUDGET_EXCEEDED` errors before payload use.
+- The target shell now registers `JSONAdapter` and renders `StructuredPayload` as a one-column structured JSON preview.
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token.
+- This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0407 through DV-0411 finish.

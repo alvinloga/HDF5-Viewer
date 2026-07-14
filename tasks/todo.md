@@ -279,7 +279,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: strict UTF-8/BOM initial behavior; bounded text preview; user-confirmed alternative encoding/table parse; line endings/final newline preserved in text mode; no lossy silent table inference.
 - Verify: encoding/line-ending/large text/table ambiguity/edit/reopen tests.
 
-### [ ] DV-0406 Implement JSON structured adapter
+### [x] DV-0406 Implement JSON structured adapter
 
 - Depends: DV-0108.
 - Read: Format Support §4.9.
