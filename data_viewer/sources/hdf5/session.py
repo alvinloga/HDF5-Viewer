@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import posixpath
 from pathlib import Path
 
 import h5py
@@ -152,26 +153,33 @@ class HDF5SourceSession:
                 name=child_name,
                 domain=DataDomain.METADATA,
                 node_kind=NodeKind.RESOURCE,
-                has_children=False,
                 capabilities=SourceCapability.NONE,
-                summary=f"external link -> {link.filename}:{link.path}",
+                attributes={
+                    "link_type": "external",
+                    "link_filename": link.filename or "",
+                    "link_path": link.path,
+                    "target_found": False,
+                },
             )
 
         if isinstance(link, h5py.SoftLink):
-            try:
-                parent_group[child_name]
-            except (KeyError, OSError):
-                summary = f"broken soft link -> {link.path}"
-            else:
-                summary = f"soft link -> {link.path}"
+            target_found = _soft_link_has_target(
+                parent_group.file,
+                parent_path=parent_group.name or "/",
+                link=link,
+                child_name=child_name,
+            )
             return DataMetadata(
                 resource_id=resource,
                 name=child_name,
                 domain=DataDomain.METADATA,
                 node_kind=NodeKind.RESOURCE,
-                has_children=False,
                 capabilities=SourceCapability.NONE,
-                summary=summary,
+                attributes={
+                    "link_type": "soft",
+                    "link_path": link.path,
+                    "target_found": target_found,
+                },
             )
 
         try:
@@ -188,13 +196,13 @@ class HDF5SourceSession:
                 name=child_name,
                 domain=DataDomain.HIERARCHICAL_ARRAY,
                 node_kind=NodeKind.CONTAINER,
-                has_children=bool(child.keys()),
-                summary=f"group ({len(child.keys())} direct children)",
                 capabilities=SourceCapability.HIERARCHY | SourceCapability.SEARCH,
                 attributes=_read_attributes(child.attrs),
             )
 
         if isinstance(child, h5py.Dataset):
+            attributes = dict(_read_attributes(child.attrs))
+            attributes["hdf5_layout"] = _read_dataset_layout(child)
             return DataMetadata(
                 resource_id=resource,
                 name=child_name,
@@ -205,7 +213,7 @@ class HDF5SourceSession:
                 logical_size_bytes=_safe_nbytes(child),
                 storage_size_bytes=_safe_dataset_storage_bytes(child),
                 capabilities=SourceCapability.RANDOM_SLICE | SourceCapability.SEARCH,
-                attributes=_read_attributes(child.attrs),
+                attributes=attributes,
             )
 
         return DataMetadata(
@@ -213,7 +221,6 @@ class HDF5SourceSession:
             name=child_name,
             domain=DataDomain.METADATA,
             node_kind=NodeKind.RESOURCE,
-            has_children=False,
             capabilities=SourceCapability.NONE,
             attributes={"kind": str(type(child).__name__)},
         )
@@ -488,9 +495,12 @@ def _link_to_node(
         )
 
     if isinstance(link, h5py.SoftLink):
-        try:
-            parent_object[child_name]
-        except (KeyError, OSError, TypeError):
+        if not _soft_link_has_target(
+            parent_object.file,
+            parent_path=parent_object.name or "/",
+            link=link,
+            child_name=child_name,
+        ):
             summary = f"broken soft link -> {link.path}"
         else:
             summary = f"soft link -> {link.path}"
@@ -525,13 +535,14 @@ def _link_to_node(
             summary=f"array shape={target.shape} dtype={target.dtype}",
         )
     if isinstance(target, h5py.Group):
+        child_count = len(tuple(target.keys()))
         return ResourceNode(
             resource_id=ResourceId(source_uri, child_path),
             name=child_name,
             node_kind=NodeKind.CONTAINER,
             domain=DataDomain.HIERARCHICAL_ARRAY,
-            has_children=bool(target.keys()),
-            summary=f"group ({len(target.keys())} direct children)",
+            has_children=child_count > 0,
+            summary=f"group ({child_count} direct children)",
         )
 
     return ResourceNode(
@@ -560,6 +571,121 @@ def _safe_dataset_storage_bytes(dataset: h5py.Dataset) -> int:
 
 def _read_attributes(attributes: h5py.AttributeManager) -> dict[str, object]:
     return {key: _serialize_attribute(value) for key, value in attributes.items()}
+
+
+def _read_dataset_layout(dataset: h5py.Dataset) -> dict[str, object]:
+    return {
+        "chunks": _serialize_shape(dataset.chunks),
+        "compression": _serialize_attribute(dataset.compression),
+        "compression_opts": _serialize_attribute(dataset.compression_opts),
+        "fill_value": _serialize_attribute(dataset.fillvalue),
+    }
+
+
+def _serialize_shape(shape: tuple[int, ...] | None) -> list[int] | None:
+    if shape is None:
+        return None
+    return [int(dim) for dim in shape]
+
+
+def _soft_link_has_target(
+    source_file: h5py.File,
+    *,
+    parent_path: str,
+    child_name: str,
+    link: h5py.SoftLink,
+) -> bool:
+    base_path = _parent_path(f"{parent_path.rstrip('/')}/{child_name}")
+    target_path = _join_h5_paths(base_path, link.path)
+    return _path_has_target(source_file, target_path)
+
+
+def _path_has_target(
+    source_file: h5py.File,
+    path: str,
+    *,
+    depth_remaining: int = 32,
+    seen: set[str] | None = None,
+) -> bool:
+    normalized = _normalize_h5_path(path)
+    if normalized == "/":
+        return True
+    if depth_remaining <= 0:
+        return False
+
+    if seen is None:
+        seen = set()
+
+    if not normalized.startswith("/"):
+        return False
+    segments = _split_h5_path(normalized)
+    current_group = source_file["/"]
+    current_path = "/"
+
+    for index, segment in enumerate(segments):
+        child_path = _join_h5_paths(current_path, segment)
+        if child_path in seen:
+            return False
+
+        try:
+            link = current_group.get(segment, getlink=True)
+        except (KeyError, OSError, TypeError):
+            return False
+        if link is None:
+            return False
+        if isinstance(link, h5py.ExternalLink):
+            return False
+
+        if isinstance(link, h5py.SoftLink):
+            next_seen = seen | {child_path}
+            resolved = _join_h5_paths(_parent_path(child_path), link.path)
+            if index + 1 < len(segments):
+                resolved = _join_h5_paths(resolved, "/".join(segments[index + 1 :]))
+            return _path_has_target(
+                source_file,
+                resolved,
+                depth_remaining=depth_remaining - 1,
+                seen=next_seen,
+            )
+
+        if index == len(segments) - 1:
+            return True
+
+        try:
+            next_object = current_group[segment]
+        except (KeyError, OSError, TypeError):
+            return False
+        if not isinstance(next_object, h5py.Group):
+            return False
+
+        current_group = next_object
+        current_path = child_path
+        seen = seen | {child_path}
+
+    return True
+
+
+def _normalize_h5_path(path: str) -> str:
+    normalized = posixpath.normpath(path.replace("\\", "/"))
+    if normalized == ".":
+        return "/"
+    if not normalized.startswith("/"):
+        normalized = f"/{normalized}"
+    return normalized
+
+
+def _split_h5_path(path: str) -> tuple[str, ...]:
+    normalized = _normalize_h5_path(path)
+    if normalized == "/":
+        return ()
+    return tuple(segment for segment in normalized.split("/") if segment not in {"", "."})
+
+
+def _join_h5_paths(*parts: str) -> str:
+    joined = "/".join(part.strip("/") for part in parts if part)
+    if not joined:
+        return "/"
+    return _normalize_h5_path(joined)
 
 
 def _serialize_attribute(value: object) -> object:

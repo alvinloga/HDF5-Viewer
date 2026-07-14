@@ -250,3 +250,195 @@ def test_hdf5_open_and_close_is_stable_under_repetition(tmp_path: Path) -> None:
         session.close()
         with pytest.raises(DataViewerError):
             session.root()
+
+
+def test_hdf5_hierarchy_listing_is_paginated_and_direct(tmp_path: Path) -> None:
+    path = tmp_path / "paged.h5"
+    with h5py.File(path, "w") as source:
+        source.create_dataset("array_a", data=[[1, 2], [3, 4]])
+        source.create_dataset("array_b", data=[[5, 6], [7, 8]])
+        group = source.create_group("group")
+        group.create_dataset("inner", data=[1, 2, 3])
+        group.create_dataset("inner_two", data=[4, 5, 6])
+
+    registry = SourceRegistry([HDF5Adapter()])
+    session = registry.open(path, cancellation=CancellationToken())
+    root = session.root()
+
+    first = session.list_children(
+        root.resource_id,
+        cursor=None,
+        page_size=2,
+        cancellation=CancellationToken(),
+    )
+    second = session.list_children(
+        root.resource_id,
+        cursor=first.next_cursor,
+        page_size=2,
+        cancellation=CancellationToken(),
+    )
+
+    assert len(first.items) == 2
+    assert first.next_cursor == "2"
+    assert len(second.items) == 1
+    assert second.next_cursor is None
+    assert {item.name for item in first.items + second.items} == {
+        "array_a",
+        "array_b",
+        "group",
+    }
+
+    direct_nodes = {item.name for item in session.list_children(
+        root.resource_id,
+        cursor=None,
+        page_size=10,
+        cancellation=CancellationToken(),
+    ).items}
+    assert direct_nodes == {"array_a", "array_b", "group"}
+    session.close()
+
+
+def test_hdf5_metadata_captures_dataset_layout_fields(tmp_path: Path) -> None:
+    import numpy as np
+
+    path = tmp_path / "layout.h5"
+    with h5py.File(path, "w") as source:
+        source.create_dataset(
+            "compressed",
+            data=np.arange(12, dtype=np.int16).reshape(3, 4),
+            chunks=(2, 2),
+            compression="gzip",
+            compression_opts=4,
+            fillvalue=-1,
+        )
+
+    registry = SourceRegistry([HDF5Adapter()])
+    session = registry.open(path, cancellation=CancellationToken())
+    root = session.root()
+    items = session.list_children(
+        root.resource_id,
+        cursor=None,
+        page_size=1,
+        cancellation=CancellationToken(),
+    ).items
+
+    metadata = session.get_metadata(
+        items[0].resource_id,
+        cancellation=CancellationToken(),
+    )
+    layout = metadata.attributes["hdf5_layout"]
+
+    assert metadata.domain is DataDomain.ARRAY
+    assert layout["chunks"] == [2, 2]
+    assert layout["compression"] == "gzip"
+    assert layout["compression_opts"] == 4
+    assert layout["fill_value"] == -1
+    assert metadata.shape == (3, 4)
+    session.close()
+
+
+def test_hdf5_soft_and_external_links_are_explicit_and_broken_links_are_marked(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "links.h5"
+    with h5py.File(path, "w") as source:
+        source.create_dataset("matrix", data=[[1, 2], [3, 4]])
+        source["soft_valid"] = h5py.SoftLink("/matrix")
+        source["soft_missing"] = h5py.SoftLink("/no_such_node")
+        source["external"] = h5py.ExternalLink("missing-target.h5", "/matrix")
+
+    registry = SourceRegistry([HDF5Adapter()])
+    session = registry.open(path, cancellation=CancellationToken())
+    root = session.root()
+    nodes = {item.name: item for item in session.list_children(
+        root.resource_id,
+        cursor=None,
+        page_size=20,
+        cancellation=CancellationToken(),
+    ).items}
+
+    assert nodes["soft_valid"].summary.startswith("soft link ->")
+    assert nodes["soft_missing"].summary.startswith("broken soft link ->")
+    assert nodes["external"].summary.startswith("external link ->")
+
+    valid_metadata = session.get_metadata(
+        nodes["soft_valid"].resource_id,
+        cancellation=CancellationToken(),
+    )
+    missing_metadata = session.get_metadata(
+        nodes["soft_missing"].resource_id,
+        cancellation=CancellationToken(),
+    )
+    external_metadata = session.get_metadata(
+        nodes["external"].resource_id,
+        cancellation=CancellationToken(),
+    )
+
+    assert valid_metadata.domain is DataDomain.METADATA
+    assert valid_metadata.attributes["link_type"] == "soft"
+    assert valid_metadata.attributes["target_found"] is True
+    assert missing_metadata.attributes["link_type"] == "soft"
+    assert missing_metadata.attributes["target_found"] is False
+    assert external_metadata.attributes["link_type"] == "external"
+    assert external_metadata.attributes["link_filename"] == "missing-target.h5"
+    assert external_metadata.attributes["link_path"] == "/matrix"
+    assert external_metadata.attributes["target_found"] is False
+    session.close()
+
+
+def test_hdf5_soft_link_cycle_is_detected_as_broken_link(tmp_path: Path) -> None:
+    path = tmp_path / "cycle.h5"
+    with h5py.File(path, "w") as source:
+        source["cycle"] = h5py.SoftLink("/cycle")
+
+    registry = SourceRegistry([HDF5Adapter()])
+    session = registry.open(path, cancellation=CancellationToken())
+    root = session.root()
+    cycle_resource = session.list_children(
+        root.resource_id,
+        cursor=None,
+        page_size=10,
+        cancellation=CancellationToken(),
+    ).items[0]
+    metadata = session.get_metadata(
+        cycle_resource.resource_id,
+        cancellation=CancellationToken(),
+    )
+
+    assert metadata.attributes["target_found"] is False
+    session.close()
+
+
+def test_hdf5_list_children_reads_only_direct_parent_children(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "direct.h5"
+    with h5py.File(path, "w") as source:
+        current = source
+        for depth in range(40):
+            current = current.create_group(f"lvl_{depth}")
+            current.create_dataset(f"leaf_{depth}", data=[depth])
+
+    original_keys = h5py._hl.group.Group.keys
+    calls = {"count": 0}
+
+    def counting_keys(self):
+        calls["count"] += 1
+        return original_keys(self)
+
+    monkeypatch.setattr("h5py._hl.group.Group.keys", counting_keys)
+
+    registry = SourceRegistry([HDF5Adapter()])
+    session = registry.open(path, cancellation=CancellationToken())
+    page_size = 5
+    root = session.root()
+    _ = session.list_children(
+        root.resource_id,
+        cursor=None,
+        page_size=page_size,
+        cancellation=CancellationToken(),
+    )
+
+    assert calls["count"] <= 1 + page_size * 3
+    session.close()

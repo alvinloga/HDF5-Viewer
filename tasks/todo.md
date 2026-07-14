@@ -144,7 +144,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: signature validation, least-permission mode, stable fingerprint, explicit close, safe error mapping; no recursive scan or payload read on open; external links not followed.
 - Verify: valid/wrong-extension/malformed/locked/missing/unicode path/open-close stress tests plus shared conformance probe/lifecycle.
 
-### [ ] DV-0202 Implement lazy hierarchy and metadata
+### [x] DV-0202 Implement lazy hierarchy and metadata
 
 - Depends: DV-0201.
 - Scope: HDF5 listing/metadata modules and tests.

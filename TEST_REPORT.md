@@ -425,6 +425,19 @@ Known gaps:
 
 - This checkpoint is based on local Windows `CPython 3.12` in `.venv`; Linux parity evidence is still pending in CI before release gating.
 
+## DV-0202 lazy HDF5 hierarchy and metadata - 2026-07-14
+
+Revision: working tree for `data_viewer/sources/hdf5/session.py` and `tests/test_hdf5_adapter.py` updates.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Focused HDF5 regression suite | `.venv\\Scripts\\python.exe -m pytest tests/test_hdf5_adapter.py -k "hdf5_"` | 13 passed |
+| Focused full HDF5 adapter suite | `.venv\\Scripts\\python.exe -m pytest tests/test_hdf5_adapter.py` | 13 passed |
+
+Known gaps:
+
+- Linux verification for this task is not yet run locally.
+
 ## Checkpoint record format
 
 For each checkpoint append:
