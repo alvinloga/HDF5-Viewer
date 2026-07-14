@@ -39,6 +39,7 @@ All notable Data Viewer changes are recorded here.
 - Added the read-only JSON structured adapter (DV-0406): `.json` sources now parse strict UTF-8/BOM input, expose JSON Pointer resource paths, support scalar roots, detect duplicate object keys with warnings, enforce size/depth/collection/string budgets, and render structured previews in the target shell.
 - Added the read-only restricted YAML adapter (DV-0407): `.yaml` and `.yml` sources now parse strict UTF-8/BOM input with `yaml.safe_load`, reject unsafe/custom tags, expose JSON Pointer resource paths, surface alias/merge semantics and typed nonstring key metadata, enforce size/depth/collection/string/alias budgets, and render structured previews in the target shell.
 - Added the read-only MATLAB MAT adapter (DV-0408): `.mat` sources now dispatch legacy MAT files through SciPy and HDF5-backed v7.3 files through h5py, expose a unified stable variable tree, hide internal metadata nodes by default, represent arrays/text/sparse/cell/struct/nested resources explicitly, bound traversal, and register in the target shell.
+- Added the read-only safe XLSX adapter (DV-0409): `.xlsx` workbooks now open with external links disabled, expose workbook/sheet/cell/table/defined-name/merged-range metadata, distinguish formulas from cached values without execution, preserve blank cells inside used ranges, support bounded worksheet page reads, reject encrypted/malformed inputs, and register in the target shell.
 
 ### Fixed
 

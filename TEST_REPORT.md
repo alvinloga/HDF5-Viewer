@@ -957,3 +957,38 @@ Known gaps:
 
 - This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token even though SSH git push works.
 - This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0409 through DV-0411 finish.
+
+## DV-0409 safe XLSX adapter - 2026-07-15
+
+Revision: working tree based on `268ed2b` before committing `feat: add xlsx source adapter`.
+
+Implementation evidence:
+
+- `data_viewer/sources/xlsx` adds a read-only XLSX adapter and source session using openpyxl.
+- The adapter registers `.xlsx` only; `.xlsm` is not claimed.
+- Workbooks open with `keep_links=False`; the root metadata records that external links are disabled and macros are unsupported.
+- Formula view and cached-value view are opened separately. Formula cells expose formula text plus cached-value availability without executing formulas.
+- The resource tree exposes `/sheets/<name>` table resources plus cell, table, merged-range, and defined-name inspection nodes.
+- Sheet reads are bounded page/full table reads with Excel-column identities and `None` values for blank cells inside the used range.
+- Encrypted/OLE-style workbooks fail with `SOURCE_ENCRYPTED`; malformed ZIP/workbook inputs fail with structured source errors.
+- XLSX is registered in the target shell registry but exposes no source editing or atomic rewrite capability.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Existing dependency sync | `venv\Scripts\python.exe -m pip install openpyxl==3.1.5` | passed; installed the version already present in `uv.lock` because the local `venv` lacked the declared dependency |
+| Initial failing XLSX adapter test | `venv\Scripts\python.exe -m pytest tests\test_xlsx_adapter.py -q` | failed as expected before implementation: collection failed because `data_viewer.sources.xlsx` did not exist |
+| XLSX focused tests | `venv\Scripts\python.exe -m pytest tests\test_xlsx_adapter.py -q` | 4 passed |
+| XLSX and registry regression subset | `venv\Scripts\python.exe -m pytest tests\test_xlsx_adapter.py tests\test_source_registry.py -q` | 10 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\sources\xlsx data_viewer\gui\shell.py tests\test_xlsx_adapter.py` | passed |
+| XLSX type check | `venv\Scripts\python.exe -m mypy data_viewer\sources\xlsx` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 355 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Target lint | `venv\Scripts\python.exe -m ruff check data_viewer tests\test_xlsx_adapter.py tests\test_gui_shell.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 72 source files |
+| Compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests` | passed |
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token even though SSH git push works.
+- This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0410 and DV-0411 finish.

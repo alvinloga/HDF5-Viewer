@@ -80,6 +80,7 @@ from data_viewer.sources.mat import MATAdapter
 from data_viewer.sources.numpy import NPYAdapter
 from data_viewer.sources.npz import NPZAdapter
 from data_viewer.sources.text import TXTAdapter
+from data_viewer.sources.xlsx import XLSXAdapter
 from data_viewer.sources.yaml import YAMLAdapter
 
 from .commands import OpenCommandHandle, OpenCommandResult, OpenFileCommand
@@ -108,6 +109,7 @@ def create_source_registry() -> SourceRegistry:
             JSONAdapter(),
             YAMLAdapter(),
             MATAdapter(),
+            XLSXAdapter(),
         ]
     )
 

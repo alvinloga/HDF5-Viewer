@@ -303,7 +303,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: content/version detection; unified stable variable tree; explicit cells/structs/chars/sparse/complex/logical/nested handling; reference cycle/budget control; internal metadata hidden-by-default; read-only.
 - Verify: conformance and representative generated/version fixtures including unsupported value states.
 
-### [ ] DV-0409 Implement safe XLSX adapter
+### [x] DV-0409 Implement safe XLSX adapter
 
 - Depends: DV-0108.
 - Read: Format Support §4.8.
