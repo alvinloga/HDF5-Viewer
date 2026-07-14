@@ -19,6 +19,8 @@ from PyQt6.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QTableView,
+    QTabWidget,
+    QToolBar,
     QTreeWidget,
 )
 
@@ -71,6 +73,76 @@ def test_shell_layout_components(qapp: QApplication) -> None:
     assert isinstance(shell.findChild(QTableView, "workspace_region"), QTableView)
     assert shell.findChild(QPlainTextEdit, "inspector_region") is not None
     assert shell.findChild(QPlainTextEdit, "bottom_region") is not None
+    shell.close()
+
+
+def test_shell_workbench_structure_matches_ui_contract(qapp: QApplication) -> None:
+    """DV-0603 exposes one navigable workbench shell with tabs and status fields."""
+
+    shell = DataViewerShell(source_registry=SourceRegistry([HDF5Adapter()]))
+    shell.resize(1024, 768)
+    shell.show()
+
+    navigation_trees = shell.findChildren(QTreeWidget, "navigation_region")
+    assert len(navigation_trees) == 1
+
+    command_bar = shell.findChild(QToolBar, "command_bar")
+    assert command_bar is not None
+    action_names = {action.objectName() for action in command_bar.actions()}
+    assert {
+        "command_open_file",
+        "command_open_workspace",
+        "command_save_document",
+        "command_save_as",
+        "command_export",
+        "command_command_palette",
+        "command_toggle_bottom_panel",
+    }.issubset(action_names)
+    save_action = next(
+        action for action in command_bar.actions() if action.objectName() == "command_save_document"
+    )
+    assert save_action.shortcut().toString() == "Ctrl+S"
+    assert not save_action.isEnabled()
+    assert "No unsaved changes." in save_action.toolTip()
+
+    workspace_tabs = shell.findChild(QTabWidget, "workspace_tabs")
+    assert workspace_tabs is not None
+    assert workspace_tabs.tabText(0) == "Data"
+
+    inspector_tabs = shell.findChild(QTabWidget, "inspector_tabs")
+    assert inspector_tabs is not None
+    assert [inspector_tabs.tabText(index) for index in range(inspector_tabs.count())] == [
+        "Overview",
+        "Attributes",
+        "Statistics",
+        "Plugins",
+    ]
+
+    bottom_tabs = shell.findChild(QTabWidget, "bottom_panel")
+    assert bottom_tabs is not None
+    assert [bottom_tabs.tabText(index) for index in range(bottom_tabs.count())] == [
+        "Tasks",
+        "Output",
+        "Problems",
+    ]
+    assert shell.findChild(QPlainTextEdit, "tasks_panel") is not None
+    assert shell.findChild(QPlainTextEdit, "bottom_region") is not None
+    assert shell.findChild(QPlainTextEdit, "problems_panel") is not None
+
+    for name in [
+        "status_source",
+        "status_mode",
+        "status_shape",
+        "status_dtype",
+        "status_scope",
+        "status_task",
+        "status_coordinates",
+        "active_split_label",
+    ]:
+        assert shell.findChild(QLabel, name) is not None
+
+    assert shell.minimumWidth() <= 1024
+    assert shell.minimumHeight() <= 768
     shell.close()
 
 

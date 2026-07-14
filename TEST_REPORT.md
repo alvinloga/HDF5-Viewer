@@ -1329,3 +1329,34 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - The command registry is not yet fully bound into the rebuilt shell command bar; broader shell panel/layout work remains DV-0603.
+
+## DV-0603 shell workbench structure - 2026-07-15
+
+Revision: working tree based on `18b72e2` before committing the DV-0603 implementation.
+
+Implementation evidence:
+
+- `data_viewer/gui/shell.py` binds the DV-0602 command registry into a native Qt command bar with stable action object names, shortcuts, disabled reasons, and shell callbacks.
+- The shell keeps one authoritative `navigation_region` structure tree while adding `workspace_tabs`, an explicit `active_split_label`, and an `ActiveContext` snapshot owned outside widget internals.
+- The inspector is now organized as Overview, Attributes, Statistics, and Plugins tabs while preserving the existing `inspector_region` overview object name.
+- The bottom workbench panel is now a Tasks/Output/Problems tab set, preserving the existing `bottom_region` output log and adding task/problem surfaces.
+- The status bar exposes source, legacy path, mode, shape, dtype, scope, task, coordinates, read-only, and edit labels as named automation/test surfaces.
+- The shell minimum size is reduced to a 1024×720 guard so the 1024×768 acceptance target can be exercised without fixed-width assumptions.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing shell contract test | `venv\Scripts\python.exe -m pytest tests\test_gui_shell.py::test_shell_workbench_structure_matches_ui_contract -q` | failed as expected before implementation: `assert None is not None` for missing `command_bar` |
+| Focused shell contract test | `venv\Scripts\python.exe -m pytest tests\test_gui_shell.py::test_shell_workbench_structure_matches_ui_contract -q` | 1 passed |
+| Shell regression suite | `venv\Scripts\python.exe -m pytest tests\test_gui_shell.py -q` | 18 passed |
+| UI/command/theme regression subset | `venv\Scripts\python.exe -m pytest tests\test_gui_shell.py tests\test_command_registry.py tests\test_gui_theme.py -q` | 28 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\gui data_viewer\app tests\test_gui_shell.py tests\test_command_registry.py tests\test_gui_theme.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\gui data_viewer\app tests\test_gui_shell.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 80 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 388 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- CI Windows/Ubuntu evidence is not recorded yet for this DV-0603 implementation commit.
+- Layout persistence hooks, screenshot matrix expansion, and richer split/tab behavior remain later DV-0603 follow-up or dependent P6 tasks.

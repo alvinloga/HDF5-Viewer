@@ -18,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 from PyQt6.QtCore import QAbstractTableModel, QModelIndex, Qt, QTimer
-from PyQt6.QtGui import QCloseEvent
+from PyQt6.QtGui import QAction, QCloseEvent
 from PyQt6.QtWidgets import (
     QApplication,
     QAbstractItemView,
@@ -36,12 +36,16 @@ from PyQt6.QtWidgets import (
     QSpinBox,
     QStatusBar,
     QTableView,
+    QTabWidget,
+    QToolBar,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+from data_viewer.app.active_context import ActiveContext, ActiveContextSnapshot
+from data_viewer.app.commands import CommandId, CommandRegistry, default_command_registry
 from data_viewer.app.documents import DocumentController
 from data_viewer.domain import (
     ArrayPayload,
@@ -346,12 +350,20 @@ def _node_path_to_key(source_uri: str, node_path: str) -> TreeNodeKey:
 class DataViewerShell(QMainWindow):
     """Structured workspace shell with structure table, metadata, and async tasks."""
 
-    def __init__(self, *, source_registry: SourceRegistry | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        source_registry: SourceRegistry | None = None,
+        command_registry: CommandRegistry | None = None,
+    ) -> None:
         super().__init__()
         self.setWindowTitle("Data Viewer")
-        self.setMinimumSize(1150, 740)
+        self.setMinimumSize(1024, 720)
 
         self._registry = source_registry or create_source_registry()
+        self._active_context = ActiveContext()
+        self._command_registry = command_registry or default_command_registry()
+        self._command_actions: dict[CommandId, QAction] = {}
         self._open_results: Queue[OpenCommandResult] = Queue()
         self._work_results: Queue[_WorkItemResult] = Queue()
         self._open_documents: list[DocumentController] = []
@@ -382,6 +394,7 @@ class DataViewerShell(QMainWindow):
 
         self._build_controls()
         self._build_layout()
+        self._refresh_command_actions()
 
         self._open_drain_timer = QTimer(self)
         self._open_drain_timer.setInterval(16)
@@ -435,6 +448,7 @@ class DataViewerShell(QMainWindow):
 
         self._navigation = QTreeWidget(self)
         self._navigation.setObjectName("navigation_region")
+        self._navigation.setAccessibleName("Files and structure")
         self._navigation.setHeaderLabel("Structure")
         self._navigation.itemExpanded.connect(self._on_navigation_item_expanded)
         self._navigation.itemClicked.connect(self._on_navigation_item_clicked)
@@ -447,11 +461,37 @@ class DataViewerShell(QMainWindow):
 
         self._inspector = QPlainTextEdit(self)
         self._inspector.setObjectName("inspector_region")
+        self._inspector.setAccessibleName("Inspector overview")
         self._inspector.setReadOnly(True)
         self._inspector.setPlaceholderText("Select a node to inspect metadata.")
 
+        self._inspector_attributes = QPlainTextEdit(self)
+        self._inspector_attributes.setObjectName("inspector_attributes")
+        self._inspector_attributes.setAccessibleName("Inspector attributes")
+        self._inspector_attributes.setReadOnly(True)
+        self._inspector_attributes.setPlaceholderText("Attributes for the selected resource appear here.")
+
+        self._inspector_statistics = QPlainTextEdit(self)
+        self._inspector_statistics.setObjectName("inspector_statistics")
+        self._inspector_statistics.setAccessibleName("Inspector statistics")
+        self._inspector_statistics.setReadOnly(True)
+        self._inspector_statistics.setPlaceholderText(
+            "Statistics from built-in plugins will appear here."
+        )
+
+        self._inspector_plugins = QPlainTextEdit(self)
+        self._inspector_plugins.setObjectName("inspector_plugins")
+        self._inspector_plugins.setAccessibleName("Inspector plugin provenance")
+        self._inspector_plugins.setReadOnly(True)
+        self._inspector_plugins.setPlaceholderText(
+            "Compatible plugins and result provenance appear here."
+        )
+
         self._workspace_status = QLabel("Workspace: not ready", self)
         self._workspace_status.setObjectName("workspace_status")
+        self._active_split_label = QLabel("split: main / view: data", self)
+        self._active_split_label.setObjectName("active_split_label")
+        self._active_split_label.setAccessibleName("Active split and view")
         self._axis_area = QWidget(self)
         self._axis_area.setObjectName("axis_controls_container")
         self._axis_area_layout = QVBoxLayout(self._axis_area)
@@ -533,14 +573,29 @@ class DataViewerShell(QMainWindow):
 
         self._bottom = QPlainTextEdit(self)
         self._bottom.setObjectName("bottom_region")
+        self._bottom.setAccessibleName("Output log")
         self._bottom.setReadOnly(True)
         self._bottom.setPlaceholderText("Task and diagnostics appear here.")
+
+        self._tasks_panel = QPlainTextEdit(self)
+        self._tasks_panel.setObjectName("tasks_panel")
+        self._tasks_panel.setAccessibleName("Task activity")
+        self._tasks_panel.setReadOnly(True)
+        self._tasks_panel.setPlainText("No active tasks.")
+
+        self._problems_panel = QPlainTextEdit(self)
+        self._problems_panel.setObjectName("problems_panel")
+        self._problems_panel.setAccessibleName("Problems")
+        self._problems_panel.setReadOnly(True)
+        self._problems_panel.setPlainText("No problems reported.")
 
         self._status_bar = QStatusBar(self)
         self._status_bar.setObjectName("status_bar")
         self.setStatusBar(self._status_bar)
         self._status_label = QLabel("Ready", self)
         self._status_label.setObjectName("status_label")
+        self._status_source = QLabel("source: -", self)
+        self._status_source.setObjectName("status_source")
         self._status_path = QLabel("Path: -", self)
         self._status_path.setObjectName("status_path")
         self._status_shape = QLabel("shape: -", self)
@@ -549,21 +604,36 @@ class DataViewerShell(QMainWindow):
         self._status_dtype.setObjectName("status_dtype")
         self._status_scope = QLabel("slice: -", self)
         self._status_scope.setObjectName("status_scope")
+        self._status_mode = QLabel("mode: -", self)
+        self._status_mode.setObjectName("status_mode")
         self._status_readonly = QLabel("mode: -", self)
         self._status_readonly.setObjectName("status_readonly")
+        self._status_task = QLabel("task: idle", self)
+        self._status_task.setObjectName("status_task")
+        self._status_coordinates = QLabel("coordinates: -", self)
+        self._status_coordinates.setObjectName("status_coordinates")
         self._status_bar.addWidget(self._status_label)
+        self._status_bar.addPermanentWidget(self._status_source)
         self._status_bar.addPermanentWidget(self._status_path)
         self._status_bar.addPermanentWidget(self._status_shape)
         self._status_bar.addPermanentWidget(self._status_dtype)
         self._status_bar.addPermanentWidget(self._status_scope)
+        self._status_bar.addPermanentWidget(self._status_mode)
         self._status_bar.addPermanentWidget(self._status_readonly)
+        self._status_bar.addPermanentWidget(self._status_task)
+        self._status_bar.addPermanentWidget(self._status_coordinates)
         self._status_bar.addPermanentWidget(self._edit_state_label)
         self._append_bottom("Ready")
         self._set_workspace_state("initial", "No source opened yet.")
         self._refresh_edit_actions()
+        self._refresh_command_actions()
 
     def _build_layout(self) -> None:
+        self._command_bar = self._build_command_bar()
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self._command_bar)
+
         command_row = QWidget(self)
+        command_row.setObjectName("command_context_row")
         command_layout = QHBoxLayout(command_row)
         command_layout.setContentsMargins(8, 8, 8, 8)
         command_layout.setSpacing(8)
@@ -580,31 +650,42 @@ class DataViewerShell(QMainWindow):
         workspace_layout = QVBoxLayout(workspace_container)
         workspace_layout.setContentsMargins(0, 0, 0, 0)
         workspace_layout.setSpacing(8)
+        workspace_layout.addWidget(self._active_split_label)
         workspace_layout.addWidget(self._workspace_status)
         workspace_layout.addWidget(self._readonly_hint_label)
         workspace_layout.addWidget(self._axis_area)
         workspace_layout.addWidget(self._workspace_view, 1)
 
+        self._workspace_tabs = QTabWidget(self)
+        self._workspace_tabs.setObjectName("workspace_tabs")
+        self._workspace_tabs.setAccessibleName("Workspace tabs and split group")
+        self._workspace_tabs.addTab(workspace_container, "Data")
+
         top_splitter = QSplitter(Qt.Orientation.Horizontal, self)
         top_splitter.setObjectName("main_splitter")
-        top_splitter.setChildrenCollapsible(False)
+        top_splitter.setChildrenCollapsible(True)
         top_splitter.addWidget(self._build_panel("Navigation", self._navigation))
-        top_splitter.addWidget(self._build_panel("Workspace", workspace_container))
-        top_splitter.addWidget(self._build_panel("Inspector", self._inspector))
+        top_splitter.addWidget(self._build_panel("Workspace", self._workspace_tabs))
+        top_splitter.addWidget(self._build_panel("Inspector", self._build_inspector_tabs()))
         top_splitter.setStretchFactor(0, 2)
         top_splitter.setStretchFactor(1, 4)
         top_splitter.setStretchFactor(2, 2)
+        top_splitter.setCollapsible(0, True)
+        top_splitter.setCollapsible(1, False)
+        top_splitter.setCollapsible(2, True)
 
-        bottom_panel = self._build_panel("Bottom", self._bottom)
-        bottom_panel.setObjectName("bottom_panel")
+        bottom_panel = self._build_bottom_tabs()
         bottom_panel.setMinimumHeight(220)
 
         main_splitter = QSplitter(Qt.Orientation.Vertical, self)
-        main_splitter.setChildrenCollapsible(False)
+        main_splitter.setObjectName("workbench_splitter")
+        main_splitter.setChildrenCollapsible(True)
         main_splitter.addWidget(top_splitter)
         main_splitter.addWidget(bottom_panel)
         main_splitter.setStretchFactor(0, 3)
         main_splitter.setStretchFactor(1, 1)
+        main_splitter.setCollapsible(0, False)
+        main_splitter.setCollapsible(1, True)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(8, 8, 8, 8)
@@ -618,9 +699,55 @@ class DataViewerShell(QMainWindow):
 
         self._navigation.setMinimumWidth(280)
         self._workspace_view.setMinimumWidth(320)
-        self._inspector.setMinimumWidth(320)
+        self._inspector.setMinimumWidth(240)
         self._workspace_status.setMinimumHeight(24)
         self._workspace_view.setMinimumHeight(220)
+
+    def _build_command_bar(self) -> QToolBar:
+        toolbar = QToolBar("Command bar", self)
+        toolbar.setObjectName("command_bar")
+        toolbar.setAccessibleName("Command bar")
+        toolbar.setMovable(False)
+        for command_id in (
+            CommandId.OPEN_FILE,
+            CommandId.OPEN_WORKSPACE,
+            CommandId.SAVE_DOCUMENT,
+            CommandId.SAVE_AS,
+            CommandId.EXPORT,
+            CommandId.COMMAND_PALETTE,
+            CommandId.FIND_CURRENT,
+            CommandId.GLOBAL_SEARCH,
+            CommandId.SPLIT_VIEW,
+            CommandId.TOGGLE_BOTTOM_PANEL,
+        ):
+            definition = self._command_registry.get(command_id)
+            action = QAction(definition.label, self)
+            action.setObjectName(f"command_{command_id.value}")
+            action.setShortcut(definition.shortcut)
+            action.setToolTip(f"{definition.label} ({definition.shortcut})")
+            action.triggered.connect(lambda _checked=False, cid=command_id: self._trigger_command(cid))
+            toolbar.addAction(action)
+            self._command_actions[command_id] = action
+        return toolbar
+
+    def _build_inspector_tabs(self) -> QTabWidget:
+        tabs = QTabWidget(self)
+        tabs.setObjectName("inspector_tabs")
+        tabs.setAccessibleName("Inspector tabs")
+        tabs.addTab(self._inspector, "Overview")
+        tabs.addTab(self._inspector_attributes, "Attributes")
+        tabs.addTab(self._inspector_statistics, "Statistics")
+        tabs.addTab(self._inspector_plugins, "Plugins")
+        return tabs
+
+    def _build_bottom_tabs(self) -> QTabWidget:
+        tabs = QTabWidget(self)
+        tabs.setObjectName("bottom_panel")
+        tabs.setAccessibleName("Tasks, output, and problems")
+        tabs.addTab(self._tasks_panel, "Tasks")
+        tabs.addTab(self._bottom, "Output")
+        tabs.addTab(self._problems_panel, "Problems")
+        return tabs
 
     def _build_panel(self, title: str, widget: QWidget) -> QGroupBox:
         panel = QGroupBox(title, self)
@@ -629,6 +756,11 @@ class DataViewerShell(QMainWindow):
         panel_layout.setSpacing(8)
         panel_layout.addWidget(widget)
         return panel
+
+    def active_context_snapshot(self) -> ActiveContextSnapshot:
+        """Return the current non-widget active context for command/view tests."""
+
+        return self._active_context.snapshot()
 
     # ----------------------------- public operations -----------------------------
     def open_file(
@@ -676,6 +808,36 @@ class DataViewerShell(QMainWindow):
         else:
             self._append_bottom("No active open request to cancel.")
         self._refresh_open_cancel_state()
+
+    def _trigger_command(self, command_id: CommandId) -> None:
+        if command_id is CommandId.OPEN_FILE:
+            self._handle_open_triggered()
+        elif command_id is CommandId.SAVE_DOCUMENT:
+            self.save_active_edits()
+        elif command_id is CommandId.SAVE_AS:
+            self._append_bottom("Save As requires a target path in this shell build.")
+        elif command_id is CommandId.EXPORT:
+            self._append_bottom("Export requires a target path. Use export_active_to_path(path).")
+        elif command_id is CommandId.TOGGLE_BOTTOM_PANEL:
+            self._toggle_bottom_panel()
+        elif command_id in {
+            CommandId.OPEN_WORKSPACE,
+            CommandId.COMMAND_PALETTE,
+            CommandId.FIND_CURRENT,
+            CommandId.GLOBAL_SEARCH,
+            CommandId.SPLIT_VIEW,
+        }:
+            self._append_bottom(f"{self._command_registry.get(command_id).label} is not wired yet.")
+
+    def _toggle_bottom_panel(self) -> None:
+        bottom_panel = self.findChild(QTabWidget, "bottom_panel")
+        if bottom_panel is None:
+            return
+        visible = not bottom_panel.isVisible()
+        bottom_panel.setVisible(visible)
+        self._active_context.set_bottom_panel_visible(visible)
+        self._append_bottom("Bottom panel shown." if visible else "Bottom panel hidden.")
+        self._refresh_command_actions()
 
     # ----------------------------- async pumpers -----------------------------
     def _drain_open_results(self) -> None:
@@ -735,6 +897,10 @@ class DataViewerShell(QMainWindow):
     # ----------------------------- open handling -----------------------------
     def _on_open_started(self) -> None:
         self._status_label.setText("Opening source")
+        self._status_task.setText("task: opening")
+        self._tasks_panel.setPlainText("Opening source...")
+        self._active_context.set_task_state(has_active_task=True)
+        self._refresh_command_actions()
         self._status_bar.showMessage("Opening source...")
 
     def _handle_open_success(self, document: DocumentController, path: Path) -> None:
@@ -756,11 +922,17 @@ class DataViewerShell(QMainWindow):
         snapshot = document.snapshot()
         self._status_label.setText(f"Opened: {snapshot.source_uri}")
         self._status_bar.showMessage(f"Opened {path}", 5000)
+        self._status_source.setText(f"source: {snapshot.source_uri}")
         self._status_path.setText(f"Path: {snapshot.source_uri}")
         self._status_shape.setText("shape: /")
         self._status_dtype.setText("dtype: -")
         self._status_scope.setText("slice: /")
+        self._status_mode.setText("mode: read-only")
         self._status_readonly.setText("mode: read-only")
+        self._status_task.setText("task: structure")
+        self._status_coordinates.setText("coordinates: -")
+        self._active_context.activate_document(snapshot)
+        self._active_context.set_task_state(has_active_task=True)
         self._refresh_edit_actions()
         self._append_bottom(f"Opened {snapshot.source_uri}")
         self._set_workspace_state("loading", "Loading structure root...")
@@ -784,8 +956,11 @@ class DataViewerShell(QMainWindow):
     def _handle_open_error(self, error: DataViewerError | None, path: Path) -> None:
         message = error.message if error is not None else "unknown error"
         self._status_label.setText("Open failed")
+        self._status_task.setText("task: failed")
         self._status_bar.showMessage("Open failed", 5000)
         self._append_bottom(f"Failed opening {path}: {message}")
+        self._problems_panel.setPlainText(f"Open failed: {path}\n{message}")
+        self._active_context.clear()
         self._set_workspace_state("error", f"Failed opening {path}: {message}")
 
     # ----------------------------- background dispatch helpers -----------------------------
@@ -927,6 +1102,12 @@ class DataViewerShell(QMainWindow):
             self._save_button.setEnabled(False)
             self._save_as_button.setEnabled(False)
             self._export_button.setEnabled(False)
+            self._active_context.set_edit_state(
+                has_dirty_changes=False,
+                can_undo=False,
+                can_redo=False,
+            )
+            self._refresh_command_actions()
             return
         snapshot = self._active_document.snapshot()
         pending = snapshot.edit_patch_count
@@ -939,6 +1120,11 @@ class DataViewerShell(QMainWindow):
         self._save_button.setEnabled(can_save)
         self._save_as_button.setEnabled(self._active_resource is not None)
         self._export_button.setEnabled(self._active_read_result is not None)
+        self._active_context.set_edit_state(
+            has_dirty_changes=pending > 0,
+            can_undo=pending > 0,
+            can_redo=False,
+        )
         if self._active_metadata is None:
             self._readonly_hint_label.setText("Source opened. Select a resource to inspect or export.")
         elif DataDomain(self._active_metadata.domain) is DataDomain.ARRAY:
@@ -947,6 +1133,19 @@ class DataViewerShell(QMainWindow):
             )
         else:
             self._readonly_hint_label.setText("Inspect-only resource: use Export or Save As where supported.")
+        self._refresh_command_actions()
+
+    def _refresh_command_actions(self) -> None:
+        if not self._command_actions:
+            return
+        snapshot = self._active_context.snapshot()
+        for command_id, action in self._command_actions.items():
+            evaluation = self._command_registry.evaluate(command_id, snapshot)
+            action.setEnabled(evaluation.enabled)
+            tooltip = f"{evaluation.label} ({evaluation.shortcut})"
+            if evaluation.disabled_reason:
+                tooltip = f"{tooltip}\n{evaluation.disabled_reason}"
+            action.setToolTip(tooltip)
 
     def _format_save_review(self, review: SaveReview) -> str:
         lines = [
@@ -1058,6 +1257,15 @@ class DataViewerShell(QMainWindow):
         if key is not None:
             self._active_request_generation_by_resource[key] = request.request_generation
             self._active_resource = resource_id
+        self._active_context.activate_view(
+            document_id=request.document_id,
+            resource_id=resource_id,
+            request_generation=request.request_generation,
+            active_split_id="main",
+            active_view_id="workspace",
+            selection_label="metadata",
+        )
+        self._active_split_label.setText(f"split: main / view: {resource_id.node_path}")
         self._set_workspace_state("loading", f"Loading metadata: {resource_id.node_path}")
         self._set_active_status(resource_id)
 
@@ -1082,6 +1290,15 @@ class DataViewerShell(QMainWindow):
         if key is not None:
             self._active_read_generation_by_resource[key] = request.request_generation
             self._active_resource = resource_id
+        self._active_context.activate_view(
+            document_id=request.document_id,
+            resource_id=resource_id,
+            request_generation=request.request_generation,
+            active_split_id="main",
+            active_view_id="workspace",
+            selection_label="read",
+        )
+        self._active_split_label.setText(f"split: main / view: {resource_id.node_path}")
 
         if force_refresh_axes:
             self._configure_row_col_limits(metadata)
@@ -1352,10 +1569,15 @@ class DataViewerShell(QMainWindow):
         self._load_slice_button.setEnabled(True)
         self._status_shape.setText(f"shape: {metadata.shape or '(scalar)'}")
         self._status_dtype.setText(f"dtype: {metadata.dtype or '-'}")
+        self._status_source.setText(f"source: {metadata.resource_id.source_uri}")
         self._status_path.setText(f"path: {metadata.resource_id.source_uri}{metadata.resource_id.node_path}")
         self._status_scope.setText("slice: current")
-        self._status_readonly.setText(
+        mode_label = (
             "mode: read-only" if DataDomain(metadata.domain) in {DataDomain.ARRAY} else "mode: inspect"
+        )
+        self._status_mode.setText(mode_label)
+        self._status_readonly.setText(
+            mode_label
         )
         self._refresh_edit_actions()
         self._set_workspace_state("ready", f"Metadata ready: {metadata.name}")
@@ -1394,6 +1616,7 @@ class DataViewerShell(QMainWindow):
         self._active_read_result = read_result
         if result.selection is not None:
             self._set_status_scope(result.selection)
+        self._status_coordinates.setText(self._status_scope.text().replace("slice:", "coordinates:"))
 
         payload = read_result.payload
         if isinstance(payload, (ArrayPayload, TablePayload, TextPayload, StructuredPayload)):
@@ -1599,6 +1822,17 @@ class DataViewerShell(QMainWindow):
         update_status_bar: bool = True,
     ) -> None:
         self._set_workspace_status(state, message)
+        has_task = state == "loading"
+        self._active_context.set_task_state(has_active_task=has_task)
+        if state == "loading":
+            self._status_task.setText(f"task: {message}")
+            self._tasks_panel.setPlainText(message)
+        elif state in {"error", "disabled"}:
+            self._status_task.setText(f"task: {state}")
+        else:
+            self._status_task.setText("task: idle")
+            self._tasks_panel.setPlainText("No active tasks.")
+        self._refresh_command_actions()
         if update_status_bar:
             self._status_bar.showMessage(message, 4000)
         if state in {"error", "empty"}:
@@ -1620,6 +1854,15 @@ class DataViewerShell(QMainWindow):
             if resource_key is None:
                 return
             self._active_read_generation_by_resource[resource_key] = request.request_generation
+            self._active_context.activate_view(
+                document_id=request.document_id,
+                resource_id=resource_id,
+                request_generation=request.request_generation,
+                active_split_id="main",
+                active_view_id="workspace",
+                selection_label="metadata",
+            )
+            self._active_split_label.setText(f"split: main / view: {resource_id.node_path}")
         self._set_workspace_state("loading", f"Loading resource: {resource_id.node_path}")
         try:
             metadata = document.get_metadata(resource_id, cancellation=CancellationToken())
@@ -1627,10 +1870,15 @@ class DataViewerShell(QMainWindow):
             self._render_metadata(metadata)
             self._status_shape.setText(f"shape: {metadata.shape or '(scalar)'}")
             self._status_dtype.setText(f"dtype: {metadata.dtype or '-'}")
+            self._status_source.setText(f"source: {metadata.resource_id.source_uri}")
             self._status_path.setText(f"path: {metadata.resource_id.node_path}")
             self._status_scope.setText("slice: pending")
-            self._status_readonly.setText(
+            mode_label = (
                 "mode: read-only" if DataDomain(metadata.domain) in {DataDomain.ARRAY} else "mode: inspect"
+            )
+            self._status_mode.setText(mode_label)
+            self._status_readonly.setText(
+                mode_label
             )
             self._refresh_edit_actions()
             if metadata.domain == DataDomain.ARRAY:
@@ -1646,10 +1894,14 @@ class DataViewerShell(QMainWindow):
     def _set_active_status(self, resource_id: ResourceId) -> None:
         state = f"path: {resource_id.node_path}"
         self._status_path.setText(state)
+        self._status_source.setText(f"source: {resource_id.source_uri}")
         self._status_scope.setText("slice: pending")
+        self._status_coordinates.setText("coordinates: pending")
 
     def _set_status_scope(self, selection: SelectionSpec) -> None:
-        self._status_scope.setText(f"slice: {self._format_selection_for_status(selection)}")
+        label = self._format_selection_for_status(selection)
+        self._status_scope.setText(f"slice: {label}")
+        self._status_coordinates.setText(f"coordinates: {label}")
 
     def _format_selection_for_status(self, selection: SelectionSpec) -> str:
         parts: list[str] = []
@@ -1687,6 +1939,7 @@ class DataViewerShell(QMainWindow):
         self._active_resource = None
         self._active_metadata = None
         self._active_read_result = None
+        self._active_context.clear()
         self._active_request_generation_by_resource.clear()
         self._active_read_generation_by_resource.clear()
         self._workspace_model.clear()

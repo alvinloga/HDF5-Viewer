@@ -46,6 +46,7 @@ All notable Data Viewer changes are recorded here.
 - Added full v1 gzip registry integration (DV-0503): every v1 gzip wrapper opens through the default target registry, generic gzip metadata is read-only, `.npz.gz`/`.xlsx.gz` report inefficient nested-compression warnings, native `.nii.gz` remains a NIfTI source, and nested-compression targets are not inferred as export formats.
 - Added the semantic Qt theme foundation (DV-0601): centralized light/dark color roles, compact 4 px metrics, platform typography roles, bundled monochrome SVG icon definitions, generated application stylesheet, and palette/icon scan tests.
 - Added the application command registry and expanded ActiveContext (DV-0602): stable command IDs, labels, shortcuts, semantic actions, enabled/disabled reasons, and explicit split/view/resource/selection/task/dirty state without widget coupling.
+- Added the first production shell structure slice (DV-0603, pending CI): command bar bindings, authoritative structure tree contract, workspace tabs, explicit active split label, inspector tabs, Tasks/Output/Problems bottom panel, expanded status fields, and 1024×768 minimum usability guard.
 
 ### Fixed
 
