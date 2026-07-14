@@ -389,6 +389,22 @@ Dual-platform CI evidence: [GitHub Actions run 29311841031](https://github.com/a
 
 Known limits remain: request-generation and lifecycle primitives are implemented for documents; platform/cache/config primitives are still owned by DV-0107.
 
+## DV-0107 platform paths, cache, config, and logging primitives - 2026-07-14
+
+Revision: working tree before commit (post-review refactor of `data_viewer/infrastructure/*`).
+
+| Check | Command | Observed result |
+|---|---|---|
+| Compilation/syntax check | `python -m compileall -q data_viewer/infrastructure tests/test_infrastructure_paths.py tests/test_infrastructure_config.py tests/test_infrastructure_cache.py tests/test_infrastructure_logging.py` | passed |
+| Targeted infrastructure script checks | `python -c` inline smoke checks for path resolution, config load/save/recover, bounded cache put/get/evict/expire/persist, and redacted logging output | passed |
+| Targeted pytest for infrastructure tests | `python -m pytest tests/test_infrastructure_paths.py tests/test_infrastructure_config.py tests/test_infrastructure_cache.py tests/test_infrastructure_logging.py -q` | blocked in this local workspace because `tests/conftest.py` autouse legacy GUI fixture requires `PyQt6.QtWidgets` |
+| Documentation/task ledger updates | `tasks/todo.md`, `CHANGELOG.md`, `TEST_REPORT.md` | updated |
+
+Known gaps:
+
+- The local environment for this workspace still cannot import legacy `PyQt6.QtWidgets`, so CI with PyQt-capable runtime should rerun the new test modules before merge.
+- `save_config` merge utility currently serializes `AppConfig` as v1 without unknown-key passthrough in this pass.
+
 ## Checkpoint record format
 
 For each checkpoint append:

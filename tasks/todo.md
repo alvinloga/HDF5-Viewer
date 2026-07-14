@@ -118,7 +118,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: controller solely owns session; view IDs borrow resources; new navigation invalidates old request results; close cooperatively cancels/waits then closes once; dirty/active-task hooks exist without GUI dependency.
 - Verify: rapid navigation stale-result test, close-during-read, double-close, task failure, multiple-view-one-source tests.
 
-### [ ] DV-0107 Implement platform paths, bounded cache, config, and logging primitives
+### [x] DV-0107 Implement platform paths, bounded cache, config, and logging primitives
 
 - Depends: DV-0103.
 - Read: Architecture cache/config/platform, Dependencies platformdirs.

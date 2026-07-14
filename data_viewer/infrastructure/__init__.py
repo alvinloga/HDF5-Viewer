@@ -1,0 +1,63 @@
+"""Shared infrastructure helpers for platform paths, cache, config, and logging."""
+
+from .cache import BoundedCache, CacheEntry, CacheLimits, DEFAULT_LIMITS
+from .config import (
+    CONFIG_SCHEMA_VERSION,
+    AppConfig,
+    CacheConfig,
+    LoadConfigResult,
+    LoggingConfig,
+    load_config,
+    merge_and_save_config,
+    save_config,
+)
+from .logging import LogRedactor, LoggerPrimitives, RedactingFormatter, configure_logging
+from .paths import (
+    APP_AUTHOR,
+    APP_NAME,
+    APP_NAME_LEGACY_FALLBACK,
+    AppConfigFiles,
+    AppPaths,
+    CONFIG_FILE_NAME,
+    LOG_DIR_NAME,
+    CACHE_DIR_NAME,
+    CONFIG_ENV_VAR,
+    CACHE_ENV_VAR,
+    LOG_ENV_VAR,
+    platform_files,
+    resolve_app_paths,
+    ensure_app_directories,
+)
+
+__all__ = [
+    "APP_AUTHOR",
+    "APP_NAME",
+    "APP_NAME_LEGACY_FALLBACK",
+    "AppConfigFiles",
+    "AppConfig",
+    "AppPaths",
+    "BoundedCache",
+    "CacheConfig",
+    "CacheEntry",
+    "CacheLimits",
+    "CONFIG_ENV_VAR",
+    "CONFIG_FILE_NAME",
+    "CONFIG_SCHEMA_VERSION",
+    "CACHE_DIR_NAME",
+    "CACHE_ENV_VAR",
+    "DEFAULT_LIMITS",
+    "LoadConfigResult",
+    "LogRedactor",
+    "LOG_DIR_NAME",
+    "LOG_ENV_VAR",
+    "LoggerPrimitives",
+    "LoggingConfig",
+    "RedactingFormatter",
+    "configure_logging",
+    "ensure_app_directories",
+    "load_config",
+    "merge_and_save_config",
+    "platform_files",
+    "resolve_app_paths",
+    "save_config",
+]
