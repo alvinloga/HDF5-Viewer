@@ -1545,6 +1545,16 @@ Local Windows verification in the repository `venv`:
 | Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 85 source files |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 408 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `7a862c6216a9d1954c3d69aa6900081b9bcdf3f2` |
+| GitHub Actions run | `gh run watch 29376044598 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29376044598 --json status,conclusion,headSha,jobs,url` | head SHA `7a862c6216a9d1954c3d69aa6900081b9bcdf3f2`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29376044598` |
+| Windows quality job | GitHub Actions run `29376044598` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m56s |
+| Ubuntu quality job | GitHub Actions run `29376044598` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m30s |
+
 Known gaps:
 
 - DV-0607 is still not checked: an automated missing-string scan for remaining shell/runtime literals and DPI screenshot evidence are still required before marking the task complete.
