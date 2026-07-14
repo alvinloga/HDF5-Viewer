@@ -12,13 +12,26 @@ from time import monotonic
 
 from data_viewer.domain import (
     DataMetadata,
+    ResourceId,
     DataViewerError,
     ErrorCode,
     ReadResult,
-    ResourceId,
     ResourceNode,
     SourceFingerprint,
 )
+from data_viewer.editing.review import (
+    SaveReview,
+    SaveStrategy,
+    build_save_review,
+    build_warnings,
+)
+from data_viewer.editing.session import (
+    EditCloseAction,
+    EditSession,
+    EditSessionState,
+    EditSessionTransitionError,
+)
+from data_viewer.editing.patches import EditPatch
 from data_viewer.sources import (
     CancellationToken,
     ManagedSourceSession,
@@ -55,6 +68,8 @@ class DocumentSnapshot:
     document_id: str
     source_uri: str
     fingerprint: SourceFingerprint
+    edit_state: EditSessionState
+    edit_patch_count: int
     status: DocumentStatus
     request_generation: int
     active_resource_id: ResourceId | None
@@ -77,6 +92,10 @@ class DocumentController:
         self._active_resource_id: ResourceId | None = None
         self._dirty_count = 0
         self._active_io_count = 0
+        self._edit_session = EditSession.create(
+            source_uri=self._session.source_uri,
+            source_fingerprint=self._session.fingerprint,
+        )
         self._tasks: dict[str, TaskRecord] = {}
         self._lock = RLock()
         self._condition = Condition(self._lock)
@@ -126,6 +145,110 @@ class DocumentController:
                 document_id=self._document_id,
                 resource_id=resource_id,
                 request_generation=self._request_generation,
+            )
+
+    def apply_edit_patch(self, patch: EditPatch) -> DocumentSnapshot:
+        """Append one edit patch and transition edit state."""
+
+        with self._condition:
+            self._ensure_open_locked("document.apply_edit_patch")
+            self._edit_session = self._edit_session.with_patch(patch)
+            self._condition.notify_all()
+            return self._snapshot_locked()
+
+    def undo_edit(self) -> tuple[DocumentSnapshot, EditPatch]:
+        """Undo the latest edit patch."""
+
+        with self._condition:
+            self._ensure_open_locked("document.undo_edit")
+            self._edit_session, patch = self._edit_session.undo()
+            self._condition.notify_all()
+            return self._snapshot_locked(), patch
+
+    def redo_edit(self) -> tuple[DocumentSnapshot, EditPatch]:
+        """Redo the latest undone edit patch."""
+
+        with self._condition:
+            self._ensure_open_locked("document.redo_edit")
+            self._edit_session, patch = self._edit_session.redo()
+            self._condition.notify_all()
+            return self._snapshot_locked(), patch
+
+    def discard_edit_changes(self) -> DocumentSnapshot:
+        """Drop all unsaved edit patches."""
+
+        with self._condition:
+            self._ensure_open_locked("document.discard_edit_changes")
+            self._edit_session = self._edit_session.discard()
+            self._condition.notify_all()
+            return self._snapshot_locked()
+
+    def refresh_edit_fingerprint(self, *, cancellation: CancellationToken) -> DocumentSnapshot:
+        """Refresh document fingerprint and update edit conflict state."""
+
+        with self._condition:
+            self._ensure_open_locked("document.refresh_edit_fingerprint")
+        with self.acquire_io_lease(cancellation=cancellation):
+            observed = self._session.refresh_fingerprint()
+        with self._condition:
+            self._edit_session = self._edit_session.refresh_fingerprint(observed)
+            self._condition.notify_all()
+            return self._snapshot_locked()
+
+    def begin_edit_save(self) -> DocumentSnapshot:
+        """Mark edit session as saving and block further patch edits."""
+
+        with self._condition:
+            self._ensure_open_locked("document.begin_edit_save")
+            self._edit_session = self._edit_session.begin_save()
+            self._condition.notify_all()
+            return self._snapshot_locked()
+
+    def mark_edit_save_success(self, fingerprint: SourceFingerprint) -> DocumentSnapshot:
+        """Clear patches and return to clean after successful persistence."""
+
+        with self._condition:
+            self._ensure_open_locked("document.mark_edit_save_success")
+            self._edit_session = self._edit_session.mark_save_success(fingerprint)
+            self._condition.notify_all()
+            return self._snapshot_locked()
+
+    def mark_edit_save_failed(self, error: DataViewerError) -> DocumentSnapshot:
+        """Keep patches and enter SAVE_FAILED after failed persistence."""
+
+        with self._condition:
+            self._ensure_open_locked("document.mark_edit_save_failed")
+            self._edit_session = self._edit_session.mark_save_failed(error)
+            self._condition.notify_all()
+            return self._snapshot_locked()
+
+    def build_edit_save_review(
+        self,
+        *,
+        target_uri: str,
+        strategy: SaveStrategy,
+    ) -> SaveReview:
+        """Build a review payload for the current change set."""
+
+        with self._condition:
+            self._ensure_open_locked("document.build_edit_save_review")
+            review = build_save_review(
+                self._edit_session.history.changeset,
+                target_uri=target_uri,
+                strategy=strategy,
+            )
+            return SaveReview(
+                target_uri=review.target_uri,
+                strategy=review.strategy,
+                source_fingerprint=review.source_fingerprint,
+                resources=review.resources,
+                patch_count=review.patch_count,
+                changed_patch_kinds=review.changed_patch_kinds,
+                estimated_size_bytes=review.estimated_size_bytes,
+                warnings=tuple(
+                    review.warnings
+                    + build_warnings(self._edit_session.history.changeset, ())
+                ),
             )
 
     def accepts_task_result(self, snapshot: TaskSnapshot) -> bool:
@@ -253,13 +376,45 @@ class DocumentController:
                 cancellation=cancellation,
             )
 
-    def close(self, *, timeout: float | None = None) -> DocumentSnapshot:
+    def close(
+        self,
+        *,
+        timeout: float | None = None,
+        edit_close_action: EditCloseAction = EditCloseAction.DISCARD,
+    ) -> DocumentSnapshot:
         """Cancel owned tasks, wait for tasks/leases, and close once."""
 
         deadline = monotonic() + timeout if timeout is not None else None
         with self._condition:
             if self._status is DocumentStatus.CLOSED:
                 return self._snapshot_locked()
+            try:
+                updated_session, should_close = self._edit_session.close_action(
+                    edit_close_action,
+                )
+            except EditSessionTransitionError as exc:
+                raise DataViewerError(
+                    code=ErrorCode.EDIT_CONFLICT,
+                    message=str(exc),
+                    operation="document.close",
+                    details={
+                        "edit_state": self._edit_session.state.value,
+                        "edit_patch_count": self._edit_session.patch_count,
+                        "edit_close_action": edit_close_action.value,
+                    },
+                ) from exc
+            if not should_close:
+                raise DataViewerError(
+                    code=ErrorCode.EDIT_CONFLICT,
+                    message="Document close was canceled due to unsaved changes.",
+                    operation="document.close",
+                    details={
+                        "edit_state": self._edit_session.state.value,
+                        "edit_patch_count": self._edit_session.patch_count,
+                        "edit_close_action": edit_close_action.value,
+                    },
+                )
+            self._edit_session = updated_session
             self._status = DocumentStatus.CLOSING
             self._cancel_active_tasks_locked()
             self._condition.notify_all()
@@ -313,6 +468,8 @@ class DocumentController:
             document_id=self._document_id,
             source_uri=self._session.source_uri,
             fingerprint=self._session.fingerprint,
+            edit_state=self._edit_session.state,
+            edit_patch_count=self._edit_session.patch_count,
             status=self._status,
             request_generation=self._request_generation,
             active_resource_id=self._active_resource_id,

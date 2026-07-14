@@ -13,6 +13,9 @@ from data_viewer.app.documents import (
     DocumentStatus,
 )
 from data_viewer.domain import DataViewerError, ErrorCode, ResourceId
+from data_viewer.editing.patches import CellPatch, fingerprint_value
+from data_viewer.editing.review import SaveStrategy
+from data_viewer.editing.session import EditCloseAction, EditSessionState
 from data_viewer.sources.registry import SourceRegistry
 from data_viewer.tasks import CancellationToken, TaskState
 from tests.conformance.source_adapter import FakeArrayAdapter, write_fake_source
@@ -187,6 +190,81 @@ def test_dirty_and_task_hooks_track_non_gui_state(tmp_path) -> None:
     )
 
     assert document.snapshot().active_task_count == 0
+
+
+def test_editing_state_is_reflected_in_document_snapshot(tmp_path) -> None:
+    document = _open_fake_document(tmp_path)
+    resource = ResourceId(document.source_uri, "/array")
+    snapshot = document.snapshot()
+    assert snapshot.edit_state is EditSessionState.CLEAN
+    assert snapshot.edit_patch_count == 0
+
+    snapshot = document.apply_edit_patch(
+        CellPatch(
+            resource,
+            (0,),
+            fingerprint_value("0"),
+            "99",
+        )
+    )
+    assert snapshot.edit_state is EditSessionState.DIRTY
+    assert snapshot.edit_patch_count == 1
+
+    snapshot_undo, patch = document.undo_edit()
+    assert snapshot_undo.edit_state is EditSessionState.CLEAN
+    assert patch.resource_id == resource
+    assert snapshot_undo.edit_patch_count == 0
+
+    snapshot = document.apply_edit_patch(
+        CellPatch(
+            resource,
+            (0,),
+            fingerprint_value("0"),
+            "42",
+        )
+    )
+    review = document.build_edit_save_review(
+        target_uri=document.source_uri,
+        strategy=SaveStrategy.REPLACEMENT,
+    )
+    assert review.patch_count == 1
+    assert review.target_uri == document.source_uri
+    assert review.changed_patch_kinds == (("cell", 1),)
+    assert review.estimated_size_bytes > 0
+
+    snapshot = document.discard_edit_changes()
+    assert snapshot.edit_state is EditSessionState.CLEAN
+    assert snapshot.edit_patch_count == 0
+
+
+def test_close_dirty_document_supports_cancel_discard_choices(tmp_path) -> None:
+    path = write_fake_source(tmp_path / "close-edit.fake")
+    document = DocumentController.open_path(
+        path,
+        registry=SourceRegistry([FakeArrayAdapter()]),
+        cancellation=CancellationToken(),
+    )
+    resource = ResourceId(document.source_uri, "/array")
+
+    document.apply_edit_patch(
+        CellPatch(
+            resource,
+            (0,),
+            fingerprint_value("0"),
+            "1",
+        )
+    )
+    with pytest.raises(DataViewerError) as err:
+        document.close(edit_close_action=EditCloseAction.CANCEL)
+    assert err.value.code is ErrorCode.EDIT_CONFLICT
+
+    # External edit changes should move the state to conflict
+    path.write_bytes(path.read_bytes() + b"x")
+    snapshot = document.refresh_edit_fingerprint(cancellation=CancellationToken())
+    assert snapshot.edit_state is EditSessionState.CONFLICTED
+
+    document.close(edit_close_action=EditCloseAction.DISCARD)
+    assert document.snapshot().status is DocumentStatus.CLOSED
 
 
 def _open_fake_document(tmp_path) -> DocumentController:

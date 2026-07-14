@@ -26,6 +26,7 @@ All notable Data Viewer changes are recorded here.
 - Added DocumentController ownership and request-generation tracking (`data_viewer/app/documents.py` and `data_viewer/app/active_context.py`), including close/wait lifecycle cleanup and non-GUI dirty/active-task state hooks.
 - Added platform path resolution and bounded temporary cache primitives (`data_viewer/infrastructure/paths.py`, `cache.py`), with atomic read/write configuration handling and log redaction support for diagnostics in `data_viewer/infrastructure/config.py` and `data_viewer/infrastructure/logging.py`.
 - Added immutable safe-editing patch primitives in `data_viewer/editing/patches.py` (`Patch`, `CellPatch`, `TextPatch`, `AttributePatch`, `ChangeSet`), typed edit-value validation in `data_viewer/editing/validation.py` (integer/float/complex/boolean/string/structured support with nonfinite and truncation guards), and `EditHistory` immutable undo/redo state in `data_viewer/editing/history.py`.
+- Added edit-session persistence state flow and save/conflict review model in `data_viewer/editing/session.py` and `data_viewer/editing/review.py`; integrated dirty/save/close/conflict transitions into `DocumentController` with close-policy semantics and structured save summary generation (`data_viewer/app/documents.py`) to support safe-edit workflows (DV-0302).
 
 ### Fixed
 

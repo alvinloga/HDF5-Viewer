@@ -556,3 +556,19 @@ Data Viewer v1 requires current-revision evidence for all gates in `docs/TESTING
 No report may use â€?00%â€?unless it names the measured denominator and includes the artifact. A passing build is not a passing application.
 
 
+## DV-0302 save/conflict state and review model - 2026-07-14
+
+Revision: working tree on `data_viewer/editing/session.py`, `data_viewer/editing/review.py`, and `data_viewer/app/documents.py` before task commit; base commit `0baa01e`.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Windows target verification environment | `.venv\\Scripts\\python.exe --version` | `Python 3.12.13` |
+| Focused editing/session unit suite | `.venv\\Scripts\\python.exe -m pytest tests/test_editing_session.py tests/test_document_controller.py -q` | 14 passed |
+| Full local suite | `.venv\\Scripts\\python.exe -m pytest -q` | 257 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Lint gate (edited files + touched tests) | `.venv\\Scripts\\ruff.exe check data_viewer/editing/session.py data_viewer/editing/review.py data_viewer/app/documents.py tests/test_editing_session.py tests/test_document_controller.py` | passed |
+| Syntax check | `.venv\\Scripts\\python.exe -m compileall -q data_viewer/editing/session.py data_viewer/editing/review.py data_viewer/app/documents.py tests/test_editing_session.py tests/test_document_controller.py` | passed |
+
+Notes:
+
+- End-to-end save/replace persistence and atomic write/verify are intentionally out of scope in this task; DV-0303 is still open.
+- `mypy` on this exact file set reports unrelated pre-existing project type issues in `data_viewer/editing/validation.py`, `tests/conformance/source_adapter.py`, and existing test typing contracts.

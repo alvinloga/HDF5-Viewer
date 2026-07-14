@@ -192,7 +192,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: immutable coordinate patches/fingerprints; overflow/string truncation/complex/nonfinite/missing/structured rules; undo/redo/discard; reverting all is clean.
 - Verify: dtype edge/property tests and unrelated-coordinate invariants.
 
-### [ ] DV-0302 Implement save/conflict state and review model
+### [x] DV-0302 Implement save/conflict state and review model
 
 - Depends: DV-0301, DV-0106.
 - Scope: `data_viewer/editing/session.py`, `review.py`, controller integration, tests.
