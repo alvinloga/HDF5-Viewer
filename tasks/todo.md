@@ -214,7 +214,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: safe direct selections only under contract conditions; structural/unsafe cases use replacement; every changed coordinate reread; unaffected data/metadata verified; failed verification yields integrity warning and retained change log.
 - Verify: cell/attribute/multi-patch/compound tests, fault matrix, source-change conflict, large bounded selection.
 
-### [ ] DV-0305 Implement export plan and receipt service
+### [x] DV-0305 Implement export plan and receipt service
 
 - Depends: DV-0102, DV-0303.
 - Read: Safe Editing §9, Product FR-007.

@@ -619,3 +619,26 @@ Notes:
 Known gaps:
 
 - This is local Windows evidence only; Linux verification remains pending in CI.
+
+## DV-0305 export plan and receipt service - 2026-07-14
+
+Revision: working tree on `codex/data-viewer-foundation` with task-local additions in `data_viewer/exporting/` and `tests/test_exporting.py`.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Focused export tests | `.venv\Scripts\python.exe -m pytest tests/test_exporting.py -q` | 7 passed |
+| Lint gate | `.venv\Scripts\ruff.exe check data_viewer/exporting tests/test_exporting.py` | passed |
+| Type check | `.venv\Scripts\mypy.exe --follow-imports=skip data_viewer/exporting tests/test_exporting.py` | Success: no issues found in 5 source files |
+| Syntax check | `.venv\Scripts\python.exe -m compileall -q data_viewer/exporting tests/test_exporting.py` | passed |
+| Full local suite | `.venv\Scripts\python.exe -m pytest -q` | 293 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Notes:
+
+- Added `ExportPlan`, explicit v1 export scopes, target formats, and raw/display/scaled value modes.
+- Added `ExportReceipt` with source fingerprint, resource/selection provenance, parameters, target, application version, warnings, bytes written, and success/failure/cancelled outcomes.
+- Added `ExportService` with atomic target replacement, explicit overwrite refusal, cooperative cancellation receipts, NPY/CSV/JSON/TXT/binary output paths, and CSV spreadsheet formula escaping.
+
+Known gaps:
+
+- This is local Windows evidence only; Linux verification remains pending in CI.
+- UI export dialogs, background queueing, and packaged smoke coverage remain later tasks.

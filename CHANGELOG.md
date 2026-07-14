@@ -29,6 +29,7 @@ All notable Data Viewer changes are recorded here.
 - Added edit-session persistence state flow and save/conflict review model in `data_viewer/editing/session.py` and `data_viewer/editing/review.py`; integrated dirty/save/close/conflict transitions into `DocumentController` with close-policy semantics and structured save summary generation (`data_viewer/app/documents.py`) to support safe-edit workflows (DV-0302).
 - Added verified atomic replacement persistence service foundation for safe overwrite paths in `data_viewer/persistence/transaction.py`, startup recovery marker lifecycle in `data_viewer/persistence/recovery.py`, and coverage for fault injection, cancellation, disk preflight, and orphan cleanup (`tests/test_persistence_recovery.py`, `tests/test_persistence_transaction.py`) (DV-0303).
 - Added HDF5 safe persistence strategies (DV-0304): reviewed cell patches can use verified in-place writes with a same-directory recovery backup, while attributes and unsafe cells use verified atomic replacement with source-fingerprint conflict checks and post-write coordinate verification.
+- Added export planning, execution, and receipt primitives (DV-0305) covering explicit full/slice/selection/filtered/result/rendered scopes, raw/display/scaled value modes, overwrite/cancel/failure receipts, CSV formula-cell escaping, and JSON receipt round trips.
 
 ### Fixed
 
