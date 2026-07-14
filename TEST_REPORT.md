@@ -518,6 +518,22 @@ Known gaps:
 - `pytest -q` still reports pre-existing NumPy warnings in `tests/test_edge_cases.py::test_nan_inf_data` (3 warnings, unchanged).
 - Linux verification is still pending for this task in CI.
 
+
+## DV-0301 patch/change-set and validation primitives - 2026-07-14
+
+Revision: working tree on `138c36b698e1805754b7e4e5981e45643744920e` with task-local edits in `data_viewer/editing/` and two new tests.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Targeted unit tests | `.venv\Scripts\python.exe -m pytest tests/test_editing_patches.py tests/test_editing_validation.py -q` | 12 passed |
+| Static lint | `.venv\Scripts\ruff.exe check data_viewer/editing/patches.py data_viewer/editing/validation.py data_viewer/editing/history.py data_viewer/editing/__init__.py tests/test_editing_patches.py tests/test_editing_validation.py` | passed |
+| Syntax check | `.venv\Scripts\python.exe -m compileall -q data_viewer/editing tests/test_editing_patches.py tests/test_editing_validation.py` | passed |
+
+Notes:
+
+- This task implements immutable patch/change-set models and edit validation without changing public contract surfaces required by DV-0301 scope.
+- No production behavior in release-critical formatting or plugin integration paths was modified in this patch; changes are limited to safe-edit value validation primitives.
+
 ## Checkpoint record format
 
 For each checkpoint append:

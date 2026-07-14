@@ -184,7 +184,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 
 ## P3 — Safe editing and export
 
-### [ ] DV-0301 Implement patch/change-set and dtype validation
+### [x] DV-0301 Implement patch/change-set and dtype validation
 
 - Depends: DV-0102, DV-0206.
 - Read: Safe Editing §3–5, ADR-004.
