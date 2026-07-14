@@ -715,6 +715,22 @@ Revision: working tree on `codex/data-viewer-foundation` with task-local additio
 | Syntax check | `venv\Scripts\python.exe -m compileall -q data_viewer\sources\numpy data_viewer\gui\shell.py tests\test_numpy_adapter.py` | passed |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 303 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI evidence for the committed task revision:
+
+| Platform | Job | Result | Manifest/JUnit evidence |
+|---|---|---|---|
+| Ubuntu | [87151579987](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29352393742/job/87151579987) | passed | artifact `data-viewer-quality-Ubuntu-29352393742-1`; manifest commit `46dc36ae552f28ba1964bed67f5a0ae17a9b4587`; CPython `3.12.13`; runner `Linux x86_64`; lock hash `f44c592658057904746d776129076715cde998fb699a797e256f432fa2c07734`; JUnit `304` tests, `0` failures, `0` errors, `1` skipped |
+| Windows | [87151580171](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29352393742/job/87151580171) | passed | artifact `data-viewer-quality-Windows-29352393742-1`; manifest commit `46dc36ae552f28ba1964bed67f5a0ae17a9b4587`; CPython `3.12.10`; runner `Windows AMD64`; lock hash `f44c592658057904746d776129076715cde998fb699a797e256f432fa2c07734`; JUnit `304` tests, `0` failures, `0` errors, `1` skipped |
+
+Downloaded artifact hashes checked from `C:\tmp\dv-ci-29352393742`:
+
+| Platform | Artifact | SHA-256 |
+|---|---|---|
+| Ubuntu | `data_viewer-1.0.0.dev0-py3-none-any.whl` | `905D20E75549EB0DFF55993D58BA8C9CE3CFC3582D36A7FC949A984253194EBB` |
+| Ubuntu | `data_viewer-1.0.0.dev0.tar.gz` | `85BB68563C39B77E825A127C071163DBC11387FD30F838E5B35989378A05FAC3` |
+| Windows | `data_viewer-1.0.0.dev0-py3-none-any.whl` | `0F0140FF1BBB7226F59824FA80BD66ED4F80B1A82A614F251EAA2E63C61D7E91` |
+| Windows | `data_viewer-1.0.0.dev0.tar.gz` | `30E542425A27D6DDB5EF9E77431C2627C6310FFCB4E9932DAAD71E61EC422147` |
+
 Notes:
 
 - Added `NPYAdapter` and `NPYSourceSession` with a synthetic root and one stable `/array` resource so flat NPY sources follow the same DataSource API ownership model as other adapters.
@@ -725,5 +741,5 @@ Notes:
 
 Known gaps:
 
-- This is local Windows task evidence only; Linux/Windows CI evidence will be recorded at Checkpoint 4 after the full uncompressed format matrix is implemented.
+- This is DV-0401 task evidence only, not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0402 through DV-0411 finish.
 - Scalar cell editing is still constrained by the current `CellPatch` coordinate contract, which disallows empty coordinates; scalar read/metadata behavior is covered here, and scalar edit support should be handled by a later edit-contract refinement if required.
