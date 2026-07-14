@@ -46,6 +46,7 @@ All notable Data Viewer changes are recorded here.
 
 - Stabilized the legacy GUI regression suite on Windows and Linux by isolating process state, scoping themes to each main window, and closing data-load panels cooperatively before their shared HDF5 sessions close.
 - Removed one structurally proven duplicate legacy event-bus test while retaining its canonical regression coverage.
+- Removed first-release NetCDF/Zarr product paths (DV-0411): legacy startup no longer imports/registers external NetCDF/Zarr sources, folder explorer defaults no longer advertise `.zarr`, optional dependency claims were removed, and the obsolete external source modules were deleted.
 - Normalized lock-file evidence across Windows and Linux checkouts and verified release jobs stop when quality tests fail.
 
 ### Documentation
@@ -61,7 +62,6 @@ All notable Data Viewer changes are recorded here.
 
 - Editing and export do not preserve correct data semantics for all shapes.
 - Split focus and source ownership are ambiguous.
-- Existing NetCDF/Zarr registration does not match the target scope.
 
 ## Legacy HDF5 Viewer v0.3.1
 

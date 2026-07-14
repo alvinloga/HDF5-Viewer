@@ -1025,3 +1025,36 @@ Known gaps:
 
 - This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token even though SSH git push works.
 - This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0411 finishes.
+
+## DV-0411 NetCDF/Zarr product-path removal - 2026-07-15
+
+Revision: working tree based on `d3bd62a` before committing `chore: remove netcdf zarr product paths`.
+
+Implementation evidence:
+
+- Legacy startup no longer imports or registers `plugins.external.netcdf_source.NetCDFSource` or `plugins.external.zarr_source.ZarrSource`.
+- Obsolete external NetCDF/Zarr source modules were removed from `plugins/external`.
+- Legacy folder explorer defaults no longer advertise `.zarr` as an openable directory format.
+- `requirements.txt` no longer contains optional NetCDF/Zarr dependency claims.
+- The target Data Viewer registry returns ordinary `SOURCE_UNSUPPORTED` for `.nc`, `.nc4`, `.netcdf`, and `.zarr` inputs.
+- Case-insensitive repository search was reviewed. Remaining `NetCDF`/`Zarr` mentions are limited to explicit v1 exclusion/specification text, historical task planning, and DV-0411 regression tests.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing scope test | `venv\Scripts\python.exe -m pytest tests\test_format_scope.py -q` | failed as expected before implementation: legacy `.zarr` filtering, legacy startup imports, requirements claims, and external source files still existed |
+| Format scope regression tests | `venv\Scripts\python.exe -m pytest tests\test_format_scope.py -q` | 5 passed |
+| Format scope and registry regression subset | `venv\Scripts\python.exe -m pytest tests\test_format_scope.py tests\test_source_registry.py -q` | 11 passed |
+| Case-insensitive inventory search | `rg -n -i "netcdf|zarr" .` | reviewed; remaining hits are v1 exclusion/specification, historical planning, or regression-test assertions |
+| Strong product-path search | `rg -n -i "plugins\.external\.(netcdf|zarr)|NetCDFSource|ZarrSource|netCDF4|zarr>=" .` | reviewed; remaining hits only appear inside DV-0411 regression-test assertions |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check main.py core\registry.py gui\sidebar\folder_explorer.py tests\test_format_scope.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 364 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Target lint | `venv\Scripts\python.exe -m ruff check data_viewer main.py core\registry.py gui\sidebar\folder_explorer.py tests\test_format_scope.py tests\test_nifti_adapter.py tests\test_gui_shell.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 75 source files |
+| Compile | `venv\Scripts\python.exe -m compileall -q main.py core gui data_viewer tests` | passed |
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token even though SSH git push works.
+- This is not Checkpoint 4 evidence. The full uncompressed format matrix still needs DV-0412 evidence recording.

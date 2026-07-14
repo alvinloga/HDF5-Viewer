@@ -319,7 +319,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: `.nii`/native `.nii.gz`; proxy bounded slices; header/affine/axis codes/voxel sizes/units/intent/scaling; exact voxel↔world mapping; no silent canonicalization/resampling; 3D/4D; read-only.
 - Verify: conformance and known affine/orientation/scaling/time/invalid-header golden tests; full-materialization spy.
 
-### [ ] DV-0411 Remove NetCDF/Zarr product paths
+### [x] DV-0411 Remove NetCDF/Zarr product paths
 
 - Depends: DV-0401 through DV-0410.
 - Read: ADR-001, Migration.

@@ -28,7 +28,7 @@ class DataSourceRegistry:
             reuse: 是否复用已有实例（默认 True）
         """
         ext = Path(path).suffix.lower()
-        # 对于 .zarr 等目录格式，使用目录名后缀
+        # 对于目录格式，使用目录名后缀
         if not ext and os.path.isdir(path):
             for filter_ext in cls._sources:
                 if path.endswith(filter_ext):

@@ -35,7 +35,6 @@ def load_config() -> dict:
 def main():
     """主函数"""
     from PyQt6.QtWidgets import QApplication
-    from PyQt6.QtCore import Qt
 
     # 高 DPI 支持
     os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '1'
@@ -52,18 +51,6 @@ def main():
     PluginManager.load_builtin_plugins()
 
     # 尝试注册可选数据源
-    from core.registry import DataSourceRegistry
-    try:
-        from plugins.external.netcdf_source import NetCDFSource
-        DataSourceRegistry.try_register(NetCDFSource)
-    except ImportError:
-        pass
-    try:
-        from plugins.external.zarr_source import ZarrSource
-        DataSourceRegistry.try_register(ZarrSource)
-    except ImportError:
-        pass
-
     # 创建主窗口
     from gui.main_window import MainWindow
     window = MainWindow(config)

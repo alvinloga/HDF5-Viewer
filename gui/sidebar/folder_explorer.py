@@ -19,7 +19,7 @@ class FolderExplorerTree(QTreeWidget):
     file_clicked = pyqtSignal(str)
     file_double_clicked = pyqtSignal(str)
 
-    _DEFAULT_FILE_FILTERS: list[str] = [".h5", ".hdf5", ".hdf", ".h5py", ".zarr"]
+    _DEFAULT_FILE_FILTERS: list[str] = [".h5", ".hdf5", ".hdf", ".h5py"]
     _DEFAULT_MAX_DEPTH: int = 5
     _DEFAULT_SHOW_HIDDEN: bool = False
 
@@ -95,7 +95,7 @@ class FolderExplorerTree(QTreeWidget):
                 continue
 
             if os.path.isdir(entry_path):
-                # 检查是否为匹配的目录格式（如 .zarr）
+                # 检查是否为匹配的目录格式
                 if self._is_matching_dir(entry_path):
                     file_item = QTreeWidgetItem(parent_item)
                     file_item.setText(0, f"\U0001f4c4 {entry_name}")
@@ -165,7 +165,7 @@ class FolderExplorerTree(QTreeWidget):
         return suffix in self._file_filters
 
     def _is_matching_dir(self, dir_path: str) -> bool:
-        """检查目录是否为匹配的目录格式（如 .zarr）"""
+        """检查目录是否为匹配的目录格式"""
         dir_name = os.path.basename(dir_path)
         for ext in self._file_filters:
             if dir_name.endswith(ext):
