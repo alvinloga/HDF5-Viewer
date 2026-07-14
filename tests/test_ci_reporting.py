@@ -75,6 +75,7 @@ def test_workflows_upload_quality_evidence_and_release_requires_quality() -> Non
     assert "if: ${{ always() }}" in quality_workflow
     assert "hashFiles('uv.lock')" in quality_workflow
     assert "tests/test_domain_types.py" in quality_workflow
+    assert "tests/test_document_controller.py" in quality_workflow
     assert "tests/test_error_diagnostics.py" in quality_workflow
     assert "tests/test_selection_payload_types.py" in quality_workflow
     assert "tests/test_source_registry.py" in quality_workflow

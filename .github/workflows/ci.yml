@@ -87,6 +87,7 @@ jobs:
           uv run --locked ruff check data_viewer .github/scripts tests/conftest.py
           tests/conformance tests/fixtures tests/test_ci_reporting.py
           tests/test_data_viewer_package.py
+          tests/test_document_controller.py
           tests/test_domain_types.py tests/test_error_diagnostics.py
           tests/test_fixture_factories.py tests/test_selection_payload_types.py
           tests/test_source_registry.py tests/test_task_lifecycle.py
