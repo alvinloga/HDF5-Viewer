@@ -572,3 +572,26 @@ Notes:
 
 - End-to-end save/replace persistence and atomic write/verify are intentionally out of scope in this task; DV-0303 is still open.
 - `mypy` on this exact file set reports unrelated pre-existing project type issues in `data_viewer/editing/validation.py`, `tests/conformance/source_adapter.py`, and existing test typing contracts.
+
+## DV-0303 verified atomic replacement service - 2026-07-14
+
+Revision: working tree based on `f89b844` (task-local edits in `data_viewer/persistence/` and two new tests).
+
+| Check | Command | Observed result |
+|---|---|---|
+| Targeted persistence + recovery unit tests | `.venv\Scripts\python.exe -m pytest tests/test_persistence_recovery.py tests/test_persistence_transaction.py -q` | 23 passed |
+| Lint gate (changed modules + tests) | `.venv\Scripts\ruff.exe check data_viewer/persistence/recovery.py data_viewer/persistence/transaction.py tests/test_persistence_recovery.py tests/test_persistence_transaction.py` | passed |
+| Type check (targeted + follow-imports skip) | `.venv\Scripts\mypy.exe --follow-imports=skip data_viewer/persistence/recovery.py data_viewer/persistence/transaction.py tests/test_persistence_recovery.py tests/test_persistence_transaction.py` | Success: no issues found in 4 source files |
+| Syntax check | `.venv\Scripts\python.exe -m compileall -q data_viewer/persistence tests/test_persistence_recovery.py tests/test_persistence_transaction.py` | passed |
+| Full suite regression verification | `.venv\Scripts\python.exe -m pytest -q` | 280 passed, 1 skipped (3 existing NumPy warnings unchanged in `tests/test_edge_cases.py::test_nan_inf_data`) |
+
+Notes:
+
+- Added `.dvtrx` recovery marker handling tests and transaction fault-injection matrix covering TEMP_CREATE/WRITE/FLUSH/REOPEN_TEMP/VALIDATE_TEMP/REPLACE/FSYNC_DIR/REOPEN_FINAL/VALIDATE_FINAL.
+- Recovery marker loading now converts malformed payloads into `WORKSPACE_INVALID` for startup-safety robustness.
+- Windows atomic directory fsync is skipped in `FilesystemAdapter.sync_directory` to avoid lock issues while preserving Linux behavior.
+
+Known gaps:
+
+- Linux verification is still pending in local execution for this task; expected to be covered in workflow evidence.
+

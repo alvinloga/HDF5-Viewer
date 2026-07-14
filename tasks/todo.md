@@ -199,7 +199,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: CLEAN/DIRTY/SAVING/SAVE_FAILED/CONFLICTED legal transitions; external fingerprint check; review lists target/strategy/resources/patches/size/warnings; close choices Save/Discard/Cancel.
 - Verify: state transition, external change, close dirty/multiple documents, validation failure tests.
 
-### [ ] DV-0303 Implement verified atomic replacement service
+### [x] DV-0303 Implement verified atomic replacement service
 
 - Depends: DV-0302, DV-0107.
 - Read: Safe Editing §7, §10–11.
