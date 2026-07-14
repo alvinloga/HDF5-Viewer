@@ -6,6 +6,11 @@ Plugins provide incremental analysis and visualization without importing GUI int
 
 The public contract has `api_version = 1`. Breaking changes require a new API version, migration guidance, compatibility tests, and an ADR.
 
+Current implementation status:
+
+- DV-0701 implements the public type skeleton in `data_viewer.plugins.api`, strict manifest validation in `data_viewer.plugins.manifests`, and built-in registry discovery/lazy loading in `data_viewer.plugins.registry`.
+- Compatibility evaluation, parameter form rendering, runner/input access, result validation/materialization, and reference plugin conformance remain later P7 tasks and must not be claimed as implemented by the presence of the API skeleton.
+
 ## 2. Package boundary
 
 ```text

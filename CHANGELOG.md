@@ -53,6 +53,7 @@ All notable Data Viewer changes are recorded here.
 - Added the first DV-0607 accessibility/localization baseline slice: centralized English/Simplified Chinese UI string resources, shell/dialog/state locale wiring, accessible-name audit helpers, deterministic command-row focus order, and compact high-DPI metric scaling helpers.
 - Extended the DV-0607 baseline with localized base-view chrome and a plot accessibility summary contract for future visualization plugins.
 - Completed the DV-0607 automated baseline with a simulated 200% offscreen shell screenshot/layout check.
+- Added the Plugin API v1 manifest and built-in registry foundation (DV-0701): public plugin result/context types, strict manifest validation, deterministic built-in registry ordering, structured diagnostics, duplicate-ID handling, and lazy entry-point imports.
 
 ### Fixed
 

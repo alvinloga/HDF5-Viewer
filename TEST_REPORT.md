@@ -1626,3 +1626,31 @@ Known gaps moving into P7:
 
 - P6 provides UI foundations and contracts; plugin discovery, compatibility forms, runner/result rendering, and reference plugins remain P7/P8 tasks.
 - Full manual visual acceptance matrices are release-gate work in P11; current P6 evidence is automated offscreen and CI-based.
+
+## DV-0701 plugin manifest schema and built-in registry - 2026-07-15
+
+Revision: working tree based on `edafa2e` before committing the DV-0701 implementation.
+
+Implementation evidence:
+
+- `data_viewer/plugins/api.py` defines the public Plugin API v1 constants and initial typed runtime/result contracts (`PLUGIN_API_VERSION`, `ResultKind`, `InputDescriptor`, `DataChunk`, `InputAccess`, `PluginContext`, `ResultProvenance`, `PluginResult`, `DataViewerPlugin`).
+- `data_viewer/plugins/manifests.py` validates untrusted `plugin.json` dictionaries/files before plugin code import, rejects unknown keys, enforces schema/API version 1, reverse-DNS IDs, semantic versions, packaged built-in entry points, input specs, closed parameter schemas, and result kinds.
+- `data_viewer/plugins/registry.py` discovers only trusted built-in manifest paths, records invalid manifests and duplicate IDs as structured diagnostics, returns deterministic ordering, and imports entry points lazily only when `load_plugin_class()` is called.
+- No reference analysis plugin is added in this task; executable reference plugin/conformance work remains DV-0705.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing plugin registry test | `venv\Scripts\python.exe -m pytest tests\test_plugin_registry.py -q` | failed as expected before implementation: `ModuleNotFoundError: No module named 'data_viewer.plugins'` |
+| Focused plugin registry tests | `venv\Scripts\python.exe -m pytest tests\test_plugin_registry.py -q` | 16 passed |
+| Plugin/package regression subset | `venv\Scripts\python.exe -m pytest tests\test_plugin_registry.py tests\test_data_viewer_package.py tests\test_packaged.py -q` | 26 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\plugins tests\test_plugin_registry.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\plugins tests\test_plugin_registry.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 89 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 425 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- DV-0701 is not checked until Windows/Linux CI passes for the implementation commit.
+- Compatibility evaluation, parameter forms, plugin runner/input access, typed result validation, and reference plugin conformance are later P7 tasks.
