@@ -136,7 +136,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 
 ## P2 — HDF5 vertical slice
 
-### [ ] DV-0201 Implement HDF5 probe and session lifecycle
+### [x] DV-0201 Implement HDF5 probe and session lifecycle
 
 - Depends: DV-0108.
 - Read: Format Support §4.1, DataSource API, ADR-002/003.
