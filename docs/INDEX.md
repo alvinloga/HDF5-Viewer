@@ -11,6 +11,7 @@
 | 3 | `docs/WORKSPACE_FORMAT.md` | Workspace schema contract |
 | 4 | `ARCHITECTURE.md` | Module boundaries and runtime flow |
 | 5 | behavior specs under `docs/` | Format, editing, UI, testing, dependencies |
+| 5 | `docs/FORMAT_INVENTORY.md` | Current format inventory and checkpoint evidence |
 | 6 | `tasks/plan.md` | Implementation ordering and checkpoints |
 | 7 | `tasks/todo.md` | Executable work items |
 

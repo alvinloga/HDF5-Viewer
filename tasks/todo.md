@@ -327,7 +327,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: not registered, advertised, imported, or packaged; no shared domain depends on them; user receives ordinary unsupported-format error.
 - Verify: case-insensitive repository search with reviewed historical exceptions; registry/package dependency tests.
 
-### [ ] DV-0412 Record Checkpoint 4 uncompressed format evidence
+### [x] DV-0412 Record Checkpoint 4 uncompressed format evidence
 
 - Depends: DV-0401 through DV-0411.
 - Acceptance: every uncompressed format passes common and specific matrices; edit/read-only capabilities truthful; security rules proven.

@@ -1058,3 +1058,41 @@ Known gaps:
 
 - This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token even though SSH git push works.
 - This is not Checkpoint 4 evidence. The full uncompressed format matrix still needs DV-0412 evidence recording.
+
+## DV-0412 Checkpoint 4 uncompressed format evidence - 2026-07-15
+
+Checkpoint 4 is recorded against GitHub Actions run [29364690093](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29364690093), head `98fb32babd8bdcfab8d1ee3a147244453dca42a2` on branch `codex/data-viewer-foundation`.
+
+Format inventory:
+
+- `docs/FORMAT_INVENTORY.md` records the current v1 uncompressed format matrix for HDF5, NPY, NPZ, CSV, TSV, TXT, MAT, NIfTI, XLSX, JSON, and YAML/YML.
+- The inventory records safe-edit formats separately from read-only plus export/Save As formats.
+- NetCDF and Zarr are recorded as excluded from v1; DV-0411 removed remaining product paths.
+- Outer `.gz` composition remains out of this checkpoint and starts at DV-0501.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 364 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Target lint | `venv\Scripts\python.exe -m ruff check data_viewer main.py core\registry.py gui\sidebar\folder_explorer.py tests\test_format_scope.py tests\test_nifti_adapter.py tests\test_gui_shell.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 75 source files |
+| Compile | `venv\Scripts\python.exe -m compileall -q main.py core gui data_viewer tests` | passed |
+
+Dual-platform CI verification:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub CLI auth | `gh auth status` | logged in as `alvinloga`; SSH git protocol; repo-scoped token available |
+| Latest branch run | `gh run list --branch codex/data-viewer-foundation --limit 10` | latest run `29364690093` for `98fb32b` started after DV-0411 push |
+| CI watch | `gh run watch 29364690093 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29364690093 --json status,conclusion,headSha,jobs,url` | status `completed`, conclusion `success`, head SHA `98fb32babd8bdcfab8d1ee3a147244453dca42a2` |
+| Artifact download | `gh run download 29364690093 --dir .tmp\ci-29364690093` | downloaded Windows and Ubuntu quality artifacts |
+| Windows quality job | downloaded `ci-reports\Windows\manifest.json` and `pytest.xml` | CPython 3.12.10, Windows/AMD64, run attempt 1, 365 tests, 0 failures, 0 errors, 1 skipped |
+| Ubuntu quality job | downloaded `ci-reports\Ubuntu\manifest.json` and `pytest.xml` | CPython 3.12.13, Linux/x86_64, run attempt 1, 365 tests, 0 failures, 0 errors, 1 skipped |
+| Build artifacts | downloaded `artifacts\Windows` and `artifacts\Ubuntu` | both platforms produced `data_viewer-1.0.0.dev0.tar.gz` and `data_viewer-1.0.0.dev0-py3-none-any.whl` |
+
+Known gaps:
+
+- This is a Checkpoint 4 uncompressed-format evidence gate, not a v1 release gate.
+- Outer gzip composition, UI redesign/workspace/compare, plugin infrastructure and catalog, packaged application installers, SBOM/license evidence, and public GitHub release artifacts remain later tasks.
