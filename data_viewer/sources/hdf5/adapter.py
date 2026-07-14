@@ -7,7 +7,7 @@ from pathlib import Path
 import h5py
 
 from data_viewer.domain import DataViewerError, ErrorCode
-from data_viewer.sources.api import DATASOURCE_API_VERSION, ProbeResult, SourceAdapter
+from data_viewer.sources.api import DATASOURCE_API_VERSION, ProbeResult
 
 from .session import HDF5SourceSession
 
