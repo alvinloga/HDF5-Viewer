@@ -767,7 +767,13 @@ Notes:
 - NPZ save uses reviewed `CellPatch` change sets, source-fingerprint conflict detection, full temporary archive rebuild, `allow_pickle=False` reopen validation, changed-coordinate verification, representative unchanged-value verification, and atomic replacement through `AtomicReplacementService`.
 - The default target shell registry now registers HDF5, NPY, and NPZ adapters.
 
+Dual-platform CI evidence for the committed task revision:
+
+| Platform | Job | Result | Manifest/JUnit evidence |
+|---|---|---|---|
+| Ubuntu | [87158465328](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29354452506/job/87158465328) | passed | artifact `data-viewer-quality-Ubuntu-29354452506-1`; manifest commit `f56632905becd03960c4b84fbe644e4627978507`; CPython `3.12.13`; runner `Linux x86_64`; lock hash `f44c592658057904746d776129076715cde998fb699a797e256f432fa2c07734`; JUnit `315` tests, `0` failures, `0` errors, `1` skipped |
+| Windows | [87158465343](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29354452506/job/87158465343) | passed | artifact `data-viewer-quality-Windows-29354452506-1`; manifest commit `f56632905becd03960c4b84fbe644e4627978507`; CPython `3.12.10`; runner `Windows AMD64`; lock hash `f44c592658057904746d776129076715cde998fb699a797e256f432fa2c07734`; JUnit `315` tests, `0` failures, `0` errors, `1` skipped |
+
 Known gaps:
 
-- This is local Windows task evidence only; dual-platform CI evidence is pending the committed branch run.
 - This is DV-0402 task evidence only, not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0403 through DV-0411 finish.
