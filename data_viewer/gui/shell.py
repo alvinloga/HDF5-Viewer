@@ -73,6 +73,7 @@ from data_viewer.sources import (
     ReadRequest,
     SourceRegistry,
 )
+from data_viewer.sources.delimited import DelimitedTextAdapter
 from data_viewer.sources.hdf5 import HDF5Adapter
 from data_viewer.sources.numpy import NPYAdapter
 from data_viewer.sources.npz import NPZAdapter
@@ -93,7 +94,9 @@ ROLE_LOAD_MORE = Qt.ItemDataRole.UserRole + 5
 def create_source_registry() -> SourceRegistry:
     """Build a bootstrap registry for the current task profile."""
 
-    return SourceRegistry([HDF5Adapter(), NPYAdapter(), NPZAdapter()])
+    return SourceRegistry(
+        [HDF5Adapter(), NPYAdapter(), NPZAdapter(), DelimitedTextAdapter()]
+    )
 
 
 @dataclass(frozen=True)
@@ -1024,17 +1027,28 @@ class DataViewerShell(QMainWindow):
             self._configure_row_col_limits(metadata)
 
         read_spec = self._build_selection(metadata, force_refresh_axes=force_refresh_axes)
-        if read_spec is None:
+        if metadata.domain == DataDomain.TABLE:
+            row_offset = max(0, self._row_offset_input.value())
+            row_limit = max(1, self._row_limit_input.value())
+            request_obj = ReadRequest(
+                resource_id=resource_id,
+                scope=OperationScope.PAGE,
+                row_offset=row_offset,
+                row_limit=row_limit,
+                max_bytes=8 * 1024 * 1024,
+            )
+            self._status_scope.setText(f"page: rows {row_offset}:{row_offset + row_limit}")
+        elif read_spec is None:
             self._set_workspace_state("error", "Unsupported selection for this resource.")
             return
-        self._set_status_scope(read_spec)
-
-        request_obj = ReadRequest(
-            resource_id=resource_id,
-            selection=read_spec,
-            scope=OperationScope.FULL if metadata.shape == () else OperationScope.SLICE,
-            max_bytes=8 * 1024 * 1024,
-        )
+        else:
+            self._set_status_scope(read_spec)
+            request_obj = ReadRequest(
+                resource_id=resource_id,
+                selection=read_spec,
+                scope=OperationScope.FULL if metadata.shape == () else OperationScope.SLICE,
+                max_bytes=8 * 1024 * 1024,
+            )
 
         self._set_workspace_state("loading", f"Reading: {resource_id.node_path}")
         self._run_with_cancel_token(
@@ -1268,8 +1282,8 @@ class DataViewerShell(QMainWindow):
         self._refresh_edit_actions()
         self._set_workspace_state("ready", f"Metadata ready: {metadata.name}")
 
-        # auto-load if this is an array.
-        if metadata.domain == DataDomain.ARRAY:
+        # auto-load data domains that the workspace table model can render.
+        if metadata.domain in {DataDomain.ARRAY, DataDomain.TABLE}:
             self._schedule_read(document, metadata.resource_id, metadata, force_refresh_axes=False)
         else:
             self._set_workspace_state("disabled", "Unsupported for tabular workspace in this build.")

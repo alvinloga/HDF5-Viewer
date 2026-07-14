@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Protocol
 
 import numpy as np
 import pytest
@@ -22,6 +23,7 @@ from data_viewer.domain import (
     SourceCapability,
     SourceFingerprint,
 )
+from data_viewer.domain.payload import TablePayload
 from data_viewer.sources.api import (
     DATASOURCE_API_VERSION,
     NodePage,
@@ -34,6 +36,19 @@ from data_viewer.tasks import CancellationToken
 
 FAKE_HEADER = b"DVFAKE\n"
 FAKE_VALUES = np.arange(6, dtype=np.int64).reshape(2, 3)
+
+
+class TrackingAdapter(Protocol):
+    """Shared shape for adapter wrappers that expose the last opened session."""
+
+    adapter_id: str
+    last_session: "CloseCountingSession | None"
+
+
+class CloseCountingSession(Protocol):
+    """Session proxy shape used by conformance close-idempotence checks."""
+
+    close_count: int
 
 
 def write_fake_source(path: Path, *, payload: bytes = b"payload") -> Path:
@@ -320,6 +335,92 @@ def assert_source_adapter_conformance(
     with pytest.raises(DataViewerError) as cancelled_error:
         session.read(
             ReadRequest(resource_id=resource),
+            cancellation=cancelled,
+            progress=lambda _done, _total, _message: None,
+        )
+    assert cancelled_error.value.code is ErrorCode.READ_CANCELLED
+
+    with pytest.raises(DataViewerError) as missing_error:
+        session.get_metadata(
+            ResourceId(session.source_uri, "/missing"),
+            cancellation=token,
+        )
+    assert missing_error.value.code is ErrorCode.RESOURCE_NOT_FOUND
+
+    session.close()
+    session.close()
+    assert adapter.last_session is not None
+    assert adapter.last_session.close_count == 1
+
+    with pytest.raises(DataViewerError) as closed_error:
+        session.root()
+    assert closed_error.value.code is ErrorCode.SOURCE_CLOSED
+
+
+def assert_table_source_adapter_conformance(
+    registry: SourceRegistry,
+    path: Path,
+    adapter: TrackingAdapter,
+    *,
+    expected_columns: tuple[str, ...],
+    expected_rows: int,
+) -> None:
+    """Run shared source contract checks for a flat table adapter."""
+
+    token = CancellationToken()
+    selected = registry.select_adapter(path, cancellation=token)
+    assert selected.adapter is adapter
+    assert selected.probe.adapter_id == adapter.adapter_id
+
+    session = registry.open(path, cancellation=token)
+    root = session.root()
+    assert root.resource_id == ResourceId(path.resolve(strict=False).as_uri(), "/")
+
+    page = session.list_children(
+        root.resource_id,
+        cursor=None,
+        page_size=1,
+        cancellation=token,
+    )
+    assert page.next_cursor is None
+    assert page.total_count == 1
+    resource = page.items[0].resource_id
+
+    metadata = session.get_metadata(resource, cancellation=token)
+    assert metadata.domain is DataDomain.TABLE
+    assert metadata.node_kind is NodeKind.RESOURCE
+    assert metadata.shape == (expected_rows, len(expected_columns))
+    assert tuple(column.name for column in metadata.columns) == expected_columns
+    assert SourceCapability.PAGED_ROWS in metadata.capabilities
+
+    progress_events: list[tuple[int, int | None, str]] = []
+    result = session.read(
+        ReadRequest(
+            resource_id=resource,
+            scope=OperationScope.PAGE,
+            row_offset=1,
+            row_limit=1,
+            selected_columns=expected_columns[:1],
+            max_bytes=FAKE_VALUES.nbytes,
+        ),
+        cancellation=token,
+        progress=lambda done, total, message: progress_events.append(
+            (done, total, message)
+        ),
+    )
+
+    assert isinstance(result.payload, TablePayload)
+    assert result.scope is OperationScope.PAGE
+    assert result.payload.row_count == 1
+    assert result.payload.source_row(0) == 1
+    assert tuple(column.name for column in result.payload.columns) == expected_columns[:1]
+    assert progress_events == [(0, 1, "start"), (1, 1, "done")]
+
+    cancelled = CancellationToken()
+    cancelled.cancel()
+    with pytest.raises(DataViewerError) as cancelled_error:
+        session.read(
+            ReadRequest(resource_id=resource, scope=OperationScope.PAGE),
             cancellation=cancelled,
             progress=lambda _done, _total, _message: None,
         )

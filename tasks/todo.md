@@ -256,7 +256,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: synthetic member hierarchy; no pickle; traversal/duplicate/encrypted/ratio/count/size defenses; edits rebuild verified archive; unaffected member semantics preserved.
 - Verify: conformance, adversarial ZIP fixtures, edit/reopen/fault tests.
 
-### [ ] DV-0403 Implement delimited import preview and CSV/TSV adapter
+### [x] DV-0403 Implement delimited import preview and CSV/TSV adapter
 
 - Depends: DV-0108, DV-0303.
 - Read: Format Support §4.4.

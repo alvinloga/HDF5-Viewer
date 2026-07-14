@@ -777,3 +777,32 @@ Dual-platform CI evidence for the committed task revision:
 Known gaps:
 
 - This is DV-0402 task evidence only, not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0403 through DV-0411 finish.
+
+## DV-0403 delimited import preview and CSV/TSV adapter - 2026-07-15
+
+Revision: working tree on `codex/data-viewer-foundation` with task-local additions in `data_viewer/sources/delimited/`, default registry/table rendering wiring in `data_viewer/gui/shell.py`, shared table conformance support in `tests/conformance/source_adapter.py`, and `tests/test_delimited_adapter.py`.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Focused delimited adapter/preview suite | `venv\Scripts\python.exe -m pytest tests\test_delimited_adapter.py -q` | 9 passed |
+| Delimited plus table-render GUI smoke | `venv\Scripts\python.exe -m pytest tests\test_delimited_adapter.py tests\test_gui_shell.py::test_opening_csv_file_updates_table_workspace -q` | 10 passed |
+| Source registry/controller/GUI/NPY/NPZ/delimited regression subset | `venv\Scripts\python.exe -m pytest tests\test_source_registry.py tests\test_document_controller.py tests\test_gui_shell.py tests\test_numpy_adapter.py tests\test_npz_adapter.py tests\test_delimited_adapter.py -q` | 55 passed |
+| Lint gate | `venv\Scripts\ruff.exe check data_viewer\sources\delimited data_viewer\gui\shell.py tests\test_delimited_adapter.py tests\test_gui_shell.py tests\conformance\source_adapter.py` | passed |
+| Type check | `venv\Scripts\python.exe -m mypy data_viewer tests\test_delimited_adapter.py tests\test_gui_shell.py` | Success: no issues found in 57 source files |
+| Syntax check | `venv\Scripts\python.exe -m compileall data_viewer\sources\delimited data_viewer\gui\shell.py tests\test_delimited_adapter.py tests\test_gui_shell.py tests\conformance\source_adapter.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 324 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Notes:
+
+- Added `DelimitedTextAdapter`, `DelimitedSourceSession`, `DelimitedTextOptions`, and `preview_delimited_source` for CSV/TSV table sources.
+- Opening uses bounded preview with explicit confirmed options: encoding, delimiter, quote/escape behavior, header row, skipped rows, comment prefix, decimal/thousands separators, missing tokens, and dtype overrides.
+- Default decoding is strict UTF-8 with UTF-8 BOM detection; invalid bytes fail with `SOURCE_MALFORMED` and no replacement-character fallback.
+- The adapter exposes one stable `/table` resource with `TABLE` domain, column schema metadata, paged row reads, selected-column reads, and stable zero-based data-row identity through `TablePayload.source_row()`.
+- Format tests cover delimiter defaults, quoted values, BOM, Unicode, malformed quotes, invalid decoding, missing values, dtype overrides, selected columns, large-offset paged reads, missing sources, wrong resources, cancellation, and table-source conformance.
+- The target shell registry now registers CSV/TSV and can render paged `TablePayload` data in the workspace table model.
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending the committed branch run.
+- This is DV-0403 adapter/read evidence only. Verified CSV/TSV source overwrite, dialect-preserving rewrite, conflict handling, and transaction fault tests remain owned by DV-0404.
+- This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0404 through DV-0411 finish.
