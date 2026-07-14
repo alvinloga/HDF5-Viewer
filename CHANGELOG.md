@@ -48,6 +48,7 @@ All notable Data Viewer changes are recorded here.
 - Added the application command registry and expanded ActiveContext (DV-0602): stable command IDs, labels, shortcuts, semantic actions, enabled/disabled reasons, and explicit split/view/resource/selection/task/dirty state without widget coupling.
 - Added the first production shell structure slice (DV-0603): command bar bindings, authoritative structure tree contract, workspace tabs, explicit active split label, inspector tabs, Tasks/Output/Problems bottom panel, expanded status fields, and 1024×768 minimum usability guard.
 - Added standard Qt state component contracts (DV-0604): initial/loading/empty/ready/partial/error/disabled/dirty/read-only/conflicted/stale view models, keyboard-reachable actions, safe error details, and non-color-only labels.
+- Added base workspace view contracts and widgets (DV-0605, pending CI): virtual table, bounded array projection, paged text preview, and image projection views with explicit scope, coordinates, shape, slice, cursor, and plugin result-channel metadata.
 
 ### Fixed
 

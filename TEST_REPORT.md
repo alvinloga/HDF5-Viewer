@@ -1407,3 +1407,34 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Broad shell/view replacement of ad-hoc state labels remains follow-up integration work after the reusable state component contract is available.
+
+## DV-0605 base view contracts and widgets - 2026-07-15
+
+Revision: working tree based on `847562f` before committing the DV-0605 implementation.
+
+Implementation evidence:
+
+- `data_viewer/gui/views.py` adds stable `ViewKind` and `BaseViewContract` values for workspace views and later plugin/result routing.
+- `TableViewWidget` renders `TablePayload` through a virtual `QAbstractTableModel`, keeps row numbers as headers, and exposes page scope/source-row coordinates without adding source-row data columns.
+- `ArrayViewWidget` renders only explicit 0D/1D/2D bounded projections, exposes original-to-result shape and normalized slice text, and rejects implicit high-dimensional flattening.
+- `TextViewWidget` renders `TextPayload` as read-only text with offset coordinates and a visible partial-preview banner when `is_complete=False`; line numbers remain presentation metadata and are not injected into source text.
+- `ImageViewWidget` renders 2D array projections with preserved aspect/zoom/interpolation labels and cursor display-to-source coordinate/value provenance.
+- Base contracts include result channels so later plugin result renderers can target workspace table/array/text/image views without depending on concrete shell internals.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing base-view test | `venv\Scripts\python.exe -m pytest tests\test_gui_base_views.py -q` | failed as expected before implementation: `ModuleNotFoundError: No module named 'data_viewer.gui.views'` |
+| Focused base view tests | `venv\Scripts\python.exe -m pytest tests\test_gui_base_views.py -q` | 5 passed |
+| GUI view/state/shell regression subset | `venv\Scripts\python.exe -m pytest tests\test_gui_base_views.py tests\test_gui_state_components.py tests\test_gui_shell.py -q` | 26 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\gui tests\test_gui_base_views.py tests\test_gui_state_components.py tests\test_gui_shell.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\gui tests\test_gui_base_views.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 82 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 396 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- CI Windows/Ubuntu evidence is not recorded yet for this DV-0605 implementation commit.
+- The shell still uses its existing internal table model; replacing shell rendering with these reusable base views is a follow-up integration slice.
+- Full image rendering, large-scroll performance instrumentation, and volume/NIfTI view specialization remain later P6/P8 work.
