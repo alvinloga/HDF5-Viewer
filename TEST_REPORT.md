@@ -833,3 +833,32 @@ Known gaps:
 
 - This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token.
 - This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0405 through DV-0411 finish.
+
+## DV-0405 TXT text/table dual-mode adapter and writer - 2026-07-15
+
+Revision: working tree on `codex/data-viewer-foundation` with task-local additions in `data_viewer/sources/text/`, TXT registration in the target shell registry, text workspace rendering in `data_viewer/gui/shell.py`, and tests in `tests/test_text_adapter.py` plus `tests/test_gui_shell.py`.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing TXT adapter test | `venv\Scripts\python.exe -m pytest tests\test_text_adapter.py -q` | failed as expected before implementation: collection failed because `data_viewer.sources.text` did not exist |
+| Focused TXT adapter/writer suite | `venv\Scripts\python.exe -m pytest tests\test_text_adapter.py -q` | 5 passed |
+| TXT plus GUI smoke | `venv\Scripts\python.exe -m pytest tests\test_text_adapter.py tests\test_gui_shell.py::test_opening_txt_file_updates_text_workspace -q` | 6 passed |
+| Source/text/delimited/registry/GUI regression subset | `venv\Scripts\python.exe -m pytest tests\test_text_adapter.py tests\test_delimited_adapter.py tests\test_source_registry.py tests\test_gui_shell.py -q` | 40 passed |
+| Lint gate | `venv\Scripts\ruff.exe check data_viewer\sources\text data_viewer\gui\shell.py tests\test_text_adapter.py tests\test_gui_shell.py` | passed |
+| Type check | `venv\Scripts\python.exe -m mypy data_viewer tests\test_text_adapter.py tests\test_gui_shell.py` | Success: no issues found in 61 source files |
+| Syntax check | `venv\Scripts\python.exe -m compileall data_viewer\sources\text data_viewer\gui\shell.py tests\test_text_adapter.py tests\test_gui_shell.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 335 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Notes:
+
+- Added `TXTAdapter` and `TextSourceSession`; `.txt` defaults to strict UTF-8 or UTF-8-BOM text mode and does not infer whitespace-delimited scientific notation as a table.
+- Text mode exposes one stable `/text` resource with `TEXT` domain, `STREAMING_READ`, `EDIT_PATCH`, `ATOMIC_REWRITE`, and `SAVE_AS` capabilities.
+- Text reads are bounded through page-style `ReadRequest` offsets/limits and return `TextPayload` with offset and completion provenance.
+- Text persistence accepts reviewed `TextPatch` ranges, validates old text fingerprints, writes a complete replacement through `AtomicReplacementService`, validates the candidate, refreshes the session fingerprint, and preserves untouched bytes including line endings and final-newline state.
+- Explicit table mode requires caller-provided `DelimitedTextOptions` and delegates to the CSV/TSV delimited session/writer, preserving the no-silent-table-inference rule.
+- The target shell now registers `TXTAdapter` and renders `TextPayload` as a one-column workspace preview.
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token.
+- This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0406 through DV-0411 finish.

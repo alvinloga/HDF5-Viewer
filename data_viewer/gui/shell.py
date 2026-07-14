@@ -56,7 +56,7 @@ from data_viewer.domain import (
     SelectionSpec,
     ErrorCode,
 )
-from data_viewer.domain.payload import TablePayload
+from data_viewer.domain.payload import TablePayload, TextPayload
 from data_viewer.editing.patches import EditPatch
 from data_viewer.editing.review import SaveReview, SaveStrategy
 from data_viewer.editing.session import EditSessionState
@@ -77,6 +77,7 @@ from data_viewer.sources.delimited import DelimitedTextAdapter
 from data_viewer.sources.hdf5 import HDF5Adapter
 from data_viewer.sources.numpy import NPYAdapter
 from data_viewer.sources.npz import NPZAdapter
+from data_viewer.sources.text import TXTAdapter
 
 from .commands import OpenCommandHandle, OpenCommandResult, OpenFileCommand
 
@@ -95,7 +96,7 @@ def create_source_registry() -> SourceRegistry:
     """Build a bootstrap registry for the current task profile."""
 
     return SourceRegistry(
-        [HDF5Adapter(), NPYAdapter(), NPZAdapter(), DelimitedTextAdapter()]
+        [HDF5Adapter(), NPYAdapter(), NPZAdapter(), DelimitedTextAdapter(), TXTAdapter()]
     )
 
 
@@ -132,7 +133,7 @@ class _ArrayTableModel(QAbstractTableModel):
 
     def __init__(self) -> None:
         super().__init__()
-        self._payload: ArrayPayload | TablePayload | None = None
+        self._payload: ArrayPayload | TablePayload | TextPayload | None = None
         self._rows: list[list[str]] = []
         self._headers: tuple[list[str], list[str]] = ([], [])
         self._row_source_coords: list[tuple[int, ...]] = []
@@ -162,12 +163,20 @@ class _ArrayTableModel(QAbstractTableModel):
             return str(value)
         return repr(value)
 
-    def set_payload(self, payload: ArrayPayload | TablePayload) -> None:
+    def set_payload(self, payload: ArrayPayload | TablePayload | TextPayload) -> None:
         self.beginResetModel()
         self._payload = payload
         self._rows = []
         self._row_source_coords = []
         self._col_source_coords = []
+
+        if isinstance(payload, TextPayload):
+            self._headers = (["Text"], [""])
+            self._rows = [[payload.text]]
+            self._row_source_coords = [(payload.offset,)]
+            self._col_source_coords = [(0,)]
+            self.endResetModel()
+            return
 
         if isinstance(payload, TablePayload):
             columns = [column.name for column in payload.columns]
@@ -1038,6 +1047,17 @@ class DataViewerShell(QMainWindow):
                 max_bytes=8 * 1024 * 1024,
             )
             self._status_scope.setText(f"page: rows {row_offset}:{row_offset + row_limit}")
+        elif metadata.domain == DataDomain.TEXT:
+            row_offset = max(0, self._row_offset_input.value())
+            row_limit = max(1, self._row_limit_input.value())
+            request_obj = ReadRequest(
+                resource_id=resource_id,
+                scope=OperationScope.PAGE,
+                row_offset=row_offset,
+                row_limit=row_limit,
+                max_bytes=8 * 1024 * 1024,
+            )
+            self._status_scope.setText(f"text: chars {row_offset}:{row_offset + row_limit}")
         elif read_spec is None:
             self._set_workspace_state("error", "Unsupported selection for this resource.")
             return
@@ -1283,7 +1303,7 @@ class DataViewerShell(QMainWindow):
         self._set_workspace_state("ready", f"Metadata ready: {metadata.name}")
 
         # auto-load data domains that the workspace table model can render.
-        if metadata.domain in {DataDomain.ARRAY, DataDomain.TABLE}:
+        if metadata.domain in {DataDomain.ARRAY, DataDomain.TABLE, DataDomain.TEXT}:
             self._schedule_read(document, metadata.resource_id, metadata, force_refresh_axes=False)
         else:
             self._set_workspace_state("disabled", "Unsupported for tabular workspace in this build.")
@@ -1313,9 +1333,16 @@ class DataViewerShell(QMainWindow):
             self._set_status_scope(result.selection)
 
         payload = read_result.payload
-        if isinstance(payload, (ArrayPayload, TablePayload)):
+        if isinstance(payload, (ArrayPayload, TablePayload, TextPayload)):
             self._workspace_model.set_payload(payload)
             self._workspace_view.resizeColumnsToContents()
+            if isinstance(payload, TextPayload):
+                self._set_workspace_state(
+                    "ready",
+                    f"Workspace ready: text preview {len(payload.text)} chars",
+                )
+                self._refresh_edit_actions()
+                return
             self._set_workspace_state(
                 "ready",
                 f"Workspace ready: {self._counted_rows(self._workspace_model)} rows, {self._counted_cols(self._workspace_model)} cols",

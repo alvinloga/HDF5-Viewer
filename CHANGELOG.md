@@ -35,6 +35,7 @@ All notable Data Viewer changes are recorded here.
 - Added the NPZ adapter and archive-rebuild writer (DV-0402): `.npz` sources now expose synthetic member hierarchies, reject unsafe archive members and object arrays, enforce ZIP size/compression safety budgets, support bounded member selection reads, and save reviewed cell patches by rebuilding and validating the archive.
 - Added the CSV/TSV delimited adapter foundation (DV-0403): `.csv` and `.tsv` sources now use bounded strict-UTF-8/BOM previews, explicit dialect/options/schema provenance, paged table reads with stable row identity, and shell table rendering; verified source overwrite remains owned by DV-0404.
 - Added the CSV/TSV verified writer (DV-0404): reviewed table cell patches now rewrite the full delimited file through the atomic replacement service, preserve confirmed encoding/dialect and line-ending/final-newline state, validate row/column counts and patched values before replacement, and reject stale source fingerprints.
+- Added the TXT text/table dual-mode adapter and writer (DV-0405): `.txt` opens as strict UTF-8/BOM text by default with bounded text previews and atomic `TextPatch` replacement, while explicitly configured table mode reuses confirmed delimited parsing/writing without silent whitespace inference.
 
 ### Fixed
 

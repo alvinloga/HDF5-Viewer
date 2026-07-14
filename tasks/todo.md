@@ -271,7 +271,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: confirmed dialect/encoding preserved; full temporary rewrite; row/column/schema validation; patches apply only original row coordinates; external conflict handled.
 - Verify: round-trip dialect/line endings/quotes/missing/dtype tests and transaction fault matrix.
 
-### [ ] DV-0405 Implement TXT text/table dual-mode adapter and writer
+### [x] DV-0405 Implement TXT text/table dual-mode adapter and writer
 
 - Depends: DV-0403, DV-0404.
 - Read: Format Support §4.5.

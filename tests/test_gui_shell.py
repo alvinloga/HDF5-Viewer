@@ -141,6 +141,37 @@ def test_opening_csv_file_updates_table_workspace(qapp: QApplication, tmp_path: 
     shell.close()
 
 
+def test_opening_txt_file_updates_text_workspace(qapp: QApplication, tmp_path: Path) -> None:
+    """Opening a valid TXT file renders a bounded text payload in the workspace."""
+
+    from data_viewer.sources.text import TXTAdapter
+
+    fixture_path = tmp_path / "notes.txt"
+    fixture_path.write_text("alpha\nbeta\n", encoding="utf-8")
+
+    shell = DataViewerShell(source_registry=SourceRegistry([TXTAdapter()]))
+    handle = shell.open_file(fixture_path)
+    assert handle is not None
+    _pump_events(cycles=120)
+
+    tree = shell.findChild(QTreeWidget, "navigation_region")
+    assert tree is not None
+    root_item = tree.topLevelItem(0)
+    assert root_item is not None
+    text_item = _find_node_by_name(root_item, "text")
+    assert text_item is not None
+    shell._on_navigation_item_clicked(text_item, 0)
+    _pump_events(cycles=120)
+
+    assert shell._active_metadata is not None
+    assert shell._active_metadata.domain is DataDomain.TEXT
+    assert shell._workspace_model.rowCount() == 1
+    assert shell._workspace_model.columnCount() == 1
+    assert shell._workspace_model.data(shell._workspace_model.index(0, 0)) == "alpha\nbeta\n"
+    assert "text preview" in shell.findChild(QLabel, "workspace_status").text()
+    shell.close()
+
+
 def test_open_can_be_cancelled_during_open(qapp: QApplication, tmp_path: Path) -> None:
     """Cancel Open interrupts an in-flight open and keeps shell state clean."""
 
