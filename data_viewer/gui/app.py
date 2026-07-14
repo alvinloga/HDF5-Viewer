@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import QApplication
 
 from data_viewer import __version__
 from data_viewer.gui.shell import launch_shell
+from data_viewer.gui.theme import ThemeMode, apply_application_theme
 
 
 def run_data_viewer(
@@ -36,6 +37,7 @@ def run_data_viewer(
     app = QApplication(qt_args)
     app.setApplicationName("Data Viewer")
     app.setApplicationVersion(__version__)
+    apply_application_theme(app, ThemeMode.LIGHT)
 
     startup = Path(path) if path else None
     launch_shell(startup_path=startup)

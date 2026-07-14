@@ -1250,3 +1250,35 @@ Known gaps:
 
 - This is a Checkpoint 5 gzip evidence gate, not a v1 release gate.
 - UI system rebuild, plugin platform/catalog, workspace/compare features, hardening, packaged application installers, SBOM/license evidence, manual Windows/Linux acceptance, and public GitHub release artifacts remain later tasks.
+
+## DV-0601 semantic themes, metrics, typography, and SVG icons - 2026-07-15
+
+Revision: working tree based on `52bd499` before committing the DV-0601 implementation.
+
+Implementation evidence:
+
+- `data_viewer/gui/theme.py` adds centralized semantic light/dark palettes for the UI/UX required color roles.
+- Palette validation includes WCAG contrast checks for primary/secondary text and focus indicators against ordinary shell surfaces.
+- Compact desktop metrics encode the 4 px spacing scale, 28/32/36 px control heights, 26-30 px row-height range, and 4/6 px radius system.
+- Typography tokens resolve platform UI and monospace font roles through Qt instead of hard-coded web fonts.
+- A bundled `dv-line` monochrome SVG icon family exposes accessible titles and uses `currentColor` strokes rather than emoji or Unicode pseudo-icons.
+- `build_application_stylesheet()` derives the target Qt stylesheet from semantic tokens, and the target application bootstrap applies the default light theme.
+- `scan_ui_token_violations()` provides the repository palette/icon scan used by the DV-0601 tests.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing theme contract test | `venv\Scripts\python.exe -m pytest tests\test_gui_theme.py -q` | failed as expected before implementation: `ModuleNotFoundError: No module named 'data_viewer.gui.theme'` |
+| Theme contract tests | `venv\Scripts\python.exe -m pytest tests\test_gui_theme.py -q` | 7 passed |
+| GUI regression subset | `venv\Scripts\python.exe -m pytest tests\test_gui_theme.py tests\test_gui_shell.py tests\test_gui_interaction.py -q` | 33 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\gui tests\test_gui_theme.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 79 source files |
+| Compile | `venv\Scripts\python.exe -m compileall -q data_viewer\gui tests\test_gui_theme.py` | passed |
+| Focused shell subset | `venv\Scripts\python.exe -m pytest tests\test_gui_theme.py tests\test_gui_shell.py -q` | 24 passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 384 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- This is local Windows task evidence only; DV-0601 remains unchecked until the commit is pushed and the dual-platform GitHub Actions matrix succeeds.
+- Broader shell layout/state rebuild, command registry, standard state components, localization, and visual screenshot matrix remain DV-0602 through DV-0608.
