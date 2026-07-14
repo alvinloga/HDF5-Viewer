@@ -391,18 +391,22 @@ Known limits remain: request-generation and lifecycle primitives are implemented
 
 ## DV-0107 platform paths, cache, config, and logging primitives - 2026-07-14
 
-Revision: working tree before commit (post-review refactor of `data_viewer/infrastructure/*`).
+Revision: `6e58508` (`fix: harden infra typed parsing and formatter init`).
 
 | Check | Command | Observed result |
 |---|---|---|
 | Compilation/syntax check | `python -m compileall -q data_viewer/infrastructure tests/test_infrastructure_paths.py tests/test_infrastructure_config.py tests/test_infrastructure_cache.py tests/test_infrastructure_logging.py` | passed |
-| Targeted infrastructure script checks | `python -c` inline smoke checks for path resolution, config load/save/recover, bounded cache put/get/evict/expire/persist, and redacted logging output | passed |
-| Targeted pytest for infrastructure tests | `python -m pytest tests/test_infrastructure_paths.py tests/test_infrastructure_config.py tests/test_infrastructure_cache.py tests/test_infrastructure_logging.py -q` | blocked in this local workspace because `tests/conftest.py` autouse legacy GUI fixture requires `PyQt6.QtWidgets` |
+| Targeted infrastructure script checks | `.venv\\Scripts\\python.exe -c` inline smoke checks for path resolution, config load/save/recover, bounded cache put/get/evict/expire/persist, and redacted logging output | passed |
+| Targeted pytest for infrastructure tests | `.venv\\Scripts\\python.exe -m pytest tests/test_infrastructure_cache.py tests/test_infrastructure_config.py tests/test_infrastructure_logging.py tests/test_infrastructure_paths.py -q` | 13 passed |
+| Scope lint/type checks | `.venv\\Scripts\\ruff.exe check data_viewer tests/test_infrastructure_cache.py tests/test_infrastructure_config.py tests/test_infrastructure_logging.py tests/test_infrastructure_paths.py`; `.venv\\Scripts\\mypy.exe data_viewer/infrastructure tests/test_infrastructure_cache.py tests/test_infrastructure_config.py tests/test_infrastructure_logging.py tests/test_infrastructure_paths.py` | passed |
+| Full collection | `.venv\\Scripts\\python.exe -m pytest --collect-only -q` | 208 tests collected |
+| Full execution | `.venv\\Scripts\\python.exe -m pytest -q` | 207 passed, 1 skipped |
 | Documentation/task ledger updates | `tasks/todo.md`, `CHANGELOG.md`, `TEST_REPORT.md` | updated |
 
 Known gaps:
 
-- The local environment for this workspace still cannot import legacy `PyQt6.QtWidgets`, so CI with PyQt-capable runtime should rerun the new test modules before merge.
+- This workspace still reports three NumPy NaN/Inf warnings from `test_edge_cases.py::test_nan_inf_data` (intentionally preserved for coverage).
+- `save_config` merge utility currently serializes `AppConfig` as v1 without unknown-key passthrough in this pass.
 - `save_config` merge utility currently serializes `AppConfig` as v1 without unknown-key passthrough in this pass.
 
 ## Checkpoint record format
