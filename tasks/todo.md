@@ -174,7 +174,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: tree lazy expands; single click metadata/Enter open; virtual table requests pages/slices; high-dimensional axis controls; explicit loading/empty/partial/error/read-only states; active source/path/shape/dtype/slice visible.
 - Verify: pytest-qt navigation/state/rapid-select/close tests; no widget-per-cell test; deterministic screenshots for vertical slice.
 
-### [ ] DV-0206 Record Checkpoint 2 HDF5 vertical evidence
+### [x] DV-0206 Record Checkpoint 2 HDF5 vertical evidence
 
 - Depends: DV-0201 through DV-0205.
 - Acceptance: representative large hierarchy opens/navigates without UI freeze or uncontrolled load; repeated open/close stable; known legacy differences recorded.

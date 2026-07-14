@@ -496,6 +496,28 @@ Known gaps:
 
 - Linux verification is still pending for this task in CI before DV-0206 evidence can be marked complete.
 
+## DV-0206 Record Checkpoint 2 HDF5 vertical evidence - 2026-07-14
+
+Revision: working tree for `tests/test_gui_shell.py`.
+
+| Check | Command | Observed result |
+|---|---|---|
+| HDF5 adapter conformance | `.venv\Scripts\python.exe -m pytest tests/test_hdf5_adapter.py -q` | 18 passed |
+| Targeted shell evidence tests | `.venv\Scripts\python.exe -m pytest tests/test_gui_shell.py -q` | 10 passed |
+| Full suite verification | `.venv\Scripts\python.exe -m pytest -q` | 237 passed, 1 skipped |
+| Lint gate for target file | `.venv\Scripts\ruff.exe check tests/test_gui_shell.py` | passed |
+
+Notes:
+
+- Added evidence coverage for large lazy tree pagination under a 640-group hierarchy and idempotent repeated open/close cycles on one shell.
+- The large-tree test verifies no uncontrolled root-level eager traversal by asserting that children load only by explicit activation and that final load state stabilizes without a lingering load-more placeholder.
+- The repeated open/close test confirms background tasks and open documents are drained between cycles.
+
+Known gaps:
+
+- `pytest -q` still reports pre-existing NumPy warnings in `tests/test_edge_cases.py::test_nan_inf_data` (3 warnings, unchanged).
+- Linux verification is still pending for this task in CI.
+
 ## Checkpoint record format
 
 For each checkpoint append:

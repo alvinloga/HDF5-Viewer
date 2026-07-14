@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 import h5py
@@ -274,6 +275,133 @@ def test_lazy_tree_expansion_and_load_more(qapp: QApplication, tmp_path: Path) -
     assert bulk_node.childCount() > load_more_before_count
 
     shell.close()
+
+
+def _pump_until(
+    predicate: Callable[[], bool],
+    cycles: int = 200,
+    sleep: float = 0.02,
+) -> bool:
+    """Pump Qt events until predicate returns True or the cycle budget is exhausted."""
+
+    for _ in range(cycles):
+        QApplication.processEvents()
+        time.sleep(sleep)
+        if predicate():
+            return True
+    return False
+
+
+def _build_hierarchical_file(path: Path, group_count: int, datasets_per_group: int) -> None:
+    with h5py.File(path, "w") as handle:
+        for group_index in range(group_count):
+            group = handle.create_group(f"group_{group_index:04d}")
+            for dataset_index in range(datasets_per_group):
+                group.create_dataset(
+                    f"values_{dataset_index:03d}",
+                    data=np.arange(12, dtype=np.int64).reshape(3, 4),
+                )
+
+
+def test_large_hierarchy_is_lazy_and_does_not_uncontrolled_load(
+    qapp: QApplication, tmp_path: Path
+) -> None:
+    """Large trees load only paginated children and remain deterministic when paginating."""
+
+    fixture_path = tmp_path / "large_tree.h5"
+    _build_hierarchical_file(fixture_path, group_count=640, datasets_per_group=1)
+
+    shell = DataViewerShell(source_registry=SourceRegistry([HDF5Adapter()]))
+    handle = shell.open_file(fixture_path)
+    assert handle is not None
+    assert _pump_until(lambda: shell.findChild(QTreeWidget, "navigation_region").topLevelItemCount() == 1)
+
+    tree = shell.findChild(QTreeWidget, "navigation_region")
+    assert tree is not None
+    root = tree.topLevelItem(0)
+    assert root is not None
+    shell._on_navigation_item_expanded(root)
+
+    first_page_ready = _pump_until(
+        lambda: root.childCount() > 0
+        and any(
+            root.child(i) is not None
+            and bool(root.child(i).data(0, shell_module.ROLE_LOAD_MORE))
+            for i in range(root.childCount())
+        ),
+    )
+    assert first_page_ready
+    assert 0 < root.childCount() <= 260
+
+    seen_counts: list[int] = [root.childCount()]
+    while True:
+        load_more = None
+        for i in range(root.childCount()):
+            candidate = root.child(i)
+            if candidate is not None and candidate.data(0, shell_module.ROLE_LOAD_MORE):
+                load_more = candidate
+                break
+        if load_more is None:
+            break
+
+        shell._on_navigation_item_activated(load_more, 0)
+        loaded = _pump_until(
+            lambda: root.childCount() > seen_counts[-1],
+            cycles=240,
+        )
+        assert loaded
+        seen_counts.append(root.childCount())
+
+    assert root.childCount() > 0
+    final_item_count = root.childCount()
+    final_has_load_more = any(
+        root.child(i) is not None and bool(root.child(i).data(0, shell_module.ROLE_LOAD_MORE))
+        for i in range(root.childCount())
+    )
+    assert final_item_count >= 640
+    assert not final_has_load_more
+    shell.close()
+
+
+def test_repeated_open_and_close_remains_stable(qapp: QApplication, tmp_path: Path) -> None:
+    """Repeated opens on the same shell maintain lifecycle state and keep handles clean."""
+
+    fixture_path = tmp_path / "repeat.h5"
+    _build_hierarchical_file(fixture_path, group_count=20, datasets_per_group=1)
+    tree_top_count: int | None = None
+
+    shell = DataViewerShell(source_registry=SourceRegistry([HDF5Adapter()]))
+    for _ in range(8):
+        handle = shell.open_file(fixture_path)
+        assert handle is not None
+        tree_ready = _pump_until(
+            lambda: shell.findChild(QTreeWidget, "navigation_region").topLevelItemCount() == 1,
+            cycles=240,
+        )
+        assert tree_ready
+        open_ready = _pump_until(lambda: len(shell._open_documents) == 1, cycles=240)
+        assert open_ready
+
+        assert len(shell._open_documents) == 1
+        root = shell.findChild(QTreeWidget, "navigation_region").topLevelItem(0)
+        assert root is not None and root.text(0) == fixture_path.name
+        if tree_top_count is None:
+            tree_top_count = shell.findChild(QTreeWidget, "navigation_region").topLevelItemCount()
+        else:
+            assert shell.findChild(QTreeWidget, "navigation_region").topLevelItemCount() == tree_top_count
+        shell.close()
+        _pump_until(lambda: len(shell._open_documents) == 0, cycles=160)
+        assert len(shell._open_documents) == 0
+
+    assert _pump_until(
+        lambda: len(shell._background_tasks) == 0,
+        cycles=200,
+    )
+    tree = shell.findChild(QTreeWidget, "navigation_region")
+    assert tree is not None
+    final_top_count = tree.topLevelItemCount()
+    if tree_top_count is not None:
+        assert final_top_count == tree_top_count
 
 
 def test_enter_open_updates_workspace_and_active_status(qapp: QApplication, tmp_path: Path) -> None:
