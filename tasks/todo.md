@@ -397,7 +397,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: every state has required label/action/accessibility; errors have safe summary/details/retry; no fake data skeleton; states do not rely on color.
 - Verify: component state matrix, keyboard/screen-reader property tests, theme screenshots.
 
-### [ ] DV-0605 Implement virtual table/array/text/image base views
+### [x] DV-0605 Implement virtual table/array/text/image base views
 
 - Depends: DV-0603, DV-0604, DV-0412.
 - Scope: common view contracts and four view models/widgets, tests.

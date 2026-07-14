@@ -1433,8 +1433,17 @@ Local Windows verification in the repository `venv`:
 | Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 82 source files |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 396 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `f501c03f4e7d060abfc2b3d24b21375160d3ab71` |
+| GitHub Actions run | `gh run watch 29373250702 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29373250702 --json status,conclusion,headSha,jobs,url` | head SHA `f501c03f4e7d060abfc2b3d24b21375160d3ab71`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29373250702` |
+| Ubuntu quality job | GitHub Actions run `29373250702` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m29s |
+| Windows quality job | GitHub Actions run `29373250702` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 2m10s |
+
 Known gaps:
 
-- CI Windows/Ubuntu evidence is not recorded yet for this DV-0605 implementation commit.
 - The shell still uses its existing internal table model; replacing shell rendering with these reusable base views is a follow-up integration slice.
 - Full image rendering, large-scroll performance instrumentation, and volume/NIfTI view specialization remain later P6/P8 work.
