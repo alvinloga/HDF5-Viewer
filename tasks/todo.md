@@ -418,7 +418,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: all visible strings centralized; English and Simplified Chinese complete for v1 shell; names/roles/tab order/focus; 200% scaling; plot summary contract established.
 - Verify: missing translation scan, focus traversal, accessible property audit, Windows/Linux DPI screenshots.
 
-### [ ] DV-0608 Record Checkpoint 6 UI evidence
+### [x] DV-0608 Record Checkpoint 6 UI evidence
 
 - Depends: DV-0601 through DV-0607.
 - Verify: UI/UX visual acceptance matrix subset plus automated GUI/accessibility/localization gates and ledger update.

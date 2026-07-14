@@ -1589,3 +1589,40 @@ Dual-platform CI verification after commit:
 | Run metadata | `gh run view 29376618677 --json status,conclusion,headSha,jobs,url` | head SHA `eb7b825cfc499fa98a084e22cbd98fdd447e4243`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29376618677` |
 | Windows quality job | GitHub Actions run `29376618677` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 2m03s |
 | Ubuntu quality job | GitHub Actions run `29376618677` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m33s |
+
+## Checkpoint 6 UI system and shell evidence - 2026-07-15
+
+Revision: working tree based on `812cdc7` before committing DV-0608.
+
+Checkpoint scope:
+
+- DV-0601 semantic themes, compact metrics, typography roles, and monochrome SVG icons.
+- DV-0602 command registry and non-widget `ActiveContext`.
+- DV-0603 workbench shell with navigation, tabs/splits, inspector, bottom panel, and status bar.
+- DV-0604 standard async/content state components.
+- DV-0605 virtual table/array/text/image base views.
+- DV-0606 import/save/export/options dialog primitives.
+- DV-0607 English/Simplified Chinese localization baseline, accessibility helpers, focus order, high-DPI screenshot baseline, and plot screen-reader summary contract.
+
+Local and CI evidence already recorded in the per-task sections above:
+
+| Task | Completion/evidence commit | CI run |
+|---|---|---|
+| DV-0601 | `2f8c424`, `dcd363d` | `29369411175`, `29369689375` |
+| DV-0602 | `9d47887`, `18b72e2` | `29370245596`, `29370489644` |
+| DV-0603 | `5dcb394`, `6fddb89` | `29371379700`, `29371644606` |
+| DV-0604 | `440dd9b`, `847562f` | `29372242943`, `29372523096` |
+| DV-0605 | `f501c03`, `f79cef1` | `29373250702`, `29373512979` |
+| DV-0606 | `6ca2f7a`, `fa61e2a` | `29374040718`, `29374307559` |
+| DV-0607 | `46e40b0`, `7a862c6`, `eb7b825`, `812cdc7` | `29375321115`, `29376044598`, `29376618677`, `29376793970` |
+
+DV-0608 verification:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Checkpoint documentation/status update | manual review of `tasks/todo.md`, `CHANGELOG.md`, and this section | DV-0608 checked; Checkpoint 6 evidence summarized without changing product code |
+
+Known gaps moving into P7:
+
+- P6 provides UI foundations and contracts; plugin discovery, compatibility forms, runner/result rendering, and reference plugins remain P7/P8 tasks.
+- Full manual visual acceptance matrices are release-gate work in P11; current P6 evidence is automated offscreen and CI-based.
