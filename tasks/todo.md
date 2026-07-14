@@ -390,7 +390,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: one authoritative structure tree; resizable/collapsible responsive panels; explicit active split; Tasks/Output/Problems; status source/mode/shape/dtype/scope/task; 1024×768 usable.
 - Verify: pytest-qt focus/navigation/resize/panel tests and target screenshot matrix subset.
 
-### [ ] DV-0604 Implement standard asynchronous/state components
+### [x] DV-0604 Implement standard asynchronous/state components
 
 - Depends: DV-0601, DV-0603.
 - Scope: standard initial/loading/empty/ready/partial/error/disabled/dirty/read-only/conflicted/stale components, tests.

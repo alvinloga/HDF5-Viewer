@@ -1394,7 +1394,16 @@ Local Windows verification in the repository `venv`:
 | Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 81 source files |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 391 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `440dd9b7bfe79efa49bc76537165d500a3dffb7e` |
+| GitHub Actions run | `gh run watch 29372242943 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29372242943 --json status,conclusion,headSha,jobs,url` | head SHA `440dd9b7bfe79efa49bc76537165d500a3dffb7e`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29372242943` |
+| Windows quality job | GitHub Actions run `29372242943` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 2m11s |
+| Ubuntu quality job | GitHub Actions run `29372242943` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m27s |
+
 Known gaps:
 
-- CI Windows/Ubuntu evidence is not recorded yet for this DV-0604 implementation commit.
 - Broad shell/view replacement of ad-hoc state labels remains follow-up integration work after the reusable state component contract is available.
