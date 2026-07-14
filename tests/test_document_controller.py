@@ -13,7 +13,6 @@ from data_viewer.app.documents import (
     DocumentStatus,
 )
 from data_viewer.domain import DataViewerError, ErrorCode, ResourceId
-from data_viewer.sources.api import ReadRequest
 from data_viewer.sources.registry import SourceRegistry
 from data_viewer.tasks import CancellationToken, TaskState
 from tests.conformance.source_adapter import FakeArrayAdapter, write_fake_source
