@@ -52,6 +52,7 @@ All notable Data Viewer changes are recorded here.
 - Added safe dialog primitives (DV-0606): inline path validation, modal save summaries, safe-default destructive confirmations, and preview-first nonmodal import options.
 - Added the first DV-0607 accessibility/localization baseline slice: centralized English/Simplified Chinese UI string resources, shell/dialog/state locale wiring, accessible-name audit helpers, deterministic command-row focus order, and compact high-DPI metric scaling helpers.
 - Extended the DV-0607 baseline with localized base-view chrome and a plot accessibility summary contract for future visualization plugins.
+- Completed the DV-0607 automated baseline with a simulated 200% offscreen shell screenshot/layout check.
 
 ### Fixed
 

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QApplication, QLabel, QLineEdit, QPushButton, QTreeWidget
+from pathlib import Path
+
+from PyQt6.QtWidgets import QApplication, QLabel, QLineEdit, QPushButton, QTreeWidget, QWidget
 
 from data_viewer.gui.accessibility import (
     AccessibilityIssue,
@@ -176,3 +178,36 @@ def test_scaled_metric_uses_four_pixel_grid_at_200_percent() -> None:
     assert scaled_metric(7, scale_factor=2.0, grid=4) == 16
     assert scaled_metric(7, scale_factor=1.0, grid=4) == 8
     assert scaled_metric(0, scale_factor=2.0) == 0
+
+
+def test_shell_renders_core_actions_in_simulated_200_percent_layout(tmp_path: Path) -> None:
+    """The shell keeps primary actions visible in a deterministic 200% screenshot."""
+
+    app = _qapp()
+    shell = DataViewerShell(source_registry=SourceRegistry([HDF5Adapter()]), locale=Locale.ZH_CN)
+    shell.resize(scaled_metric(1024, scale_factor=2.0), scaled_metric(768, scale_factor=2.0))
+    shell.show()
+    app.processEvents()
+
+    for name in [
+        "path_input",
+        "open_button",
+        "save_button",
+        "save_as_button",
+        "export_button",
+        "navigation_region",
+        "workspace_tabs",
+        "bottom_panel",
+    ]:
+        widget = shell.findChild(QWidget, name)
+        assert widget is not None, name
+        assert widget.isVisible(), name
+        assert widget.size().width() > 0, name
+        assert widget.size().height() > 0, name
+
+    screenshot = shell.grab()
+    screenshot_path = tmp_path / "data-viewer-shell-zh-200pct.png"
+    assert not screenshot.isNull()
+    assert screenshot.save(str(screenshot_path))
+    assert screenshot_path.stat().st_size > 0
+    shell.close()

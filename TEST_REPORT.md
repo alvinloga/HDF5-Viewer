@@ -1558,3 +1558,24 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - DV-0607 is still not checked: an automated missing-string scan for remaining shell/runtime literals and DPI screenshot evidence are still required before marking the task complete.
+
+## DV-0607 final accessibility/localization baseline evidence - 2026-07-15
+
+Revision: working tree based on `94e6304` before committing the final DV-0607 test/status slice.
+
+Implementation evidence:
+
+- `tests/test_gui_i18n_accessibility.py` now includes a deterministic simulated 200% offscreen shell render in Simplified Chinese and saves a screenshot artifact in the pytest temp directory for layout evidence.
+- The DV-0607 automated baseline now covers catalog completeness, English/Simplified Chinese shell/dialog/state/view text, accessible names, focus order, missing accessible-name audit behavior, compact high-DPI metric scaling, and plot screen-reader summary text.
+- `tasks/todo.md` marks DV-0607 complete after the local verification below.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Focused localization/accessibility tests | `venv\Scripts\python.exe -m pytest tests\test_gui_i18n_accessibility.py -q` | 8 passed |
+| GUI localization/shell regression subset | `venv\Scripts\python.exe -m pytest tests\test_gui_i18n_accessibility.py tests\test_gui_shell.py -q` | 26 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_gui_i18n_accessibility.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\gui tests\test_gui_i18n_accessibility.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 85 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 409 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |

@@ -411,7 +411,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: non-destructive open; preview-first import; target-specific save summary; inline validation; long paths selectable/elided; safe default button behavior.
 - Verify: keyboard/invalid/default/destructive/path/localization GUI tests.
 
-### [ ] DV-0607 Add accessibility, high-DPI, and English/Chinese localization baseline
+### [x] DV-0607 Add accessibility, high-DPI, and English/Chinese localization baseline
 
 - Depends: DV-0601 through DV-0606.
 - Scope: translation catalogs, accessibility helpers, test tooling.
