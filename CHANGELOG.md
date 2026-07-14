@@ -17,6 +17,11 @@ All notable Data Viewer changes are recorded here.
 - Added the HDF5 probe/session foundation in `data_viewer/sources/hdf5` (`HDF5Adapter`, `HDF5SourceSession`) and `tests/test_hdf5_adapter.py` covering signature validation, wrong-extension and malformed input, locked/missing sources, Unicode paths, shared contract conformance, and open/close stability.
 - Added lazy HDF5 hierarchy listing metadata support in DV-0202: paginated direct-child listing (no full recursive traversal), explicit dataset layout metadata (`chunks`, `compression`, `compression_opts`, `fill_value`), soft-link target status detection (including broken/cyclic links), and metadata-enriched link summaries for soft/external links.
 - Added direct bounded HDF5 selection reads in `data_viewer/sources/hdf5/session.py` (DV-0203): reads now materialize through a normalized selection key with added coverage for scalar, empty, 1D/2D/high-dimensional, compound, string, complex, and boolean arrays and dtypes.
+- Added a new target Qt bootstrap for Data Viewer with minimal shell/command composition:
+  - `data_viewer/gui/app.py` introduces `run_data_viewer` bootstrap entry.
+  - `data_viewer/gui/commands.py` implements asynchronous open + cancellation command handling.
+  - `data_viewer/gui/shell.py` provides regioned shell scaffolding and lifecycle-safe open/close handling.
+  - `data_viewer/__main__.py` dispatches to target bootstrap by default with `--legacy` fallback and `--version` support.
 - Added DocumentController ownership and request-generation tracking (`data_viewer/app/documents.py` and `data_viewer/app/active_context.py`), including close/wait lifecycle cleanup and non-GUI dirty/active-task state hooks.
 - Added platform path resolution and bounded temporary cache primitives (`data_viewer/infrastructure/paths.py`, `cache.py`), with atomic read/write configuration handling and log redaction support for diagnostics in `data_viewer/infrastructure/config.py` and `data_viewer/infrastructure/logging.py`.
 

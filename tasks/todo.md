@@ -158,7 +158,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: selection sent to h5py before materialization; scalar/empty/1D/2D/high-dimensional/compound/string/complex/boolean values retain coordinates and dtype semantics; byte estimates enforce budget.
 - Verify: selection equivalence/property tests, whole-read spy rejection, cancellation between chunks, memory benchmark smoke.
 
-### [ ] DV-0204 Build minimal target Qt bootstrap and shell
+### [x] DV-0204 Build minimal target Qt bootstrap and shell
 
 - Depends: DV-0106, DV-0107.
 - Read: UI/UX §3–4, Migration Stage C.

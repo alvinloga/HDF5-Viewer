@@ -455,6 +455,28 @@ Notes:
 - Added a selection-key spy assertion proving one dataset indexing call with the normalized key equivalent.
 - Existing CI environment cannot import legacy Qt in plain Anaconda Python; all task evidence here is from repository `.venv` where PyQt6 imports are available.
 
+## DV-0204 minimal target Qt bootstrap and shell - 2026-07-14
+
+Revision: `eeed173682c9e46b0e1b378820028c5bb5dfec21`
+
+Environment: Windows 11, `Python 3.12.13` from `.venv` (`uv`-managed CPython), Qt offscreen.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Lint | `.venv\\Scripts\\ruff.exe check data_viewer/__main__.py data_viewer/gui/app.py data_viewer/gui/shell.py data_viewer/gui/commands.py tests/test_data_viewer_package.py tests/test_gui_shell.py` | passed |
+| Type check (targeted, import boundaries) | `.venv\\Scripts\\mypy.exe --follow-imports=skip data_viewer/__main__.py data_viewer/gui/app.py data_viewer/gui/commands.py data_viewer/gui/shell.py` | no issues found |
+| Targeted CLI bootstrap tests | `.venv\\Scripts\\python.exe -m pytest tests/test_data_viewer_package.py -q` | 4 passed |
+| Targeted shell GUI tests | `.venv\\Scripts\\python.exe -m pytest tests/test_gui_shell.py -q` | 4 passed |
+| Combined target suite | `.venv\\Scripts\\python.exe -m pytest tests/test_data_viewer_package.py tests/test_gui_shell.py -q` | 8 passed |
+| Target app command contract | `.venv\\Scripts\\python.exe -m data_viewer --version` | `Data Viewer 1.0.0.dev0` |
+| Full regression suite (targeted scope) | `.venv\\Scripts\\python.exe -m pytest -q` | 231 passed, 1 skipped |
+| Syntax check | `.venv\\Scripts\\python.exe -m compileall -q data_viewer tests` | passed |
+
+Known gaps:
+
+- Linux verification for this task remains to be completed in CI cross-platform run.
+- This task does not add read/write format coverage beyond the minimal bootstrap shell.
+
 ## Checkpoint record format
 
 For each checkpoint append:

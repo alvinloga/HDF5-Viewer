@@ -1,17 +1,86 @@
-"""Temporary command-line entry point while the target bootstrap is built."""
+"""Data Viewer command-line entry point."""
 
 from __future__ import annotations
 
+from collections.abc import Callable
+import argparse
+import os
+import subprocess
+import sys
+from pathlib import Path
+
 from . import __version__
+from .gui import run_data_viewer
+from .domain import DataViewerError, ErrorCode
 
 
 def main() -> int:
-    """Explain the migration state without starting the legacy application."""
-    print(
-        f"Data Viewer development shell {__version__}: "
-        "the target application bootstrap is not available yet."
+    """Run Data Viewer with explicit legacy fallback."""
+
+    return main_with_handlers(
+        run_data_viewer=run_data_viewer,
+        run_legacy=_run_legacy_bootstrap,
     )
-    return 0
+
+
+def main_with_handlers(
+    *,
+    run_data_viewer: Callable[[str | None], int] = run_data_viewer,
+    run_legacy: Callable[[str | None], int] | None = None,
+) -> int:
+    """Run the CLI with injectable handlers for testability."""
+    if run_legacy is None:
+        run_legacy = _run_legacy_bootstrap
+
+    parser = argparse.ArgumentParser(
+        prog="data_viewer",
+        description="Data Viewer command-line entry point.",
+    )
+    parser.add_argument("path", nargs="?", help="Optional source file to open.")
+    parser.add_argument(
+        "--legacy",
+        action="store_true",
+        help="Start legacy HDF5 Viewer workflow explicitly.",
+    )
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="Print application version and exit.",
+    )
+    args = parser.parse_args()
+
+    if args.version:
+        print(f"Data Viewer {__version__}")
+        return 0
+
+    if args.legacy or os.getenv("DATA_VIEWER_LEGACY") == "1":
+        return run_legacy(args.path)
+
+    return run_data_viewer(path=args.path)  # noqa: TRY300
+
+
+def _run_legacy_bootstrap(path: str | None) -> int:
+    """Run the legacy bootstrap in a subprocess so process lifecycle is isolated."""
+
+    command = [sys.executable, str(_legacy_entrypoint())]
+    if path:
+        command.append(path)
+    try:
+        completed = subprocess.run(command, check=False)
+        return int(completed.returncode)
+    except Exception as exc:
+        raise DataViewerError(
+            code=ErrorCode.SOURCE_OPEN_FAILED,
+            message="Unable to start legacy Data Viewer bootstrap.",
+            operation="__main__._run_legacy_bootstrap",
+            cause=exc,
+        ) from exc
+
+
+def _legacy_entrypoint() -> str:
+    """Return the repository path to the legacy bootstrap script."""
+
+    return str(Path(__file__).resolve().with_name("main.py"))
 
 
 if __name__ == "__main__":
