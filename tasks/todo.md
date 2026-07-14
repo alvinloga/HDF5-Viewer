@@ -368,7 +368,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 
 ## P6 — UI system and shell
 
-### [ ] DV-0601 Implement semantic themes, metrics, typography, and SVG icons
+### [x] DV-0601 Implement semantic themes, metrics, typography, and SVG icons
 
 - Depends: DV-0206.
 - Read: UI/UX §5–6, ADR-009.

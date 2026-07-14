@@ -1278,7 +1278,16 @@ Local Windows verification in the repository `venv`:
 | Focused shell subset | `venv\Scripts\python.exe -m pytest tests\test_gui_theme.py tests\test_gui_shell.py -q` | 24 passed |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 384 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `2f8c4246ddcdbf34421cb6c2e2853af5606567c9` |
+| GitHub Actions run | `gh run watch 29369411175 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29369411175 --json status,conclusion,headSha,jobs,url` | head SHA `2f8c4246ddcdbf34421cb6c2e2853af5606567c9`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29369411175` |
+| Windows quality job | GitHub Actions run `29369411175` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m54s |
+| Ubuntu quality job | GitHub Actions run `29369411175` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m31s |
+
 Known gaps:
 
-- This is local Windows task evidence only; DV-0601 remains unchecked until the commit is pushed and the dual-platform GitHub Actions matrix succeeds.
 - Broader shell layout/state rebuild, command registry, standard state components, localization, and visual screenshot matrix remain DV-0602 through DV-0608.
