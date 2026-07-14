@@ -1472,7 +1472,16 @@ Local Windows verification in the repository `venv`:
 | Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 83 source files |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 401 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `6ca2f7ad8501dd1c370c2f6e821114209eafe54b` |
+| GitHub Actions run | `gh run watch 29374040718 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29374040718 --json status,conclusion,headSha,jobs,url` | head SHA `6ca2f7ad8501dd1c370c2f6e821114209eafe54b`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29374040718` |
+| Windows quality job | GitHub Actions run `29374040718` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 2m9s |
+| Ubuntu quality job | GitHub Actions run `29374040718` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m41s |
+
 Known gaps:
 
-- CI Windows/Ubuntu evidence is not recorded yet for this DV-0606 implementation commit.
 - These are reusable dialog primitives; full shell command wiring, platform file picker adapters, and localization catalog integration remain follow-up P6 tasks.

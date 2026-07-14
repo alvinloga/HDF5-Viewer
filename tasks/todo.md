@@ -404,7 +404,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: paged/virtual access; no implicit flatten; coordinate/slice/scope visible; strict text partial banner; image aspect/zoom/interpolation/cursor value; plugin/result extensibility.
 - Verify: large synthetic scroll/slice tests, no widget-per-cell, bounded read instrumentation, keyboard navigation.
 
-### [ ] DV-0606 Implement import/save/export/options dialogs to UI spec
+### [x] DV-0606 Implement import/save/export/options dialogs to UI spec
 
 - Depends: DV-0306, DV-0405, DV-0604.
 - Scope: import preview, options, destructive confirmation, path/validation widgets, tests.
