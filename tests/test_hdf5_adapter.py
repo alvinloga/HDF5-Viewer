@@ -16,7 +16,10 @@ from data_viewer.domain import (
     OperationScope,
     ResourceId,
     SelectionSpec,
+    SourceFingerprint,
 )
+from data_viewer.editing import AttributePatch, CellPatch, ChangeSet, fingerprint_value
+from data_viewer.editing.review import SaveStrategy
 from data_viewer.sources import api as source_api
 from data_viewer.sources.hdf5 import HDF5Adapter, HDF5_SIGNATURE, HDF5SourceSession
 from data_viewer.sources.registry import SourceRegistry
@@ -693,4 +696,183 @@ def test_hdf5_list_children_reads_only_direct_parent_children(
     )
 
     assert calls["count"] <= 1 + page_size * 3
+    session.close()
+
+
+def test_hdf5_apply_cell_patch_uses_in_place_strategy_and_verifies_coordinate(
+    tmp_path: Path,
+) -> None:
+    path = _write_simple_hdf5(tmp_path / "editable.h5")
+    session = HDF5Adapter().open(path, cancellation=CancellationToken())
+    dataset = _dataset_resource(session, "array")
+    changeset = ChangeSet(
+        source_fingerprint=session.fingerprint,
+        patches=(
+            CellPatch(
+                resource_id=dataset,
+                coordinate=(1, 2),
+                old_value_fingerprint=fingerprint_value(6),
+                new_value=66,
+            ),
+        ),
+    )
+
+    result = session.apply_change_set(changeset, cancellation=CancellationToken())
+
+    assert result.strategy is SaveStrategy.IN_PLACE
+    assert result.changed_coordinates == 1
+    read_back = session.read(
+        ReadRequest(resource_id=dataset, max_bytes=1024),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+    assert read_back.payload.values.tolist() == [[1, 2, 3], [4, 5, 66]]
+    assert not tuple(tmp_path.glob("*.dv-h5ip-*.bak"))
+    session.close()
+
+
+def test_hdf5_apply_multiple_cell_patches_keeps_unaffected_values(
+    tmp_path: Path,
+) -> None:
+    path = _write_simple_hdf5(tmp_path / "multi_edit.h5")
+    session = HDF5Adapter().open(path, cancellation=CancellationToken())
+    dataset = _dataset_resource(session, "array")
+    changeset = ChangeSet(
+        source_fingerprint=session.fingerprint,
+        patches=(
+            CellPatch(dataset, (0, 0), fingerprint_value(1), 10),
+            CellPatch(dataset, (1, 1), fingerprint_value(5), 50),
+        ),
+    )
+
+    result = session.apply_change_set(changeset, cancellation=CancellationToken())
+
+    assert result.strategy is SaveStrategy.IN_PLACE
+    with h5py.File(path, "r") as reopened:
+        assert reopened["array"][...].tolist() == [[10, 2, 3], [4, 50, 6]]
+    session.close()
+
+
+def test_hdf5_apply_attribute_patch_uses_verified_replacement(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "attribute_edit.h5"
+    with h5py.File(path, "w") as source:
+        dataset = source.create_dataset("array", data=[[1, 2], [3, 4]])
+        dataset.attrs["unit"] = "m"
+
+    session = HDF5Adapter().open(path, cancellation=CancellationToken())
+    dataset = _dataset_resource(session, "array")
+    changeset = ChangeSet(
+        source_fingerprint=session.fingerprint,
+        patches=(
+            AttributePatch(
+                resource_id=dataset,
+                name="unit",
+                old_value_fingerprint=fingerprint_value("m"),
+                new_value="cm",
+            ),
+        ),
+    )
+
+    result = session.apply_change_set(changeset, cancellation=CancellationToken())
+
+    assert result.strategy is SaveStrategy.REPLACEMENT
+    assert result.changed_coordinates == 0
+    with h5py.File(path, "r") as reopened:
+        assert reopened["array"].attrs["unit"] == "cm"
+        assert reopened["array"][...].tolist() == [[1, 2], [3, 4]]
+    session.close()
+
+
+def test_hdf5_apply_compound_cell_patch_uses_replacement_strategy(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "compound_edit.h5"
+    dtype = np.dtype([("id", "i4"), ("value", "f8")])
+    with h5py.File(path, "w") as source:
+        source.create_dataset(
+            "compound",
+            data=np.array([(1, 1.5), (2, 2.5)], dtype=dtype),
+        )
+
+    session = HDF5Adapter().open(path, cancellation=CancellationToken())
+    dataset = _dataset_resource(session, "compound")
+    changeset = ChangeSet(
+        source_fingerprint=session.fingerprint,
+        patches=(
+            CellPatch(
+                resource_id=dataset,
+                coordinate=(0,),
+                old_value_fingerprint=fingerprint_value({"id": 1, "value": 1.5}),
+                new_value={"id": 10, "value": 10.5},
+            ),
+        ),
+    )
+
+    result = session.apply_change_set(changeset, cancellation=CancellationToken())
+
+    assert result.strategy is SaveStrategy.REPLACEMENT
+    with h5py.File(path, "r") as reopened:
+        row = reopened["compound"][0]
+        assert int(row["id"]) == 10
+        assert float(row["value"]) == 10.5
+        assert int(reopened["compound"][1]["id"]) == 2
+    session.close()
+
+
+def test_hdf5_apply_changeset_rejects_stale_source_fingerprint(tmp_path: Path) -> None:
+    path = _write_simple_hdf5(tmp_path / "stale.h5")
+    session = HDF5Adapter().open(path, cancellation=CancellationToken())
+    dataset = _dataset_resource(session, "array")
+    changeset = ChangeSet(
+        source_fingerprint=SourceFingerprint(
+            size_bytes=0,
+            modified_time_ns=0,
+        ),
+        patches=(
+            CellPatch(dataset, (0, 0), fingerprint_value(1), 99),
+        ),
+    )
+
+    with pytest.raises(DataViewerError) as error:
+        session.apply_change_set(changeset, cancellation=CancellationToken())
+
+    assert error.value.code is ErrorCode.SOURCE_CHANGED
+    with h5py.File(path, "r") as reopened:
+        assert reopened["array"][0, 0] == 1
+    session.close()
+
+
+def test_hdf5_in_place_failure_keeps_recovery_backup_and_integrity_warning(
+    tmp_path: Path,
+) -> None:
+    path = _write_simple_hdf5(tmp_path / "failed_in_place.h5")
+    session = HDF5Adapter().open(path, cancellation=CancellationToken())
+    dataset = _dataset_resource(session, "array")
+    changeset = ChangeSet(
+        source_fingerprint=session.fingerprint,
+        patches=(
+            CellPatch(dataset, (0, 1), fingerprint_value(2), 22),
+        ),
+    )
+
+    def fail_at_verify(step: str) -> None:
+        if step == "in_place_verify":
+            raise RuntimeError("forced verification failure")
+
+    with pytest.raises(DataViewerError) as error:
+        session.apply_change_set(
+            changeset,
+            cancellation=CancellationToken(),
+            failure_injector=fail_at_verify,
+        )
+
+    assert error.value.code is ErrorCode.READ_FAILED
+    assert error.value.details["integrity_warning"] is True
+    assert error.value.details["change_log_retained"] is True
+    backup_path = Path(str(error.value.details["recovery_backup_path"]))
+    assert backup_path.exists()
+    with h5py.File(backup_path, "r") as backup:
+        assert backup["array"][0, 1] == 2
     session.close()

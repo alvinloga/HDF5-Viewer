@@ -595,3 +595,27 @@ Known gaps:
 
 - Linux verification is still pending in local execution for this task; expected to be covered in workflow evidence.
 
+
+## DV-0304 HDF5 persistence strategies - 2026-07-14
+
+Revision: working tree based on `codex/data-viewer-foundation` with task-local edits in `data_viewer/sources/hdf5/` and `tests/test_hdf5_adapter.py`.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Focused HDF5 adapter and persistence suite | `.venv\Scripts\python.exe -m pytest tests/test_hdf5_adapter.py -q` | 24 passed |
+| Editing/persistence regression subset | `.venv\Scripts\python.exe -m pytest tests/test_hdf5_adapter.py tests/test_persistence_recovery.py tests/test_persistence_transaction.py tests/test_editing_patches.py tests/test_editing_session.py -q` | 58 passed |
+| Lint gate | `.venv\Scripts\ruff.exe check data_viewer/sources/hdf5/session.py data_viewer/sources/hdf5/__init__.py tests/test_hdf5_adapter.py` | passed |
+| Type check for touched source | `.venv\Scripts\mypy.exe --ignore-missing-imports --follow-imports=skip data_viewer/sources/hdf5/session.py` | Success: no issues found in 1 source file |
+| Syntax check | `.venv\Scripts\python.exe -m compileall -q data_viewer/sources/hdf5/session.py tests/test_hdf5_adapter.py` | passed |
+| Full local suite | `.venv\Scripts\python.exe -m pytest -q` | 286 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Notes:
+
+- HDF5 sessions now expose `EDIT_PATCH` and `ATOMIC_REWRITE` capabilities.
+- Plain numeric cell patches use in-place writes only after source-fingerprint validation, old-value fingerprint checks, same-directory backup creation, flush/fsync, and changed-coordinate reread verification.
+- Attribute patches and compound cell patches route through the verified atomic replacement service, then reopen and validate changed values plus representative unchanged data.
+- Injected in-place verification failure preserves a recovery backup path and returns an integrity-warning error with `change_log_retained=true`.
+
+Known gaps:
+
+- This is local Windows evidence only; Linux verification remains pending in CI.

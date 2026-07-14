@@ -207,7 +207,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: same-directory temp, disk preflight, write/flush/fsync/reopen validate/atomic replace/final reopen; honest cross-filesystem behavior; startup recovery metadata; cancellation only before commit boundary.
 - Verify: injected failure at every step, Windows lock/Linux permission CI tests, insufficient disk, cancellation, orphan cleanup.
 
-### [ ] DV-0304 Implement HDF5 persistence strategies
+### [x] DV-0304 Implement HDF5 persistence strategies
 
 - Depends: DV-0203, DV-0303.
 - Scope: HDF5 writer/validator and tests.

@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from dataclasses import dataclass
+import os
 import posixpath
 from pathlib import Path
+import shutil
+import tempfile
 
 import h5py
 import numpy as np
@@ -22,7 +27,29 @@ from data_viewer.domain import (
     SourceCapability,
     SourceFingerprint,
 )
+from data_viewer.editing import (
+    AttributePatch,
+    CellPatch,
+    ChangeSet,
+    EditPatch,
+    fingerprint_value,
+)
+from data_viewer.editing.review import SaveStrategy
+from data_viewer.persistence.transaction import AtomicReplacementService
 from data_viewer.sources.api import NodePage, ProgressCallback, ReadRequest, ResourceNode
+
+type HDF5PersistenceFailureInjector = Callable[[str], None]
+
+
+@dataclass(frozen=True, slots=True)
+class HDF5PersistenceResult:
+    """Result of applying one HDF5 changeset."""
+
+    strategy: SaveStrategy
+    source_fingerprint: SourceFingerprint
+    changed_coordinates: int
+    warnings: tuple[str, ...] = ()
+    recovery_backup_path: Path | None = None
 
 
 class HDF5SourceSession:
@@ -46,16 +73,22 @@ class HDF5SourceSession:
 
     @property
     def capabilities(self) -> SourceCapability:
-        return SourceCapability.HIERARCHY | SourceCapability.SEARCH
+        return (
+            SourceCapability.HIERARCHY
+            | SourceCapability.SEARCH
+            | SourceCapability.EDIT_PATCH
+            | SourceCapability.ATOMIC_REWRITE
+        )
 
     def root(self) -> ResourceNode:
         self._ensure_open(operation="source.hdf5.root")
+        file = self._h5_file()
         return ResourceNode(
             resource_id=ResourceId(self._source_uri, "/"),
             name=self._path.name,
             node_kind=NodeKind.ROOT,
             domain=DataDomain.HIERARCHICAL_ARRAY,
-            has_children=bool(self._file.keys()),
+            has_children=bool(file.keys()),
             summary=self._path.name,
         )
 
@@ -120,6 +153,7 @@ class HDF5SourceSession:
         cancellation: object,
     ) -> DataMetadata:
         self._ensure_open(operation="source.hdf5.get_metadata")
+        file = self._h5_file()
         _raise_if_cancelled(cancellation, operation="source.hdf5.get_metadata")
 
         if resource.source_uri != self._source_uri:
@@ -137,11 +171,11 @@ class HDF5SourceSession:
                 node_kind=NodeKind.ROOT,
                 shape=(),
                 capabilities=self.capabilities | SourceCapability.SEARCH,
-                attributes=_read_attributes(self._file.attrs),
+                attributes=_read_attributes(file.attrs),
                 storage_size_bytes=self._path.stat().st_size,
             )
 
-        parent_group = _parent_group(self._file, resource.node_path)
+        parent_group = _parent_group(file, resource.node_path)
         child_name = _node_name(resource.node_path)
         link = parent_group.get(child_name, getlink=True)
         if link is None:
@@ -212,7 +246,11 @@ class HDF5SourceSession:
                 dtype=str(child.dtype),
                 logical_size_bytes=_safe_nbytes(child),
                 storage_size_bytes=_safe_dataset_storage_bytes(child),
-                capabilities=SourceCapability.RANDOM_SLICE | SourceCapability.SEARCH,
+                capabilities=(
+                    SourceCapability.RANDOM_SLICE
+                    | SourceCapability.SEARCH
+                    | SourceCapability.EDIT_PATCH
+                ),
                 attributes=attributes,
             )
 
@@ -233,6 +271,7 @@ class HDF5SourceSession:
         progress: ProgressCallback,
     ) -> ReadResult:
         self._ensure_open(operation="source.hdf5.read")
+        file = self._h5_file()
         _raise_if_cancelled(cancellation, operation="source.hdf5.read")
 
         if request.row_offset is not None or request.row_limit is not None:
@@ -262,7 +301,7 @@ class HDF5SourceSession:
                 details={"scope": request.scope.value},
             )
 
-        parent_group = _parent_group(self._file, request.resource_id.node_path)
+        parent_group = _parent_group(file, request.resource_id.node_path)
         child_name = _node_name(request.resource_id.node_path)
         link = parent_group.get(child_name, getlink=True)
         if link is None:
@@ -406,6 +445,37 @@ class HDF5SourceSession:
         self._fingerprint = _fingerprint(self._path)
         return self._fingerprint
 
+    def apply_change_set(
+        self,
+        changeset: ChangeSet,
+        *,
+        cancellation: object,
+        replacement_service: AtomicReplacementService | None = None,
+        failure_injector: HDF5PersistenceFailureInjector | None = None,
+    ) -> HDF5PersistenceResult:
+        """Apply one reviewed changeset using the safest valid HDF5 strategy."""
+
+        self._ensure_open(operation="source.hdf5.apply_change_set")
+        _raise_if_cancelled(cancellation, operation="source.hdf5.apply_change_set")
+        _validate_changeset_source(changeset, source_uri=self._source_uri)
+        if changeset.is_clean:
+            raise ValueError("changeset must contain at least one patch")
+
+        self._assert_unchanged(changeset.source_fingerprint)
+        strategy = self._select_persistence_strategy(changeset)
+        if strategy is SaveStrategy.IN_PLACE:
+            return self._apply_in_place(
+                changeset,
+                cancellation=cancellation,
+                failure_injector=failure_injector,
+            )
+        return self._apply_by_replacement(
+            changeset,
+            cancellation=cancellation,
+            replacement_service=replacement_service or AtomicReplacementService(),
+            failure_injector=failure_injector,
+        )
+
     def close(self) -> None:
         if self._closed:
             return
@@ -430,9 +500,19 @@ class HDF5SourceSession:
                 details={"source_uri": self._source_uri},
             )
 
-    def _open_file(self) -> None:
+    def _h5_file(self) -> h5py.File:
+        if self._file is None:
+            raise DataViewerError(
+                code=ErrorCode.SOURCE_OPEN_FAILED,
+                message="HDF5 file handle is unavailable.",
+                operation="source.hdf5.file_handle",
+                details={"source_uri": self._source_uri},
+            )
+        return self._file
+
+    def _open_file(self, mode: str = "r") -> None:
         try:
-            self._file = h5py.File(self._path, "r")
+            self._file = h5py.File(self._path, mode)
         except OSError as exc:
             self._closed = True
             raise DataViewerError(
@@ -443,16 +523,566 @@ class HDF5SourceSession:
                 cause=exc,
             ) from exc
 
+    def _close_file_handle(self) -> None:
+        if self._file is not None:
+            self._file.close()
+            self._file = None
+
+    def _reopen_read_only(self) -> None:
+        self._close_file_handle()
+        self._open_file("r")
+
     def _resolve_object(self, node_path: str) -> h5py.Group | h5py.Dataset:
+        file = self._h5_file()
         if node_path == "/":
-            return self._file["/"]
+            return file["/"]
         try:
-            return self._file[node_path]
+            return file[node_path]
         except (KeyError, OSError) as exc:
             raise _resource_not_found(
                 ResourceId(self._source_uri, node_path),
                 operation="source.hdf5.resolve_object",
             ) from exc
+
+    def _assert_unchanged(self, expected: SourceFingerprint) -> None:
+        current = _fingerprint(self._path)
+        if current != expected or self._fingerprint != expected:
+            raise DataViewerError(
+                code=ErrorCode.SOURCE_CHANGED,
+                message="HDF5 source changed before save; refusing to overwrite.",
+                operation="source.hdf5.apply_change_set",
+                details={
+                    "expected_fingerprint": expected.to_json(),
+                    "observed_fingerprint": current.to_json(),
+                    "session_fingerprint": self._fingerprint.to_json(),
+                },
+                retryable=True,
+            )
+
+    def _select_persistence_strategy(self, changeset: ChangeSet) -> SaveStrategy:
+        if all(isinstance(patch, CellPatch) for patch in changeset.patches):
+            for patch in changeset.patches:
+                assert isinstance(patch, CellPatch)
+                if not self._can_cell_patch_in_place(patch):
+                    return SaveStrategy.REPLACEMENT
+            return SaveStrategy.IN_PLACE
+        return SaveStrategy.REPLACEMENT
+
+    def _apply_in_place(
+        self,
+        changeset: ChangeSet,
+        *,
+        cancellation: object,
+        failure_injector: HDF5PersistenceFailureInjector | None,
+    ) -> HDF5PersistenceResult:
+        backup_path = self._create_in_place_backup()
+        changed_coordinates = sum(isinstance(patch, CellPatch) for patch in changeset.patches)
+        try:
+            _invoke_hdf5_injector(failure_injector, "in_place_precheck")
+            self._close_file_handle()
+            self._open_file("r+")
+            file = self._h5_file()
+            _raise_if_cancelled(cancellation, operation="source.hdf5.apply_in_place")
+            _verify_old_values(file, changeset.patches)
+            _invoke_hdf5_injector(failure_injector, "in_place_write")
+            _apply_hdf5_patches(file, changeset.patches)
+            file.flush()
+            _fsync_path(self._path)
+            _invoke_hdf5_injector(failure_injector, "in_place_verify")
+            _verify_new_values(file, changeset.patches)
+            self._reopen_read_only()
+            self._fingerprint = _fingerprint(self._path)
+            _unlink_if_exists(backup_path)
+            return HDF5PersistenceResult(
+                strategy=SaveStrategy.IN_PLACE,
+                source_fingerprint=self._fingerprint,
+                changed_coordinates=changed_coordinates,
+                warnings=(
+                    "HDF5 was updated in place after same-directory backup and coordinate verification.",
+                ),
+            )
+        except DataViewerError as exc:
+            self._recover_after_failed_in_place(backup_path)
+            raise _integrity_warning_error(
+                exc,
+                backup_path=backup_path,
+                strategy=SaveStrategy.IN_PLACE,
+            ) from exc
+        except Exception as exc:
+            self._recover_after_failed_in_place(backup_path)
+            raise _integrity_warning_error(
+                exc,
+                backup_path=backup_path,
+                strategy=SaveStrategy.IN_PLACE,
+            ) from exc
+
+    def _apply_by_replacement(
+        self,
+        changeset: ChangeSet,
+        *,
+        cancellation: object,
+        replacement_service: AtomicReplacementService,
+        failure_injector: HDF5PersistenceFailureInjector | None,
+    ) -> HDF5PersistenceResult:
+        changed_coordinates = sum(isinstance(patch, CellPatch) for patch in changeset.patches)
+        estimated_output_bytes = self._path.stat().st_size
+
+        def write_payload(temp_path: Path) -> None:
+            _invoke_hdf5_injector(failure_injector, "replacement_write")
+            shutil.copy2(self._path, temp_path)
+            with h5py.File(temp_path, "r+") as target:
+                _verify_old_values(target, changeset.patches)
+                _apply_hdf5_patches(target, changeset.patches)
+                target.flush()
+
+        def validate_payload(path: Path) -> SourceFingerprint:
+            _invoke_hdf5_injector(failure_injector, "replacement_validate")
+            with h5py.File(path, "r") as target:
+                _verify_new_values(target, changeset.patches)
+                _verify_representative_unchanged_values(target, changeset.patches)
+            return _fingerprint(path)
+
+        self._close_file_handle()
+        try:
+            result = replacement_service.run_replacement(
+                source_path=self._path,
+                destination=self._path,
+                write_payload=write_payload,
+                validate_payload=validate_payload,
+                expected_source_fingerprint=changeset.source_fingerprint,
+                estimated_output_bytes=estimated_output_bytes,
+                cancellation=cancellation,
+            )
+        finally:
+            self._open_file("r")
+
+        self._fingerprint = result.destination_fingerprint
+        return HDF5PersistenceResult(
+            strategy=SaveStrategy.REPLACEMENT,
+            source_fingerprint=self._fingerprint,
+            changed_coordinates=changed_coordinates,
+            warnings=("HDF5 was rewritten through verified atomic replacement.",),
+        )
+
+    def _can_cell_patch_in_place(self, patch: CellPatch) -> bool:
+        operation = "source.hdf5.plan_in_place"
+        dataset = _require_direct_dataset(
+            self._h5_file(),
+            patch.resource_id,
+            operation=operation,
+        )
+        _validate_coordinate(
+            dataset,
+            patch.coordinate,
+            resource_id=patch.resource_id,
+            operation=operation,
+        )
+        return not dataset.dtype.fields and dataset.dtype.kind != "O"
+
+    def _create_in_place_backup(self) -> Path:
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            dir=self._path.parent,
+            delete=False,
+            prefix=f".{self._path.name}.dv-h5ip-",
+            suffix=".bak",
+        ) as handle:
+            backup_path = Path(handle.name)
+        shutil.copy2(self._path, backup_path)
+        _fsync_path(backup_path)
+        return backup_path
+
+    def _recover_after_failed_in_place(self, backup_path: Path) -> None:
+        try:
+            self._reopen_read_only()
+            self._fingerprint = _fingerprint(self._path)
+        except Exception:
+            self._close_file_handle()
+        if not backup_path.exists():
+            return
+
+
+def _validate_changeset_source(changeset: ChangeSet, *, source_uri: str) -> None:
+    for patch in changeset.patches:
+        if patch.resource_id.source_uri != source_uri:
+            raise ValueError("all HDF5 patches must target this source session")
+
+
+def _invoke_hdf5_injector(
+    injector: HDF5PersistenceFailureInjector | None,
+    step: str,
+) -> None:
+    if injector is not None:
+        injector(step)
+
+
+def _require_direct_dataset(
+    file: h5py.File,
+    resource: ResourceId,
+    *,
+    operation: str,
+) -> h5py.Dataset:
+    if resource.node_path == "/":
+        raise DataViewerError(
+            code=ErrorCode.CAPABILITY_UNAVAILABLE,
+            message="HDF5 root is not an editable dataset.",
+            operation=operation,
+            resource_id=resource,
+        )
+
+    try:
+        parent = _parent_group(file, resource.node_path)
+        child_name = _node_name(resource.node_path)
+        link = parent.get(child_name, getlink=True)
+    except (KeyError, OSError, ValueError) as exc:
+        raise _resource_not_found(resource, operation=operation) from exc
+
+    if not isinstance(link, h5py.HardLink):
+        raise DataViewerError(
+            code=ErrorCode.CAPABILITY_UNAVAILABLE,
+            message="Only directly linked HDF5 datasets can be edited.",
+            operation=operation,
+            resource_id=resource,
+            details={"link_type": type(link).__name__},
+        )
+
+    try:
+        target = parent[child_name]
+    except (KeyError, OSError) as exc:
+        raise _resource_not_found(resource, operation=operation) from exc
+    if not isinstance(target, h5py.Dataset):
+        raise DataViewerError(
+            code=ErrorCode.CAPABILITY_UNAVAILABLE,
+            message="Only HDF5 datasets can receive cell patches.",
+            operation=operation,
+            resource_id=resource,
+            details={"target_type": type(target).__name__},
+        )
+    return target
+
+
+def _require_attribute_target(
+    file: h5py.File,
+    resource: ResourceId,
+    *,
+    operation: str,
+) -> h5py.File | h5py.Group | h5py.Dataset:
+    if resource.node_path == "/":
+        return file
+    try:
+        target = file[resource.node_path]
+    except (KeyError, OSError) as exc:
+        raise _resource_not_found(resource, operation=operation) from exc
+    if not isinstance(target, (h5py.Group, h5py.Dataset)):
+        raise DataViewerError(
+            code=ErrorCode.CAPABILITY_UNAVAILABLE,
+            message="Only HDF5 files, groups, or datasets can receive attribute patches.",
+            operation=operation,
+            resource_id=resource,
+            details={"target_type": type(target).__name__},
+        )
+    return target
+
+
+def _validate_coordinate(
+    dataset: h5py.Dataset,
+    coordinate: tuple[int, ...],
+    *,
+    resource_id: ResourceId,
+    operation: str,
+) -> None:
+    shape = tuple(int(dim) for dim in dataset.shape)
+    if len(coordinate) != len(shape):
+        raise DataViewerError(
+            code=ErrorCode.SELECTION_INVALID,
+            message="Patch coordinate rank does not match HDF5 dataset rank.",
+            operation=operation,
+            resource_id=resource_id,
+            details={"coordinate": list(coordinate), "shape": list(shape)},
+        )
+    for axis, (index, size) in enumerate(zip(coordinate, shape, strict=True)):
+        if index < 0 or index >= size:
+            raise DataViewerError(
+                code=ErrorCode.SELECTION_INVALID,
+                message="Patch coordinate is outside HDF5 dataset bounds.",
+                operation=operation,
+                resource_id=resource_id,
+                details={
+                    "axis": axis,
+                    "index": index,
+                    "size": size,
+                    "shape": list(shape),
+                },
+            )
+
+
+def _verify_old_values(file: h5py.File, patches: tuple[EditPatch, ...]) -> None:
+    for patch_index, patch in enumerate(patches):
+        observed: str | None
+        if isinstance(patch, CellPatch):
+            dataset = _require_direct_dataset(
+                file,
+                patch.resource_id,
+                operation="source.hdf5.verify_old_cell",
+            )
+            _validate_coordinate(
+                dataset,
+                patch.coordinate,
+                resource_id=patch.resource_id,
+                operation="source.hdf5.verify_old_cell",
+            )
+            observed = _fingerprint_hdf5_value(dataset[patch.coordinate])
+            expected = patch.old_value_fingerprint
+        elif isinstance(patch, AttributePatch):
+            target = _require_attribute_target(
+                file,
+                patch.resource_id,
+                operation="source.hdf5.verify_old_attribute",
+            )
+            has_attribute = patch.name in target.attrs
+            observed = (
+                _fingerprint_hdf5_value(target.attrs[patch.name])
+                if has_attribute
+                else None
+            )
+            expected = patch.old_value_fingerprint
+        else:
+            raise DataViewerError(
+                code=ErrorCode.CAPABILITY_UNAVAILABLE,
+                message="HDF5 persistence does not support text patches.",
+                operation="source.hdf5.verify_old_values",
+                resource_id=patch.resource_id,
+                details={"patch_type": type(patch).__name__},
+            )
+
+        if observed != expected:
+            raise DataViewerError(
+                code=ErrorCode.EDIT_CONFLICT,
+                message="HDF5 patch old value no longer matches the source.",
+                operation="source.hdf5.verify_old_values",
+                resource_id=patch.resource_id,
+                details={
+                    "patch_index": patch_index,
+                    "expected_fingerprint": expected,
+                    "observed_fingerprint": observed,
+                    "patch_type": type(patch).__name__,
+                },
+            )
+
+
+def _verify_new_values(file: h5py.File, patches: tuple[EditPatch, ...]) -> None:
+    for patch_index, patch in enumerate(patches):
+        if isinstance(patch, CellPatch):
+            dataset = _require_direct_dataset(
+                file,
+                patch.resource_id,
+                operation="source.hdf5.verify_new_cell",
+            )
+            observed = _normalize_hdf5_value(dataset[patch.coordinate])
+            expected = _normalize_hdf5_value(
+                _cast_cell_value(patch.new_value, dataset.dtype)
+            )
+        elif isinstance(patch, AttributePatch):
+            target = _require_attribute_target(
+                file,
+                patch.resource_id,
+                operation="source.hdf5.verify_new_attribute",
+            )
+            if patch.new_value is None:
+                if patch.name not in target.attrs:
+                    continue
+                observed = _normalize_hdf5_value(target.attrs[patch.name])
+                expected = None
+            else:
+                observed = _normalize_hdf5_value(target.attrs[patch.name])
+                expected = _normalize_hdf5_value(patch.new_value)
+        else:
+            continue
+
+        if observed != expected:
+            raise DataViewerError(
+                code=ErrorCode.READ_FAILED,
+                message="HDF5 post-write verification failed.",
+                operation="source.hdf5.verify_new_values",
+                resource_id=patch.resource_id,
+                details={
+                    "patch_index": patch_index,
+                    "patch_type": type(patch).__name__,
+                },
+            )
+
+
+def _verify_representative_unchanged_values(
+    file: h5py.File,
+    patches: tuple[EditPatch, ...],
+) -> None:
+    changed_cells = {
+        (patch.resource_id.node_path, patch.coordinate)
+        for patch in patches
+        if isinstance(patch, CellPatch)
+    }
+    affected_paths = sorted({patch.resource_id.node_path for patch in patches})
+    for node_path in affected_paths:
+        if node_path == "/":
+            continue
+        try:
+            target = file[node_path]
+        except (KeyError, OSError) as exc:
+            raise DataViewerError(
+                code=ErrorCode.RESOURCE_NOT_FOUND,
+                message="HDF5 validation could not reopen an affected resource.",
+                operation="source.hdf5.verify_unchanged",
+                details={"node_path": node_path},
+                cause=exc,
+            ) from exc
+        if not isinstance(target, h5py.Dataset) or target.shape == ():
+            continue
+        coordinate = tuple(0 for _ in target.shape)
+        if (node_path, coordinate) in changed_cells:
+            continue
+        _ = target[coordinate]
+
+
+def _apply_hdf5_patches(file: h5py.File, patches: tuple[EditPatch, ...]) -> None:
+    for patch in patches:
+        if isinstance(patch, CellPatch):
+            dataset = _require_direct_dataset(
+                file,
+                patch.resource_id,
+                operation="source.hdf5.apply_cell_patch",
+            )
+            dataset[patch.coordinate] = _cast_cell_value(patch.new_value, dataset.dtype)
+        elif isinstance(patch, AttributePatch):
+            target = _require_attribute_target(
+                file,
+                patch.resource_id,
+                operation="source.hdf5.apply_attribute_patch",
+            )
+            if patch.new_value is None:
+                if patch.name in target.attrs:
+                    del target.attrs[patch.name]
+            else:
+                target.attrs[patch.name] = _cast_attribute_value(patch.new_value)
+        else:
+            raise DataViewerError(
+                code=ErrorCode.CAPABILITY_UNAVAILABLE,
+                message="HDF5 persistence does not support text patches.",
+                operation="source.hdf5.apply_patches",
+                resource_id=patch.resource_id,
+                details={"patch_type": type(patch).__name__},
+            )
+
+
+def _cast_cell_value(value: object, dtype: np.dtype) -> object:
+    target = np.dtype(dtype)
+    if target.fields:
+        if not isinstance(value, dict):
+            raise DataViewerError(
+                code=ErrorCode.EDIT_VALIDATION_FAILED,
+                message="Compound HDF5 cells require a mapping patch value.",
+                operation="source.hdf5.cast_cell_value",
+                details={"dtype": str(target)},
+            )
+        field_names = tuple(target.fields)
+        if tuple(sorted(value)) != tuple(sorted(field_names)):
+            raise DataViewerError(
+                code=ErrorCode.EDIT_VALIDATION_FAILED,
+                message="Compound HDF5 patch fields do not match target dtype.",
+                operation="source.hdf5.cast_cell_value",
+                details={
+                    "expected_fields": list(field_names),
+                    "received_fields": sorted(str(key) for key in value),
+                },
+            )
+        return np.array(tuple(value[name] for name in field_names), dtype=target)[()]
+    return np.array(value, dtype=target)[()]
+
+
+def _cast_attribute_value(value: object) -> object:
+    if isinstance(value, dict):
+        return np.array(tuple(value[key] for key in sorted(value)))
+    if isinstance(value, (list, tuple)):
+        return np.array(value)
+    return value
+
+
+def _fingerprint_hdf5_value(value: object) -> str:
+    return fingerprint_value(_normalize_hdf5_value(value))
+
+
+def _normalize_hdf5_value(value: object) -> object:
+    if isinstance(value, np.void) and value.dtype.fields:
+        return {
+            field_name: _normalize_hdf5_value(value[field_name])
+            for field_name in value.dtype.fields
+        }
+    if isinstance(value, np.ndarray):
+        if value.ndim == 0:
+            return _normalize_hdf5_value(value.item())
+        return [_normalize_hdf5_value(item) for item in value.tolist()]
+    if isinstance(value, np.generic):
+        return _normalize_hdf5_value(value.item())
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return bytes(value).decode("utf-8", errors="replace")
+    if isinstance(value, tuple):
+        return tuple(_normalize_hdf5_value(item) for item in value)
+    if isinstance(value, list):
+        return [_normalize_hdf5_value(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _normalize_hdf5_value(item) for key, item in value.items()}
+    return value
+
+
+def _integrity_warning_error(
+    error: BaseException,
+    *,
+    backup_path: Path,
+    strategy: SaveStrategy,
+) -> DataViewerError:
+    if isinstance(error, DataViewerError):
+        code = error.code
+        message = error.message
+        operation = error.operation
+        resource_id = error.resource_id
+        cause = error.cause
+    else:
+        code = ErrorCode.READ_FAILED
+        message = "HDF5 in-place persistence failed; source requires integrity inspection."
+        operation = "source.hdf5.apply_change_set"
+        resource_id = None
+        cause = error
+
+    details = {
+        "strategy": strategy.value,
+        "integrity_warning": True,
+        "change_log_retained": True,
+        "recovery_backup_path": str(backup_path),
+    }
+    if isinstance(error, DataViewerError):
+        details["cause_code"] = error.code.value
+    return DataViewerError(
+        code=code,
+        message=message,
+        operation=operation,
+        resource_id=resource_id,
+        details=details,
+        cause=cause,
+    )
+
+
+def _fsync_path(path: Path) -> None:
+    with path.open("rb+") as handle:
+        handle.flush()
+        handle_fd = handle.fileno()
+        os.fsync(handle_fd)
+
+
+def _unlink_if_exists(path: Path) -> None:
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        return
 
 
 def _parent_group(file: h5py.File, node_path: str) -> h5py.Group:
@@ -719,7 +1349,7 @@ def _serialize_attribute(value: object) -> object:
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
     if isinstance(value, (bytes, bytearray, memoryview)):
-        return value.decode("utf-8", errors="replace")
+        return bytes(value).decode("utf-8", errors="replace")
     if isinstance(value, (tuple, list)):
         return [_serialize_attribute(item) for item in value]
     if isinstance(value, dict):
