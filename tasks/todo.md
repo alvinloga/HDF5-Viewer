@@ -110,11 +110,11 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: exact public v1 contract; bounded probe arbitration; duplicate format/extension diagnostics; lifecycle enforcement; fake adapter passes metadata/list/read/cancel/error/close conformance.
 - Verify: conformance suite, forbidden library-object boundary tests, mypy.
 
-### [ ] DV-0106 Implement DocumentController ownership and request versioning
+### [x] DV-0106 Implement DocumentController ownership and request versioning
 
 - Depends: DV-0104, DV-0105.
 - Read: Architecture source lifecycle, ADR-003.
-- Scope: `data_viewer/application/documents.py`, `active_context.py`, tests.
+- Scope: `data_viewer/app/documents.py`, `data_viewer/app/active_context.py`, tests.
 - Acceptance: controller solely owns session; view IDs borrow resources; new navigation invalidates old request results; close cooperatively cancels/waits then closes once; dirty/active-task hooks exist without GUI dependency.
 - Verify: rapid navigation stale-result test, close-during-read, double-close, task failure, multiple-view-one-source tests.
 

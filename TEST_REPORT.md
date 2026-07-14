@@ -361,6 +361,34 @@ Final CI evidence: [GitHub Actions run 29238330052](https://github.com/alvinloga
 
 Known limits: DocumentController source-session ownership, source close waiting on explicit I/O leases, and platform/cache/config primitives remain unimplemented and are owned by DV-0106 and DV-0107.
 
+## DV-0106 DocumentController ownership and request versioning - 2026-07-14
+
+Revision: `bd49e88` (`fix: drop unused ReadRequest import in document controller test`) (implementation baseline is `609c373`).
+Scope: `data_viewer/app/documents.py`, `data_viewer/app/active_context.py`, `data_viewer/app/__init__.py`, `data_viewer/sources/...` contract touchpoints, `tests/test_document_controller.py`, `tests/test_ci_reporting.py`, `.github/workflows/ci.yml`.
+
+Implemented behavior:
+
+- `DocumentController` owns one active source session and owns clean close semantics while waiting for active I/O tasks to finish;
+- resource identity and request generation remain stable per document context; navigation returns incremented request generations that reject stale results;
+- controller dirty flags and active-task hooks are emitted from controller context without direct GUI coupling;
+- stale tasks are isolated from GUI widgets through `ActiveContext`, and public cancellation/close transitions are reflected via structured snapshots.
+
+Local Windows verification on this workspace (not CI-locked Python):
+
+| Check | Command | Observed result |
+|---|---|---|
+| DocumentController focused regression suite | `python -m pytest tests/test_document_controller.py -q` | failed during collection in this workspace: `ModuleNotFoundError: No module named 'PyQt6.QtWidgets'` from legacy GUI fixture |
+| CI reporting contract test subset | `python -m pytest tests/test_ci_reporting.py -k document -q` | deselected due file selection |
+
+Dual-platform CI evidence: [GitHub Actions run 29311841031](https://github.com/alvinloga/HDF5-Viewer/actions/runs/29311841031), head `bd49e88`.
+
+| Platform | CI result |
+|---|---|
+| Windows | passed (quality lane, full offscreen regression suite, and quality artifact upload) |
+| Ubuntu | passed (quality lane, full offscreen regression suite, and quality artifact upload) |
+
+Known limits remain: request-generation and lifecycle primitives are implemented for documents; platform/cache/config primitives are still owned by DV-0107.
+
 ## Checkpoint record format
 
 For each checkpoint append:
