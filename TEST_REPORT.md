@@ -1579,3 +1579,13 @@ Local Windows verification in the repository `venv`:
 | Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\gui tests\test_gui_i18n_accessibility.py` | passed |
 | Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 85 source files |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 409 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Completion commit | `git push origin codex/data-viewer-foundation` | pushed `eb7b825cfc499fa98a084e22cbd98fdd447e4243` |
+| GitHub Actions run | `gh run watch 29376618677 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29376618677 --json status,conclusion,headSha,jobs,url` | head SHA `eb7b825cfc499fa98a084e22cbd98fdd447e4243`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29376618677` |
+| Windows quality job | GitHub Actions run `29376618677` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 2m03s |
+| Ubuntu quality job | GitHub Actions run `29376618677` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m33s |
