@@ -1509,6 +1509,16 @@ Local Windows verification in the repository `venv`:
 | Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 85 source files |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 407 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `46e40b032fac9d704f10acc6364827ab9618572e` |
+| GitHub Actions run | `gh run watch 29375321115 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29375321115 --json status,conclusion,headSha,jobs,url` | head SHA `46e40b032fac9d704f10acc6364827ab9618572e`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29375321115` |
+| Windows quality job | GitHub Actions run `29375321115` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 2m03s |
+| Ubuntu quality job | GitHub Actions run `29375321115` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m47s |
+
 Known gaps:
 
-- DV-0607 is not complete yet: base data view labels, plot screen-reader summary contracts, automated missing-string scans beyond the new catalog gate, and dual-platform CI evidence remain follow-up work before `tasks/todo.md` can be checked.
+- DV-0607 is not complete yet: base data view labels, plot screen-reader summary contracts, automated missing-string scans beyond the new catalog gate, and DPI screenshot evidence remain follow-up work before `tasks/todo.md` can be checked.
