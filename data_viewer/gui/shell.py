@@ -76,6 +76,7 @@ from data_viewer.sources import (
 from data_viewer.sources.delimited import DelimitedTextAdapter
 from data_viewer.sources.hdf5 import HDF5Adapter
 from data_viewer.sources.json import JSONAdapter
+from data_viewer.sources.mat import MATAdapter
 from data_viewer.sources.numpy import NPYAdapter
 from data_viewer.sources.npz import NPZAdapter
 from data_viewer.sources.text import TXTAdapter
@@ -106,6 +107,7 @@ def create_source_registry() -> SourceRegistry:
             TXTAdapter(),
             JSONAdapter(),
             YAMLAdapter(),
+            MATAdapter(),
         ]
     )
 

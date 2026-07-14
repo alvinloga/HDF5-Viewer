@@ -923,3 +923,37 @@ Known gaps:
 
 - This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token even though SSH git push works.
 - This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0408 through DV-0411 finish.
+
+## DV-0408 MATLAB MAT adapter - 2026-07-15
+
+Revision: working tree based on `fe712ce` before committing `feat: add mat source adapter`.
+
+Implementation evidence:
+
+- `data_viewer/sources/mat` adds a read-only MAT adapter and source session.
+- Legacy MAT files dispatch through SciPy `loadmat`; HDF5-backed v7.3-style `.mat` files dispatch through h5py.
+- The session exposes one stable hierarchy rooted at `/`, with variables as direct children and nested cell/struct/HDF5 group entries as escaped path nodes.
+- Legacy internal keys `__globals__`, `__header__`, and `__version__`, and HDF5 `#refs#`, are hidden from the default tree and reported as metadata instead.
+- Numeric, logical, and complex arrays read as `ArrayPayload`; char arrays read as `TextPayload`; sparse/reference/unsupported values read as structured summaries.
+- HDF5 v7.3 traversal has cycle and node-count protection; hard-link cycles are surfaced without recursive expansion.
+- MAT is registered in the target shell registry but exposes no source editing or atomic rewrite capability.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Existing dependency sync | `venv\Scripts\python.exe -m pip install scipy==1.18.0` | passed; installed the version already present in `uv.lock` because the local `venv` lacked the declared dependency |
+| Initial failing MAT adapter test | `venv\Scripts\python.exe -m pytest tests\test_mat_adapter.py -q` | failed as expected before implementation: collection failed because `data_viewer.sources.mat` did not exist |
+| MAT focused tests | `venv\Scripts\python.exe -m pytest tests\test_mat_adapter.py -q` | 4 passed |
+| MAT and registry regression subset | `venv\Scripts\python.exe -m pytest tests\test_mat_adapter.py tests\test_source_registry.py -q` | 10 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\sources\mat data_viewer\gui\shell.py tests\test_mat_adapter.py` | passed |
+| MAT type check | `venv\Scripts\python.exe -m mypy data_viewer\sources\mat` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 351 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Target lint | `venv\Scripts\python.exe -m ruff check data_viewer tests\test_mat_adapter.py tests\test_gui_shell.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 68 source files |
+| Compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests` | passed |
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token even though SSH git push works.
+- This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0409 through DV-0411 finish.

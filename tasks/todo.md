@@ -295,7 +295,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: safe loader only; Python/custom tags rejected; aliases/depth/size limited; typed nonstring keys and merge/alias semantics surfaced; read-only.
 - Verify: conformance and adversarial constructor/alias-expansion/depth fixtures.
 
-### [ ] DV-0408 Implement MAT adapter for legacy and v7.3
+### [x] DV-0408 Implement MAT adapter for legacy and v7.3
 
 - Depends: DV-0202, DV-0108.
 - Read: Format Support §4.6.
