@@ -151,7 +151,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: direct-child pagination; group/dataset/link/broken-link representation; cycle protection; shape/dtype/chunk/compression/fill/storage/attributes; large tree open is bounded.
 - Verify: hierarchy/link/attribute fixtures, pagination stability, instrumentation proves no full recursive walk.
 
-### [ ] DV-0203 Implement direct bounded HDF5 selections
+### [x] DV-0203 Implement direct bounded HDF5 selections
 
 - Depends: DV-0102, DV-0202.
 - Scope: HDF5 selection reader/conversion and tests.

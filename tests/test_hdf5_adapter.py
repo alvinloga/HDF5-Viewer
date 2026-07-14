@@ -5,8 +5,18 @@ from __future__ import annotations
 from pathlib import Path
 import h5py
 import pytest
+import numpy as np
 
-from data_viewer.domain import DataViewerError, DataDomain, ErrorCode, NodeKind, OperationScope
+from data_viewer.domain import (
+    AxisSelection,
+    DataViewerError,
+    DataDomain,
+    ErrorCode,
+    NodeKind,
+    OperationScope,
+    ResourceId,
+    SelectionSpec,
+)
 from data_viewer.sources import api as source_api
 from data_viewer.sources.hdf5 import HDF5Adapter, HDF5_SIGNATURE, HDF5SourceSession
 from data_viewer.sources.registry import SourceRegistry
@@ -22,6 +32,20 @@ def _write_simple_hdf5(path: Path) -> Path:
     with h5py.File(path, "w") as source:
         source.create_dataset("array", data=[[1, 2, 3], [4, 5, 6]])
     return path
+
+
+def _dataset_resource(session: source_api.SourceSession, name: str) -> ResourceId:
+    root = session.root()
+    items = session.list_children(
+        root.resource_id,
+        cursor=None,
+        page_size=100,
+        cancellation=CancellationToken(),
+    ).items
+    for item in items:
+        if item.name == name:
+            return item.resource_id
+    raise AssertionError(f"Dataset {name!r} not found in {root.name}")
 
 
 class _TrackingSession:
@@ -236,6 +260,234 @@ def test_hdf5_unicode_path_open_and_read(tmp_path: Path) -> None:
     assert result.payload.values.shape == (2, 3)
     assert result.payload.source_coordinates((1, 2)) == (1, 2)
 
+    session.close()
+
+
+def test_hdf5_read_scalar_selection_preserves_scalar_shape_and_coordinates(tmp_path: Path) -> None:
+    path = tmp_path / "scalar.h5"
+    with h5py.File(path, "w") as source:
+        source.create_dataset("scalar", data=np.int64(42))
+
+    registry = SourceRegistry([HDF5Adapter()])
+    session = registry.open(path, cancellation=CancellationToken())
+    dataset = _dataset_resource(session, "scalar")
+    result = session.read(
+        ReadRequest(resource_id=dataset, max_bytes=1024),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+
+    assert result.payload.values.shape == ()
+    assert result.payload.values.dtype == np.dtype("int64")
+    assert result.payload.values.item() == 42
+    assert result.payload.source_coordinates(()) == ()
+    assert result.payload.selection.result_shape == ()
+    session.close()
+
+
+def test_hdf5_read_empty_dataset_preserves_shape_and_zero_bytes(tmp_path: Path) -> None:
+    path = tmp_path / "empty.h5"
+    with h5py.File(path, "w") as source:
+        source.create_dataset("empty", data=np.empty((0, 3), dtype=np.float64))
+
+    registry = SourceRegistry([HDF5Adapter()])
+    session = registry.open(path, cancellation=CancellationToken())
+    dataset = _dataset_resource(session, "empty")
+    result = session.read(
+        ReadRequest(resource_id=dataset, max_bytes=1024),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+
+    assert result.payload.values.shape == (0, 3)
+    assert result.payload.values.dtype == np.dtype("float64")
+    assert result.payload.values.nbytes == 0
+    session.close()
+
+
+def test_hdf5_read_scalar_1d_and_2d_hyper_slices(tmp_path: Path) -> None:
+    path = tmp_path / "array.h5"
+    data_1d = np.arange(10, dtype=np.int16)
+    data_2d = np.arange(12, dtype=np.int16).reshape(3, 4)
+    with h5py.File(path, "w") as source:
+        source.create_dataset("one_d", data=data_1d)
+        source.create_dataset("two_d", data=data_2d)
+
+    registry = SourceRegistry([HDF5Adapter()])
+    session = registry.open(path, cancellation=CancellationToken())
+
+    one_d = _dataset_resource(session, "one_d")
+    one_d_result = session.read(
+        ReadRequest(
+            resource_id=one_d,
+            selection=SelectionSpec.hyperslab(
+                AxisSelection.slice(0, start=1, stop=8, step=2),
+            ),
+            max_bytes=1024,
+        ),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+    assert one_d_result.payload.values.tolist() == [1, 3, 5, 7]
+    assert one_d_result.payload.source_coordinates((3,)) == (7,)
+
+    two_d = _dataset_resource(session, "two_d")
+    two_d_result = session.read(
+        ReadRequest(
+            resource_id=two_d,
+            selection=SelectionSpec.hyperslab(
+                AxisSelection(axis=0, index=1),
+                AxisSelection.slice(1, start=0, stop=3),
+            ),
+            max_bytes=1024,
+        ),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+    assert two_d_result.payload.values.shape == (3,)
+    assert np.array_equal(two_d_result.payload.values, data_2d[1, 0:3])
+    assert two_d_result.payload.source_coordinates((2,)) == (1, 2)
+    session.close()
+
+
+def test_hdf5_read_high_dimensional_compound_string_complex_boolean_dtypes(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "dtype_mix.h5"
+    compound = np.array([(1, 1.5), (2, 2.5), (3, 3.5)], dtype=[("id", "i4"), ("value", "f8")])
+    strings = np.array(["a", "b", "c", "d"], dtype=h5py.string_dtype(encoding="utf-8"))
+    complex_values = np.array([1 + 2j, 3 + 4j, 5 + 6j], dtype=np.complex64)
+    booleans = np.array([True, False, True, False, True], dtype=bool)
+
+    with h5py.File(path, "w") as source:
+        source.create_dataset("compound", data=compound)
+        source.create_dataset("high_nd", data=np.arange(2 * 3 * 4, dtype=np.float32).reshape(2, 3, 4))
+        source.create_dataset("strings", data=strings)
+        source.create_dataset("complex", data=complex_values)
+        source.create_dataset("booleans", data=booleans)
+
+    registry = SourceRegistry([HDF5Adapter()])
+    session = registry.open(path, cancellation=CancellationToken())
+
+    high_nd = _dataset_resource(session, "high_nd")
+    high_nd_result = session.read(
+        ReadRequest(
+            resource_id=high_nd,
+            selection=SelectionSpec.hyperslab(
+                AxisSelection(axis=0, index=1),
+                AxisSelection.slice(1, start=0, stop=3),
+                AxisSelection.slice(2, start=1, stop=4),
+            ),
+            max_bytes=1024,
+        ),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+    assert high_nd_result.payload.values.shape == (3, 3)
+    assert high_nd_result.payload.source_coordinates((2, 1)) == (1, 2, 2)
+
+    compound_ds = _dataset_resource(session, "compound")
+    compound_result = session.read(
+        ReadRequest(
+            resource_id=compound_ds,
+            selection=SelectionSpec.hyperslab(AxisSelection.slice(0, start=1, stop=3)),
+            max_bytes=1024,
+        ),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+    assert compound_result.payload.values.dtype == compound.dtype
+    assert np.array_equal(compound_result.payload.values["id"], np.array([2, 3]))
+    assert compound_result.payload.source_coordinates((1,)) == (2,)
+
+    string_ds = _dataset_resource(session, "strings")
+    strings_result = session.read(
+        ReadRequest(
+            resource_id=string_ds,
+            selection=SelectionSpec.hyperslab(AxisSelection.slice(0, start=1, stop=3)),
+            max_bytes=1024,
+        ),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+    assert all(isinstance(item, (bytes, str)) for item in strings_result.payload.values.tolist())
+    assert strings_result.payload.values.tolist() == [b"b", b"c"]
+    assert strings_result.payload.source_coordinates((1,)) == (2,)
+
+    complex_ds = _dataset_resource(session, "complex")
+    complex_result = session.read(
+        ReadRequest(
+            resource_id=complex_ds,
+            selection=SelectionSpec.hyperslab(
+                AxisSelection.slice(0, start=0, stop=2),
+            ),
+            max_bytes=1024,
+        ),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+    assert np.isclose(complex_result.payload.values[1], 3 + 4j)
+    assert complex_result.payload.values.dtype == np.dtype("complex64")
+    assert complex_result.payload.source_coordinates((1,)) == (1,)
+
+    boolean_ds = _dataset_resource(session, "booleans")
+    boolean_result = session.read(
+        ReadRequest(
+            resource_id=boolean_ds,
+            selection=SelectionSpec.hyperslab(
+                AxisSelection.slice(0, start=1, stop=5, step=2),
+            ),
+            max_bytes=1024,
+        ),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+    assert boolean_result.payload.values.dtype == np.dtype(bool)
+    assert boolean_result.payload.values.tolist() == [False, False]
+    assert boolean_result.payload.source_coordinates((1,)) == (3,)
+    session.close()
+
+
+def test_hdf5_read_passes_normalized_selection_key_directly_to_dataset(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "selection_key.h5"
+    with h5py.File(path, "w") as source:
+        source.create_dataset("matrix", data=np.arange(18, dtype=np.int8).reshape(3, 6))
+
+    registry = SourceRegistry([HDF5Adapter()])
+    session = registry.open(path, cancellation=CancellationToken())
+    dataset = _dataset_resource(session, "matrix")
+
+    seen: list[tuple[int | slice | tuple | None, ...]] = []
+    original_getitem = h5py._hl.dataset.Dataset.__getitem__
+
+    def spy_getitem(self, item):
+        seen.append(item)
+        return original_getitem(self, item)
+
+    monkeypatch.setattr(h5py._hl.dataset.Dataset, "__getitem__", spy_getitem)
+    selection = SelectionSpec.hyperslab(
+        AxisSelection.slice(0, start=1, stop=3),
+        AxisSelection.slice(1, start=1, stop=5, step=2),
+    )
+    result = session.read(
+        ReadRequest(
+            resource_id=dataset,
+            selection=selection,
+            max_bytes=1024,
+        ),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+
+    assert len(seen) == 1
+    normalized = selection.normalize((3, 6)).unwrap()
+    assert seen[0] == normalized.to_numpy_key()
+    assert result.payload.values.shape == (2, 2)
+    assert np.array_equal(result.payload.values, np.array([[7, 9], [13, 15]], dtype=np.int8))
+    assert result.payload.source_coordinates((1, 1)) == (2, 3)
     session.close()
 
 

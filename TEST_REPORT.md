@@ -438,6 +438,23 @@ Known gaps:
 
 - Linux verification for this task is not yet run locally.
 
+## DV-0203 direct bounded HDF5 reads - 2026-07-14
+
+Revision: `071f09d`
+
+| Check | Command | Observed result |
+|---|---|---|
+| Windows verification environment | `.venv\\Scripts\\python.exe --version` | CPython 3.12 (uv-managed virtual environment) |
+| HDF5 adapter focused suite | `.venv\\Scripts\\python.exe -m pytest tests/test_hdf5_adapter.py -q` | 18 passed |
+| Scoped lint | `.venv\\Scripts\\ruff.exe check data_viewer/sources/hdf5/session.py tests/test_hdf5_adapter.py` | passed |
+| Full suite (local evidence) | `.venv\\Scripts\\python.exe -m pytest -q` | 225 passed, 1 skipped |
+
+Notes:
+
+- Added direct bounded selection test coverage for scalar, empty, 1D, 2D, high-dimensional, compound, string, complex, and boolean values.
+- Added a selection-key spy assertion proving one dataset indexing call with the normalized key equivalent.
+- Existing CI environment cannot import legacy Qt in plain Anaconda Python; all task evidence here is from repository `.venv` where PyQt6 imports are available.
+
 ## Checkpoint record format
 
 For each checkpoint append:

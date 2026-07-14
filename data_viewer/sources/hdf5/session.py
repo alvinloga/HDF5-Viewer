@@ -320,7 +320,10 @@ class HDF5SourceSession:
             )
 
         progress(0, 1, "start")
-        values = np.asarray(child[selection.to_numpy_key()])
+        values = _read_dataset_values(
+            dataset=child,
+            selection=selection,
+        )
         _raise_if_cancelled(cancellation, operation="source.hdf5.read")
         progress(1, 1, "done")
 
@@ -567,6 +570,18 @@ def _safe_dataset_storage_bytes(dataset: h5py.Dataset) -> int:
         return int(dataset.id.get_storage_size())
     except (AttributeError, OSError):
         return _safe_nbytes(dataset) or 0
+
+
+def _read_dataset_values(
+    *,
+    dataset: h5py.Dataset,
+    selection: NormalizedSelection,
+) -> np.ndarray:
+    """Read one bounded dataset slice using one direct dataset indexing call."""
+
+    key = selection.to_numpy_key()
+    data = dataset[key]
+    return np.asarray(data)
 
 
 def _read_attributes(attributes: h5py.AttributeManager) -> dict[str, object]:
