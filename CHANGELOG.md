@@ -43,6 +43,7 @@ All notable Data Viewer changes are recorded here.
 - Added the read-only NIfTI adapter and coordinate model (DV-0410): `.nii` and native `.nii.gz` volumes now expose spatial metadata, proxy-backed bounded slices, scaling/intent/header provenance, exact voxel↔world affine mapping, and register in the target shell without canonicalization or resampling.
 - Added generic gzip wrapper detection and stream-capable inner adapter support (DV-0501) for `.csv.gz`, `.tsv.gz`, `.txt.gz`, `.json.gz`, `.yaml.gz`, and `.yml.gz`, while preserving native `.nii.gz` routing and leaving random-access gzip extraction to DV-0502.
 - Added managed random-access gzip extraction cache (DV-0502) with canonical fingerprint cache keys, budget/ratio/free-disk preflight, cancellation cleanup, expired/incomplete startup cleanup, and random-access NPY gzip fixture coverage.
+- Added full v1 gzip registry integration (DV-0503 in progress): every v1 gzip wrapper opens through the default target registry, generic gzip metadata is read-only, `.npz.gz`/`.xlsx.gz` report inefficient nested-compression warnings, native `.nii.gz` remains a NIfTI source, and nested-compression targets are not inferred as export formats.
 
 ### Fixed
 

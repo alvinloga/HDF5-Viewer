@@ -24,10 +24,6 @@ class HDF5Adapter:
     def probe(self, path: Path, header: bytes) -> ProbeResult | None:
         """Validate candidate HDF5 files by signature."""
 
-        if not path.exists():
-            return None
-        if not path.is_file():
-            return None
         suffix = path.suffix.lower()
         if suffix not in self.extensions:
             return None

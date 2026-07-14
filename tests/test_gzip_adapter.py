@@ -5,11 +5,16 @@ from __future__ import annotations
 import gzip
 from pathlib import Path
 
+import h5py
+import nibabel as nib
 import numpy as np
+from openpyxl import Workbook
 import pytest
+from scipy.io import savemat
 
 from data_viewer.domain import DataDomain, DataViewerError, ErrorCode, OperationScope, ResourceId
 from data_viewer.domain.payload import StructuredPayload, TablePayload
+from data_viewer.exporting import ExportTargetFormat, infer_export_format
 from data_viewer.gui.shell import create_source_registry
 from data_viewer.sources.api import ReadRequest
 from data_viewer.sources.json import JSONAdapter
@@ -22,6 +27,12 @@ def _write_gzip(path: Path, payload: bytes) -> Path:
     with gzip.open(path, "wb") as handle:
         handle.write(payload)
     return path
+
+
+def _gzip_file(source: Path, target: Path) -> Path:
+    with source.open("rb") as source_handle, gzip.open(target, "wb") as gzip_handle:
+        gzip_handle.write(source_handle.read())
+    return target
 
 
 def test_json_gzip_wrapper_opens_with_original_resource_identity(tmp_path: Path) -> None:
@@ -122,3 +133,75 @@ def test_gzip_wrapper_honors_cancellation_before_probe(tmp_path: Path) -> None:
         create_source_registry().select_adapter(path, cancellation=token)
 
     assert exc_info.value.code is ErrorCode.READ_CANCELLED
+
+
+def test_default_registry_opens_every_v1_gzip_form(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DATA_VIEWER_CACHE_DIR", str(tmp_path / "app-cache"))
+    h5_source = tmp_path / "sample.h5"
+    with h5py.File(h5_source, "w") as handle:
+        handle.create_dataset("values", data=np.arange(4))
+    npy_source = tmp_path / "array.npy"
+    np.save(npy_source, np.arange(3))
+    npz_source = tmp_path / "archive.npz"
+    np.savez(npz_source, values=np.arange(3))
+    csv_source = tmp_path / "table.csv"
+    csv_source.write_text("time,value\n0,1\n", encoding="utf-8")
+    tsv_source = tmp_path / "table.tsv"
+    tsv_source.write_text("time\tvalue\n0\t1\n", encoding="utf-8")
+    txt_source = tmp_path / "notes.txt"
+    txt_source.write_text("hello\n", encoding="utf-8")
+    mat_source = tmp_path / "data.mat"
+    savemat(mat_source, {"values": np.arange(3)})
+    xlsx_source = tmp_path / "book.xlsx"
+    workbook = Workbook()
+    workbook.active["A1"] = "value"
+    workbook.save(xlsx_source)
+    json_source = tmp_path / "data.json"
+    json_source.write_text('{"value": 1}', encoding="utf-8")
+    yaml_source = tmp_path / "data.yaml"
+    yaml_source.write_text("value: 1\n", encoding="utf-8")
+    nifti_source = tmp_path / "image.nii.gz"
+    nib.save(
+        nib.Nifti1Image(np.zeros((2, 2, 2), dtype=np.int16), np.eye(4)),
+        nifti_source,
+    )
+    gzip_paths = [
+        _gzip_file(h5_source, tmp_path / "sample.h5.gz"),
+        _gzip_file(npy_source, tmp_path / "array.npy.gz"),
+        _gzip_file(npz_source, tmp_path / "archive.npz.gz"),
+        _gzip_file(csv_source, tmp_path / "table.csv.gz"),
+        _gzip_file(tsv_source, tmp_path / "table.tsv.gz"),
+        _gzip_file(txt_source, tmp_path / "notes.txt.gz"),
+        _gzip_file(mat_source, tmp_path / "data.mat.gz"),
+        nifti_source,
+        _gzip_file(xlsx_source, tmp_path / "book.xlsx.gz"),
+        _gzip_file(json_source, tmp_path / "data.json.gz"),
+        _gzip_file(yaml_source, tmp_path / "data.yaml.gz"),
+    ]
+    registry = create_source_registry()
+
+    opened_formats: list[str] = []
+    for path in gzip_paths:
+        session = registry.open(path, cancellation=CancellationToken())
+        root = session.root()
+        metadata = session.get_metadata(root.resource_id, cancellation=CancellationToken())
+        opened_formats.append(path.name)
+
+        assert root.resource_id.source_uri == path.resolve(strict=False).as_uri()
+        if path.name.endswith(".nii.gz"):
+            assert metadata.domain is DataDomain.VOLUME
+            assert "gzip_wrapped" not in metadata.attributes
+        else:
+            assert metadata.attributes["gzip_wrapped"] is True
+            assert metadata.attributes["read_only"] is True
+        session.close()
+
+    assert opened_formats == [path.name for path in gzip_paths]
+
+
+def test_nested_compression_targets_are_not_inferred_as_export_formats() -> None:
+    assert infer_export_format(Path("result.npz.gz")) is ExportTargetFormat.BINARY
+    assert infer_export_format(Path("result.xlsx.gz")) is ExportTargetFormat.BINARY

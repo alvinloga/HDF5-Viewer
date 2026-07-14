@@ -25,8 +25,6 @@ class MATAdapter:
     def probe(self, path: Path, header: bytes) -> ProbeResult | None:
         """Validate candidate MAT files by suffix and bounded signature checks."""
 
-        if not path.exists() or not path.is_file():
-            return None
         if path.suffix.lower() not in self.extensions:
             return None
         if header.startswith(HDF5_SIGNATURE):

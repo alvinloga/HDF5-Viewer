@@ -1166,3 +1166,35 @@ Known gaps:
 
 - This is local Windows task evidence only; dual-platform CI evidence is pending after commit/push.
 - This is not Checkpoint 5 evidence. Full gzip format integration, read-only UX messaging, nested-compression warnings, dual-platform full matrix evidence, and checkpoint ledger remain DV-0503 through DV-0504.
+
+## DV-0503 full gzip registry integration - 2026-07-15
+
+Revision: working tree based on `b120bba` before committing the DV-0503 implementation.
+
+Implementation evidence:
+
+- The default target registry now composes generic gzip support for every non-NIfTI v1 source adapter: HDF5, NPY, NPZ, CSV, TSV, TXT, MAT, XLSX, JSON, YAML, and YML.
+- `.nii.gz` remains routed to the native NIfTI adapter and is not labeled as a generic gzip wrapper.
+- Stream-capable text-like gzip wrappers continue to use lifecycle-bound stream decompression.
+- Random-access gzip wrappers use the managed extraction cache lazily, so constructing the registry does not create platform cache directories until a random-access gzip source is opened.
+- Generic gzip sessions preserve outer `.gz` resource identity, strip edit/atomic-rewrite capabilities, and expose read-only gzip metadata.
+- `.npz.gz` and `.xlsx.gz` open through the generic wrapper but expose inefficient nested-compression warnings.
+- Export target inference treats `.npz.gz` and `.xlsx.gz` as ordinary binary paths rather than proposed nested-compression output formats.
+- NPY session close now releases mmap handles through the array base chain, allowing Windows cleanup of lifecycle-bound gzip temp views.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial full gzip matrix test | `venv\Scripts\python.exe -m pytest tests\test_gzip_adapter.py::test_default_registry_opens_every_v1_gzip_form -q` | failed as expected before DV-0503 registry/probe integration because random-access virtual inner paths were not accepted and the default registry did not yet cover every gzip form |
+| Full gzip matrix regression | `venv\Scripts\python.exe -m pytest tests\test_gzip_adapter.py::test_default_registry_opens_every_v1_gzip_form -q` | 1 passed |
+| Gzip/read-only/export/GUI subset | `venv\Scripts\python.exe -m pytest tests\test_gzip_adapter.py tests\test_gzip_extraction_cache.py tests\test_exporting.py tests\test_gui_shell.py -q` | 37 passed |
+| Target lint | `venv\Scripts\python.exe -m ruff check data_viewer tests\test_gzip_adapter.py tests\test_gzip_extraction_cache.py tests\test_exporting.py tests\test_gui_shell.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 78 source files |
+| Full compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 377 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- This is local Windows task evidence only; DV-0503 remains unchecked until the commit is pushed and the dual-platform GitHub Actions matrix succeeds.
+- This is not Checkpoint 5 evidence. Checkpoint 5 recording remains DV-0504 after DV-0503 has dual-platform evidence.

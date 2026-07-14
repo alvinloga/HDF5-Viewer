@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from dataclasses import replace
 import gzip
+import shutil
 import tempfile
 from pathlib import Path
-from typing import Iterable
 
 from data_viewer.domain import (
     DataMetadata,
@@ -34,6 +35,9 @@ DEFAULT_STREAM_DECOMPRESS_BYTES = 64 * 1024 * 1024
 READ_ONLY_GZIP_WARNING = (
     "Read-only gzip wrapper; values were produced from a decompressed stream."
 )
+STREAM_CAPABLE_EXTENSIONS = (".csv", ".json", ".tsv", ".txt", ".yaml", ".yml")
+INEFFICIENT_NESTED_EXTENSIONS = (".npz", ".xlsx")
+ExtractionCacheFactory = Callable[[], ManagedExtractionCache]
 
 
 class GzipAdapter:
@@ -46,11 +50,20 @@ class GzipAdapter:
         self,
         inner_adapters: Iterable[SourceAdapter],
         *,
-        extraction_cache: ManagedExtractionCache | None = None,
+        extraction_cache: ManagedExtractionCache | ExtractionCacheFactory | None = None,
+        stream_capable_extensions: Iterable[str] = STREAM_CAPABLE_EXTENSIONS,
         max_decompressed_probe_bytes: int = DEFAULT_DECOMPRESSED_PROBE_BYTES,
         max_stream_decompress_bytes: int = DEFAULT_STREAM_DECOMPRESS_BYTES,
     ) -> None:
         self._extraction_cache = extraction_cache
+        self._resolved_extraction_cache = (
+            extraction_cache
+            if isinstance(extraction_cache, ManagedExtractionCache)
+            else None
+        )
+        self._stream_capable_extensions = frozenset(
+            extension.lower() for extension in stream_capable_extensions
+        )
         self._inner_by_extension: dict[str, SourceAdapter] = {}
         for adapter in inner_adapters:
             for extension in adapter.extensions:
@@ -75,7 +88,8 @@ class GzipAdapter:
         return self._extensions
 
     def probe(self, path: Path, header: bytes) -> ProbeResult | None:
-        inner = self._inner_for_path(path)
+        inner_match = self._inner_match_for_path(path)
+        inner = inner_match[1] if inner_match is not None else None
         if inner is None:
             return None
         if not header.startswith(GZIP_MAGIC):
@@ -108,27 +122,35 @@ class GzipAdapter:
                 operation="source.gzip.open",
                 retryable=True,
             )
-        inner = self._inner_for_path(path)
-        if inner is None:
+        inner_match = self._inner_match_for_path(path)
+        if inner_match is None:
             raise DataViewerError(
                 code=ErrorCode.SOURCE_UNSUPPORTED,
                 message="No stream-capable gzip inner adapter accepts this extension.",
                 operation="source.gzip.open",
                 details={"path": str(path), "adapter_id": self.adapter_id},
             )
+        inner_extension, inner = inner_match
         temp_dir = tempfile.TemporaryDirectory(prefix="data-viewer-gzip-")
         try:
-            if self._extraction_cache is not None:
-                extraction = self._extraction_cache.extract(
+            extraction_cache = (
+                self._get_extraction_cache()
+                if inner_extension not in self._stream_capable_extensions
+                else None
+            )
+            if extraction_cache is not None:
+                extraction = extraction_cache.extract(
                     path,
                     cancellation=cancellation,
                 )
-                inner_session = inner.open(extraction.path, cancellation=cancellation)
-                temp_dir.cleanup()
+                temp_path = Path(temp_dir.name) / _inner_virtual_path(path).name
+                shutil.copy2(extraction.path, temp_path)
+                inner_session = inner.open(temp_path, cancellation=cancellation)
                 return _GzipWrappedSession(
                     outer_path=path,
-                    temp_dir=None,
+                    temp_dir=temp_dir,
                     inner_adapter_id=inner.adapter_id,
+                    inner_extension=inner_extension,
                     inner_session=inner_session,
                     gzip_access="managed_random_access_cache",
                     cache_hit=extraction.cache_hit,
@@ -145,6 +167,7 @@ class GzipAdapter:
                 outer_path=path,
                 temp_dir=temp_dir,
                 inner_adapter_id=inner.adapter_id,
+                inner_extension=inner_extension,
                 inner_session=inner_session,
                 gzip_access="read_only_stream_wrapper",
                 cache_hit=False,
@@ -154,12 +177,26 @@ class GzipAdapter:
             raise
 
     def _inner_for_path(self, path: Path) -> SourceAdapter | None:
+        match = self._inner_match_for_path(path)
+        return match[1] if match is not None else None
+
+    def _get_extraction_cache(self) -> ManagedExtractionCache | None:
+        if self._extraction_cache is None:
+            return None
+        if self._resolved_extraction_cache is None:
+            if not callable(self._extraction_cache):
+                self._resolved_extraction_cache = self._extraction_cache
+            else:
+                self._resolved_extraction_cache = self._extraction_cache()
+        return self._resolved_extraction_cache
+
+    def _inner_match_for_path(self, path: Path) -> tuple[str, SourceAdapter] | None:
         name = path.name.lower()
         if name.endswith(".nii.gz"):
             return None
         for extension, adapter in self._inner_by_extension.items():
             if name.endswith(f"{extension}.gz"):
-                return adapter
+                return extension, adapter
         return None
 
 
@@ -172,6 +209,7 @@ class _GzipWrappedSession:
         outer_path: Path,
         temp_dir: tempfile.TemporaryDirectory[str] | None,
         inner_adapter_id: str,
+        inner_extension: str,
         inner_session: SourceSession,
         gzip_access: str,
         cache_hit: bool,
@@ -181,6 +219,7 @@ class _GzipWrappedSession:
         self._fingerprint = _fingerprint(outer_path)
         self._temp_dir = temp_dir
         self._inner_adapter_id = inner_adapter_id
+        self._inner_extension = inner_extension
         self._inner = inner_session
         self._inner_uri = inner_session.source_uri
         self._gzip_access = gzip_access
@@ -240,11 +279,17 @@ class _GzipWrappedSession:
             {
                 "gzip_wrapped": True,
                 "inner_adapter_id": self._inner_adapter_id,
+                "inner_extension": self._inner_extension,
                 "source_compression": "gzip",
                 "gzip_access": self._gzip_access,
                 "gzip_cache_hit": self._cache_hit,
+                "read_only": True,
             }
         )
+        if self._inner_extension in INEFFICIENT_NESTED_EXTENSIONS:
+            attributes["gzip_nested_compression_warning"] = (
+                f"{self._inner_extension}.gz is readable but inefficient nested compression and is not proposed as an output format."
+            )
         return replace(
             metadata,
             resource_id=self._outer_resource(metadata.resource_id),
@@ -271,7 +316,7 @@ class _GzipWrappedSession:
         )
         return replace(
             result,
-            warnings=tuple(result.warnings) + (READ_ONLY_GZIP_WARNING,),
+            warnings=tuple(result.warnings) + self._warnings(),
         )
 
     def search(
@@ -309,6 +354,14 @@ class _GzipWrappedSession:
         finally:
             if self._temp_dir is not None:
                 self._temp_dir.cleanup()
+
+    def _warnings(self) -> tuple[str, ...]:
+        warnings = [READ_ONLY_GZIP_WARNING]
+        if self._inner_extension in INEFFICIENT_NESTED_EXTENSIONS:
+            warnings.append(
+                f"{self._inner_extension}.gz is inefficient nested compression and is not proposed as an output format."
+            )
+        return tuple(warnings)
 
     def _outer_node(self, node: ResourceNode) -> ResourceNode:
         return replace(node, resource_id=self._outer_resource(node.resource_id))

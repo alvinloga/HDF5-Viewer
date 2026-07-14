@@ -439,10 +439,16 @@ class NPYSourceSession:
 
     @staticmethod
     def _close_array_object(array: np.ndarray[Any, np.dtype[np.generic]]) -> None:
-        mmap = getattr(array, "_mmap", None)
-        close = getattr(mmap, "close", None)
-        if callable(close):
-            close()
+        seen: set[int] = set()
+        current: object | None = array
+        while current is not None and id(current) not in seen:
+            seen.add(id(current))
+            mmap = getattr(current, "_mmap", None)
+            close = getattr(mmap, "close", None)
+            if callable(close):
+                close()
+                return
+            current = getattr(current, "base", None)
 
     def _assert_unchanged(self, expected: SourceFingerprint) -> None:
         current = _fingerprint(self._path)

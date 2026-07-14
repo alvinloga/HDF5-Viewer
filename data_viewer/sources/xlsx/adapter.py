@@ -24,8 +24,6 @@ class XLSXAdapter:
     def probe(self, path: Path, header: bytes) -> ProbeResult | None:
         """Validate candidate XLSX files by suffix and OOXML ZIP signature."""
 
-        if not path.exists() or not path.is_file():
-            return None
         if path.suffix.lower() not in self.extensions:
             return None
         if not header.startswith(ZIP_SIGNATURE):

@@ -22,8 +22,6 @@ class NPZAdapter:
     def probe(self, path: Path, header: bytes) -> ProbeResult | None:
         """Validate candidate NPZ files by extension and bounded ZIP signature."""
 
-        if not path.exists() or not path.is_file():
-            return None
         if path.suffix.lower() not in self.extensions:
             return None
         if not header.startswith(NPZ_MAGIC_PREFIX):
@@ -66,4 +64,3 @@ class NPZAdapter:
 
 
 __all__ = ["NPZAdapter", "NPZ_MAGIC_PREFIX"]
-

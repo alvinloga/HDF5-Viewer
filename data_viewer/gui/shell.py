@@ -68,6 +68,7 @@ from data_viewer.exporting import (
     build_export_plan,
 )
 from data_viewer.tasks import CancellationToken
+from data_viewer.infrastructure.paths import resolve_app_paths
 from data_viewer.sources import (
     NodePage,
     ReadRequest,
@@ -75,6 +76,7 @@ from data_viewer.sources import (
 )
 from data_viewer.sources.delimited import DelimitedTextAdapter
 from data_viewer.sources.gzip import GzipAdapter
+from data_viewer.sources.gzip.cache import ManagedExtractionCache
 from data_viewer.sources.hdf5 import HDF5Adapter
 from data_viewer.sources.json import JSONAdapter
 from data_viewer.sources.mat import MATAdapter
@@ -98,6 +100,14 @@ ROLE_HAS_CHILDREN = Qt.ItemDataRole.UserRole + 4
 ROLE_LOAD_MORE = Qt.ItemDataRole.UserRole + 5
 
 
+def _default_gzip_extraction_cache() -> ManagedExtractionCache:
+    """Create the managed gzip extraction cache lazily on first random-access use."""
+
+    paths = resolve_app_paths()
+    paths.cache_dir.mkdir(parents=True, exist_ok=True)
+    return ManagedExtractionCache(paths.cache_dir / "gzip-extractions")
+
+
 def create_source_registry() -> SourceRegistry:
     """Build a bootstrap registry for the current task profile."""
 
@@ -105,19 +115,27 @@ def create_source_registry() -> SourceRegistry:
     text = TXTAdapter()
     json = JSONAdapter()
     yaml = YAMLAdapter()
+    hdf5 = HDF5Adapter()
+    npy = NPYAdapter()
+    npz = NPZAdapter()
+    mat = MATAdapter()
+    xlsx = XLSXAdapter()
     return SourceRegistry(
         [
-            HDF5Adapter(),
-            NPYAdapter(),
-            NPZAdapter(),
+            hdf5,
+            npy,
+            npz,
             delimited,
             text,
             json,
             yaml,
-            MATAdapter(),
-            XLSXAdapter(),
+            mat,
+            xlsx,
             NIFTIAdapter(),
-            GzipAdapter([delimited, text, json, yaml]),
+            GzipAdapter(
+                [hdf5, npy, npz, delimited, text, json, yaml, mat, xlsx],
+                extraction_cache=_default_gzip_extraction_cache,
+            ),
         ]
     )
 
