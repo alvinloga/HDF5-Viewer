@@ -22,8 +22,6 @@ class NPYAdapter:
     def probe(self, path: Path, header: bytes) -> ProbeResult | None:
         """Validate candidate NPY files by extension and magic prefix."""
 
-        if not path.exists() or not path.is_file():
-            return None
         if path.suffix.lower() not in self.extensions:
             return None
         if not header.startswith(NPY_MAGIC_PREFIX):

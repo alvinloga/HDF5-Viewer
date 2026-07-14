@@ -345,7 +345,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: longest-first `.nii.gz`; content validation; bounded decompressed prefix; streaming inner adapters for text formats; structured corrupt/truncated errors.
 - Verify: all text-like gzip conformance fixtures, false-extension tests, cancellation.
 
-### [ ] DV-0502 Implement managed random-access extraction cache
+### [x] DV-0502 Implement managed random-access extraction cache
 
 - Depends: DV-0107, DV-0501.
 - Scope: extraction task/cache identity/janitor and tests.

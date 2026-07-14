@@ -42,6 +42,7 @@ All notable Data Viewer changes are recorded here.
 - Added the read-only safe XLSX adapter (DV-0409): `.xlsx` workbooks now open with external links disabled, expose workbook/sheet/cell/table/defined-name/merged-range metadata, distinguish formulas from cached values without execution, preserve blank cells inside used ranges, support bounded worksheet page reads, reject encrypted/malformed inputs, and register in the target shell.
 - Added the read-only NIfTI adapter and coordinate model (DV-0410): `.nii` and native `.nii.gz` volumes now expose spatial metadata, proxy-backed bounded slices, scaling/intent/header provenance, exact voxel↔world affine mapping, and register in the target shell without canonicalization or resampling.
 - Added generic gzip wrapper detection and stream-capable inner adapter support (DV-0501) for `.csv.gz`, `.tsv.gz`, `.txt.gz`, `.json.gz`, `.yaml.gz`, and `.yml.gz`, while preserving native `.nii.gz` routing and leaving random-access gzip extraction to DV-0502.
+- Added managed random-access gzip extraction cache (DV-0502) with canonical fingerprint cache keys, budget/ratio/free-disk preflight, cancellation cleanup, expired/incomplete startup cleanup, and random-access NPY gzip fixture coverage.
 
 ### Fixed
 

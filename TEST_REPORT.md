@@ -1131,3 +1131,38 @@ Known gaps:
 
 - This is local Windows task evidence only; dual-platform CI evidence is pending after commit/push.
 - This is not Checkpoint 5 evidence. Random-access gzip extraction, full gzip matrix integration, UI read-only messaging, and checkpoint ledger remain DV-0502 through DV-0504.
+
+## DV-0502 managed random-access extraction cache - 2026-07-15
+
+Revision: working tree based on `4c43cc9` before committing `feat: add gzip extraction cache`.
+
+Implementation evidence:
+
+- `data_viewer/sources/gzip/cache.py` adds `ManagedExtractionCache` with `ExtractionLimits`.
+- Random-access gzip extraction uses canonical cache keys derived from resolved file URI, compressed size, mtime, and compressed-prefix hash.
+- Extraction enforces free-disk, decompressed-size, and compression-ratio budgets before committing cache entries.
+- Cancellation and failed extraction remove `.incomplete` files and leave no committed cache entry.
+- Startup cleanup removes abandoned `.incomplete` files and expired indexed cache entries.
+- `GzipAdapter` can now use the managed extraction cache for random-access inner adapters while preserving outer `.gz` resource identity and read-only gzip warnings.
+- Existing stream-capable gzip behavior from DV-0501 remains unchanged.
+- NPY gzip random-access fixture coverage proves decompressed cache open/read, cache reuse, source-fingerprint invalidation, budget failure, cancellation cleanup, and expired-entry janitor behavior.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing extraction-cache test | `venv\Scripts\python.exe -m pytest tests\test_gzip_extraction_cache.py -q` | failed as expected before implementation: collection failed because `data_viewer.sources.gzip.cache` did not exist |
+| NPY gzip probe regression | `venv\Scripts\python.exe -m pytest tests\test_gzip_extraction_cache.py -q` after adding probe assertion | failed as expected until `NPYAdapter.probe()` no longer required the virtual inner path to exist |
+| Gzip extraction focused tests | `venv\Scripts\python.exe -m pytest tests\test_gzip_extraction_cache.py tests\test_gzip_adapter.py tests\test_numpy_adapter.py -q` | 18 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\sources\gzip data_viewer\sources\numpy\adapter.py tests\test_gzip_extraction_cache.py tests\test_gzip_adapter.py` | passed |
+| Gzip cache type check | `venv\Scripts\python.exe -m mypy data_viewer\sources\gzip` | passed |
+| Compile | `venv\Scripts\python.exe -m compileall -q data_viewer\sources\gzip data_viewer\sources\numpy tests\test_gzip_extraction_cache.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 375 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Target lint | `venv\Scripts\python.exe -m ruff check data_viewer tests\test_gzip_extraction_cache.py tests\test_gzip_adapter.py tests\test_gui_shell.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 78 source files |
+| Full compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests` | passed |
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending after commit/push.
+- This is not Checkpoint 5 evidence. Full gzip format integration, read-only UX messaging, nested-compression warnings, dual-platform full matrix evidence, and checkpoint ledger remain DV-0503 through DV-0504.

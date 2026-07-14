@@ -26,6 +26,7 @@ from data_viewer.sources.api import (
     SourceAdapter,
     SourceSession,
 )
+from data_viewer.sources.gzip.cache import ManagedExtractionCache
 
 GZIP_MAGIC = b"\x1f\x8b"
 DEFAULT_DECOMPRESSED_PROBE_BYTES = 1024 * 1024
@@ -45,9 +46,11 @@ class GzipAdapter:
         self,
         inner_adapters: Iterable[SourceAdapter],
         *,
+        extraction_cache: ManagedExtractionCache | None = None,
         max_decompressed_probe_bytes: int = DEFAULT_DECOMPRESSED_PROBE_BYTES,
         max_stream_decompress_bytes: int = DEFAULT_STREAM_DECOMPRESS_BYTES,
     ) -> None:
+        self._extraction_cache = extraction_cache
         self._inner_by_extension: dict[str, SourceAdapter] = {}
         for adapter in inner_adapters:
             for extension in adapter.extensions:
@@ -114,8 +117,23 @@ class GzipAdapter:
                 details={"path": str(path), "adapter_id": self.adapter_id},
             )
         temp_dir = tempfile.TemporaryDirectory(prefix="data-viewer-gzip-")
-        temp_path = Path(temp_dir.name) / _inner_virtual_path(path).name
         try:
+            if self._extraction_cache is not None:
+                extraction = self._extraction_cache.extract(
+                    path,
+                    cancellation=cancellation,
+                )
+                inner_session = inner.open(extraction.path, cancellation=cancellation)
+                temp_dir.cleanup()
+                return _GzipWrappedSession(
+                    outer_path=path,
+                    temp_dir=None,
+                    inner_adapter_id=inner.adapter_id,
+                    inner_session=inner_session,
+                    gzip_access="managed_random_access_cache",
+                    cache_hit=extraction.cache_hit,
+                )
+            temp_path = Path(temp_dir.name) / _inner_virtual_path(path).name
             _decompress_to_path(
                 path,
                 temp_path,
@@ -128,6 +146,8 @@ class GzipAdapter:
                 temp_dir=temp_dir,
                 inner_adapter_id=inner.adapter_id,
                 inner_session=inner_session,
+                gzip_access="read_only_stream_wrapper",
+                cache_hit=False,
             )
         except Exception:
             temp_dir.cleanup()
@@ -150,9 +170,11 @@ class _GzipWrappedSession:
         self,
         *,
         outer_path: Path,
-        temp_dir: tempfile.TemporaryDirectory[str],
+        temp_dir: tempfile.TemporaryDirectory[str] | None,
         inner_adapter_id: str,
         inner_session: SourceSession,
+        gzip_access: str,
+        cache_hit: bool,
     ) -> None:
         self._outer_path = outer_path
         self._outer_uri = outer_path.resolve(strict=False).as_uri()
@@ -161,6 +183,8 @@ class _GzipWrappedSession:
         self._inner_adapter_id = inner_adapter_id
         self._inner = inner_session
         self._inner_uri = inner_session.source_uri
+        self._gzip_access = gzip_access
+        self._cache_hit = cache_hit
         self._closed = False
 
     @property
@@ -217,7 +241,8 @@ class _GzipWrappedSession:
                 "gzip_wrapped": True,
                 "inner_adapter_id": self._inner_adapter_id,
                 "source_compression": "gzip",
-                "gzip_access": "read_only_stream_wrapper",
+                "gzip_access": self._gzip_access,
+                "gzip_cache_hit": self._cache_hit,
             }
         )
         return replace(
@@ -282,7 +307,8 @@ class _GzipWrappedSession:
         try:
             self._inner.close()
         finally:
-            self._temp_dir.cleanup()
+            if self._temp_dir is not None:
+                self._temp_dir.cleanup()
 
     def _outer_node(self, node: ResourceNode) -> ResourceNode:
         return replace(node, resource_id=self._outer_resource(node.resource_id))
