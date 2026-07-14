@@ -1291,3 +1291,32 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Broader shell layout/state rebuild, command registry, standard state components, localization, and visual screenshot matrix remain DV-0602 through DV-0608.
+
+## DV-0602 command registry and ActiveContext - 2026-07-15
+
+Revision: working tree based on `dcd363d` before committing the DV-0602 implementation.
+
+Implementation evidence:
+
+- `data_viewer/app/commands.py` adds a stable application-level command registry with command IDs, labels, shortcuts, semantic action names, and enabled/disabled evaluations.
+- The default command registry covers the UI/UX shortcut baseline: open file/workspace, save, Save As, export, close view, command palette, find, global search, split view, toggle bottom panel, undo, and redo.
+- `ActiveContextSnapshot` now records explicit document, resource, request generation, active split, active view, selection label, dirty, active-task, undo/redo, and bottom-panel state.
+- `ActiveContext` adds typed update methods for active view, edit state, task state, and bottom-panel visibility without importing or scanning GUI widgets.
+- Command availability is derived from `ActiveContextSnapshot`, with machine-stable command IDs and human-readable disabled reasons.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing command registry test | `venv\Scripts\python.exe -m pytest tests\test_command_registry.py -q` | failed as expected before implementation: `ModuleNotFoundError: No module named 'data_viewer.app.commands'` |
+| Command registry focused tests | `venv\Scripts\python.exe -m pytest tests\test_command_registry.py -q` | 3 passed |
+| App/GUI regression subset | `venv\Scripts\python.exe -m pytest tests\test_command_registry.py tests\test_gui_theme.py tests\test_gui_shell.py -q` | 27 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\app data_viewer\gui tests\test_command_registry.py tests\test_gui_theme.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 80 source files |
+| Compile | `venv\Scripts\python.exe -m compileall -q data_viewer\app data_viewer\gui tests\test_command_registry.py tests\test_gui_theme.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 387 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- This is local Windows task evidence only; DV-0602 remains unchecked until the commit is pushed and the dual-platform GitHub Actions matrix succeeds.
+- The command registry is not yet fully bound into the rebuilt shell command bar; broader shell panel/layout work remains DV-0603.
