@@ -1447,3 +1447,32 @@ Known gaps:
 
 - The shell still uses its existing internal table model; replacing shell rendering with these reusable base views is a follow-up integration slice.
 - Full image rendering, large-scroll performance instrumentation, and volume/NIfTI view specialization remain later P6/P8 work.
+
+## DV-0606 import/save/export/options dialog primitives - 2026-07-15
+
+Revision: working tree based on `f79cef1` before committing the DV-0606 implementation.
+
+Implementation evidence:
+
+- `data_viewer/gui/dialogs.py` adds `PathValidationWidget`, `SaveSummaryDialog`, `DestructiveConfirmationDialog`, and `ImportOptionsDialog`.
+- Path validation reports inline errors, supports open/save/export modes, preserves long paths through selectable text and full-path tooltips, and does not launch platform file dialogs in tests.
+- Save summary dialogs are application-modal, require reviewed patches, and show target URI, persistence strategy, affected resources, patch kinds, warnings, and a safe Cancel default.
+- Destructive confirmations name the specific resource and consequence, avoid generic confirmation wording, and keep Cancel as the default button.
+- Import options are preview-first and nonmodal; applying options is not the default action and the dialog does not mutate the source file.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing dialog test | `venv\Scripts\python.exe -m pytest tests\test_gui_dialogs.py -q` | failed as expected before implementation: `ModuleNotFoundError: No module named 'data_viewer.gui.dialogs'` |
+| Focused dialog tests | `venv\Scripts\python.exe -m pytest tests\test_gui_dialogs.py -q` | 5 passed |
+| GUI dialog/state/shell regression subset | `venv\Scripts\python.exe -m pytest tests\test_gui_dialogs.py tests\test_gui_state_components.py tests\test_gui_shell.py -q` | 26 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\gui tests\test_gui_dialogs.py tests\test_gui_state_components.py tests\test_gui_shell.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\gui tests\test_gui_dialogs.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 83 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 401 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- CI Windows/Ubuntu evidence is not recorded yet for this DV-0606 implementation commit.
+- These are reusable dialog primitives; full shell command wiring, platform file picker adapters, and localization catalog integration remain follow-up P6 tasks.
