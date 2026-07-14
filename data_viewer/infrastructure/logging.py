@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-
+from typing import Literal
 from .config import LoggingConfig
 
 
@@ -109,8 +109,15 @@ class LogRedactor:
 class RedactingFormatter(logging.Formatter):
     """Formatter that redacts sensitive payload after final rendering."""
 
-    def __init__(self, redactor: LogRedactor, *args: object, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        redactor: LogRedactor,
+        fmt: str | None = None,
+        datefmt: str | None = None,
+        style: Literal["%", "{", "$"] = "%",
+        validate: bool = True,
+    ) -> None:
+        super().__init__(fmt=fmt, datefmt=datefmt, style=style, validate=validate)
         self._redactor = redactor
 
     def format(self, record: logging.LogRecord) -> str:

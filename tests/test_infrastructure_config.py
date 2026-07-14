@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from data_viewer.infrastructure.config import (
     CONFIG_SCHEMA_VERSION,
     AppConfig,

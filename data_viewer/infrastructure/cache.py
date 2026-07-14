@@ -7,6 +7,7 @@ import json
 import os
 import tempfile
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Callable
@@ -92,15 +93,27 @@ class CacheEntry:
         }
 
     @classmethod
-    def from_json(cls, value: dict[str, object]) -> "CacheEntry":
+    def from_json(cls, value: Mapping[str, object]) -> "CacheEntry":
         try:
+            size_bytes_raw = value["size_bytes"]
+            if not isinstance(size_bytes_raw, int):
+                raise TypeError("size_bytes must be an integer")
+            created_raw = value["created_at"]
+            if not isinstance(created_raw, int | float):
+                raise TypeError("created_at must be numeric")
+            last_access_raw = value["last_accessed_at"]
+            if not isinstance(last_access_raw, int | float):
+                raise TypeError("last_accessed_at must be numeric")
+            checksum_raw = value.get("checksum", "")
+            if not isinstance(checksum_raw, str):
+                raise TypeError("checksum must be a string")
             return cls(
                 key=str(value["key"]),
                 path=Path(str(value["path"])),
-                size_bytes=int(value["size_bytes"]),
-                created_at=float(value["created_at"]),
-                last_accessed_at=float(value["last_accessed_at"]),
-                checksum=str(value.get("checksum", "")),
+                size_bytes=size_bytes_raw,
+                created_at=float(created_raw),
+                last_accessed_at=float(last_access_raw),
+                checksum=checksum_raw,
             )
         except (KeyError, TypeError, ValueError) as error:
             raise ValueError(f"invalid cache entry payload: {error}") from error

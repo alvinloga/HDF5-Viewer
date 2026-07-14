@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import io
 import logging
-from pathlib import Path
 
 from data_viewer.infrastructure.config import LoggingConfig
 from data_viewer.infrastructure.logging import LogRedactor, configure_logging
