@@ -47,6 +47,7 @@ All notable Data Viewer changes are recorded here.
 - Added the semantic Qt theme foundation (DV-0601): centralized light/dark color roles, compact 4 px metrics, platform typography roles, bundled monochrome SVG icon definitions, generated application stylesheet, and palette/icon scan tests.
 - Added the application command registry and expanded ActiveContext (DV-0602): stable command IDs, labels, shortcuts, semantic actions, enabled/disabled reasons, and explicit split/view/resource/selection/task/dirty state without widget coupling.
 - Added the first production shell structure slice (DV-0603): command bar bindings, authoritative structure tree contract, workspace tabs, explicit active split label, inspector tabs, Tasks/Output/Problems bottom panel, expanded status fields, and 1024×768 minimum usability guard.
+- Added standard Qt state component contracts (DV-0604, pending CI): initial/loading/empty/ready/partial/error/disabled/dirty/read-only/conflicted/stale view models, keyboard-reachable actions, safe error details, and non-color-only labels.
 
 ### Fixed
 

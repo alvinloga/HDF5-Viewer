@@ -1369,3 +1369,32 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Layout persistence hooks, screenshot matrix expansion, and richer split/tab behavior remain dependent P6/P9 tasks.
+
+## DV-0604 standard async and content state components - 2026-07-15
+
+Revision: working tree based on `6fddb89` before committing the DV-0604 implementation.
+
+Implementation evidence:
+
+- `data_viewer/gui/state_components.py` adds `StateKind`, `StateAction`, `StateViewModel`, `default_state_model()`, `error_state_model()`, and `StandardStateWidget`.
+- The standard state vocabulary covers initial, loading, empty, ready, partial, error, disabled, dirty, read-only, conflicted, and stale states.
+- State rendering exposes text labels, accessible names/descriptions, selectable summaries/details, and keyboard-reachable buttons instead of color-only state cues.
+- Error states separate safe summary/details from retry actions; disabled actions carry explicit reason tooltips and accessible descriptions.
+- No fake-data skeletons are introduced; default loading state uses a named cancellable action and clear target text.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing state-component test | `venv\Scripts\python.exe -m pytest tests\test_gui_state_components.py -q` | failed as expected before implementation: `ModuleNotFoundError: No module named 'data_viewer.gui.state_components'` |
+| Focused state component tests | `venv\Scripts\python.exe -m pytest tests\test_gui_state_components.py -q` | 3 passed |
+| GUI/theme/shell regression subset | `venv\Scripts\python.exe -m pytest tests\test_gui_state_components.py tests\test_gui_theme.py tests\test_gui_shell.py -q` | 28 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\gui tests\test_gui_state_components.py tests\test_gui_theme.py tests\test_gui_shell.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\gui tests\test_gui_state_components.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 81 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 391 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- CI Windows/Ubuntu evidence is not recorded yet for this DV-0604 implementation commit.
+- Broad shell/view replacement of ad-hoc state labels remains follow-up integration work after the reusable state component contract is available.
