@@ -230,7 +230,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: dirty/read-only/conflict not color-only; original/current values accessible; destructive target named; invalid save disabled; read-only offers Save As/export; task progress/cancel/details visible.
 - Verify: pytest-qt full edit/save/conflict/close/export flows and theme screenshots.
 
-### [ ] DV-0307 Record Checkpoint 3 persistence evidence
+### [x] DV-0307 Record Checkpoint 3 persistence evidence
 
 - Depends: DV-0301 through DV-0306.
 - Acceptance: HDF5 edit and generic transaction integrity proven; export scope/provenance proven; no read-only overwrite path.

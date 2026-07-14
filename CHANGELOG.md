@@ -45,6 +45,7 @@ All notable Data Viewer changes are recorded here.
 - Defined Windows and Linux as simultaneous release gates.
 - Added target architecture, product specification, public API contracts, workspace schema, UI specification, safe-editing protocol, testing policy, dependency policy, ADRs, and agent rules.
 - Reclassified the existing source as the legacy migration baseline.
+- Recorded Checkpoint 3 persistence evidence for HDF5 safe edits, generic transactions, export provenance, and edit/export UI flows on Windows and Ubuntu CI.
 
 ### Known legacy limitations
 
