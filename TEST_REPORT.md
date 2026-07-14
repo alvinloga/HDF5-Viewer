@@ -701,3 +701,29 @@ Evidence coverage:
 Known gaps:
 
 - This is a Checkpoint 3 quality/evidence gate, not a v1 release gate. Packaged application smoke, full format matrix, plugin numerical matrix, workspace/compare matrix, visual DPI/theme matrix, SBOM/license evidence, and public release artifacts remain later tasks.
+
+## DV-0401 NPY adapter and writer - 2026-07-14
+
+Revision: working tree on `codex/data-viewer-foundation` with task-local additions in `data_viewer/sources/numpy/`, default registry wiring in `data_viewer/gui/shell.py`, shared conformance helper typing in `tests/conformance/source_adapter.py`, and `tests/test_numpy_adapter.py`.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Focused NPY adapter/writer suite | `venv\Scripts\python.exe -m pytest tests\test_numpy_adapter.py -q` | 7 passed |
+| NPY plus related registry/controller/GUI regression subset | `venv\Scripts\python.exe -m pytest tests\test_numpy_adapter.py tests\test_source_registry.py tests\test_document_controller.py tests\test_gui_shell.py -q` | 34 passed |
+| Lint gate | `venv\Scripts\ruff.exe check data_viewer\sources\numpy data_viewer\gui\shell.py tests\test_numpy_adapter.py tests\conformance\source_adapter.py` | passed |
+| Type check | `venv\Scripts\python.exe -m mypy data_viewer tests\test_numpy_adapter.py` | Success: no issues found in 49 source files |
+| Syntax check | `venv\Scripts\python.exe -m compileall -q data_viewer\sources\numpy data_viewer\gui\shell.py tests\test_numpy_adapter.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 303 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Notes:
+
+- Added `NPYAdapter` and `NPYSourceSession` with a synthetic root and one stable `/array` resource so flat NPY sources follow the same DataSource API ownership model as other adapters.
+- Every NPY load path uses `allow_pickle=False`; object arrays fail with a structured `SOURCE_MALFORMED` error and no unsafe override.
+- Read behavior covers shared conformance, scalar arrays, zero-length arrays, structured dtypes, Fortran order, byte-order preservation, normalized selections, budget refusal, cancellation, and missing-resource errors.
+- NPY save uses reviewed `CellPatch` change sets, source-fingerprint conflict detection, full temporary `.npy` writing, `allow_pickle=False` reopen validation, shape/dtype/patch verification, and atomic replacement through `AtomicReplacementService`.
+- The default target shell registry now registers HDF5 and NPY adapters.
+
+Known gaps:
+
+- This is local Windows task evidence only; Linux/Windows CI evidence will be recorded at Checkpoint 4 after the full uncompressed format matrix is implemented.
+- Scalar cell editing is still constrained by the current `CellPatch` coordinate contract, which disallows empty coordinates; scalar read/metadata behavior is covered here, and scalar edit support should be handled by a later edit-contract refinement if required.

@@ -31,6 +31,7 @@ All notable Data Viewer changes are recorded here.
 - Added HDF5 safe persistence strategies (DV-0304): reviewed cell patches can use verified in-place writes with a same-directory recovery backup, while attributes and unsafe cells use verified atomic replacement with source-fingerprint conflict checks and post-write coordinate verification.
 - Added export planning, execution, and receipt primitives (DV-0305) covering explicit full/slice/selection/filtered/result/rendered scopes, raw/display/scaled value modes, overwrite/cancel/failure receipts, CSV formula-cell escaping, and JSON receipt round trips.
 - Added edit review, save/conflict, and export UI wiring (DV-0306): the shell now exposes textual dirty/read-only/conflict states, review/save/export command controls, real HDF5 patch save execution through `DocumentController`, conflict-safe disabled save behavior, and receipt-backed active-payload export.
+- Added the NPY adapter and verified replacement writer (DV-0401): `.npy` sources now probe/open through DataSource API v1, load with `allow_pickle=False`, reject object arrays, preserve scalar/empty/structured/order/byte-order metadata, support bounded selection reads, and save reviewed cell patches through atomic replacement validation.
 
 ### Fixed
 

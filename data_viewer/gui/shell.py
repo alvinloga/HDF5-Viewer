@@ -74,6 +74,7 @@ from data_viewer.sources import (
     SourceRegistry,
 )
 from data_viewer.sources.hdf5 import HDF5Adapter
+from data_viewer.sources.numpy import NPYAdapter
 
 from .commands import OpenCommandHandle, OpenCommandResult, OpenFileCommand
 
@@ -91,7 +92,7 @@ ROLE_LOAD_MORE = Qt.ItemDataRole.UserRole + 5
 def create_source_registry() -> SourceRegistry:
     """Build a bootstrap registry for the current task profile."""
 
-    return SourceRegistry([HDF5Adapter()])
+    return SourceRegistry([HDF5Adapter(), NPYAdapter()])
 
 
 @dataclass(frozen=True)

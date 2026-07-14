@@ -240,7 +240,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 
 ## P4 — Format adapters and writers
 
-### [ ] DV-0401 Implement NPY adapter and writer
+### [x] DV-0401 Implement NPY adapter and writer
 
 - Depends: DV-0108, DV-0303.
 - Read: Format Support §4.2, NumPy security rule.

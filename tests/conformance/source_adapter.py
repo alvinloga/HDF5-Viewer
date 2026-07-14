@@ -44,9 +44,9 @@ def write_fake_source(path: Path, *, payload: bytes = b"payload") -> Path:
 class FakeArrayAdapter:
     """Small in-memory adapter used to prove the public SourceAdapter contract."""
 
-    adapter_id = "fake.array"
+    adapter_id: str = "fake.array"
     api_version = DATASOURCE_API_VERSION
-    extensions = (".fake",)
+    extensions: tuple[str, ...] = (".fake",)
 
     def __init__(
         self,
