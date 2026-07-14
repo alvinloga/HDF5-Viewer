@@ -992,3 +992,36 @@ Known gaps:
 
 - This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token even though SSH git push works.
 - This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0410 and DV-0411 finish.
+
+## DV-0410 NIfTI adapter and coordinate model - 2026-07-15
+
+Revision: working tree based on `2c642d9` before committing `feat: add nifti source adapter`.
+
+Implementation evidence:
+
+- `data_viewer/sources/nifti` adds a read-only NIfTI adapter and source session using NiBabel proxy loading.
+- The adapter claims `.nii` and native `.nii.gz`; `.nii.gz` is validated as native NIfTI gzip rather than generic wrapped gzip.
+- NIfTI metadata records raw shape/dtype, affine, axis codes, voxel sizes, xyzt units, intent, scaling, proxy type, header summary, and no-resampling provenance.
+- Bounded volume reads slice `image.dataobj` directly and return `VolumePayload` with source-coordinate provenance; ordinary slice reads do not call full-volume materialization.
+- `voxel_to_world` and `world_to_voxel` expose exact affine and inverse-affine coordinate mapping without silent canonicalization, reorientation, or resampling.
+- NIfTI is registered in the target shell registry but exposes no source editing or atomic rewrite capability.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Existing dependency sync | `venv\Scripts\python.exe -m pip install nibabel==5.4.2` | passed; installed the version already present in `uv.lock` because the local `venv` lacked the declared dependency |
+| Initial failing NIfTI adapter test | `venv\Scripts\python.exe -m pytest tests\test_nifti_adapter.py -q` | failed as expected before implementation: collection failed because `data_viewer.sources.nifti` did not exist |
+| NIfTI focused tests | `venv\Scripts\python.exe -m pytest tests\test_nifti_adapter.py -q` | 4 passed |
+| NIfTI and registry regression subset | `venv\Scripts\python.exe -m pytest tests\test_nifti_adapter.py tests\test_source_registry.py -q` | 10 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\sources\nifti data_viewer\gui\shell.py tests\test_nifti_adapter.py` | passed |
+| NIfTI type check | `venv\Scripts\python.exe -m mypy data_viewer\sources\nifti` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 359 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Target lint | `venv\Scripts\python.exe -m ruff check data_viewer tests\test_nifti_adapter.py tests\test_gui_shell.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 75 source files |
+| Compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests` | passed |
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token even though SSH git push works.
+- This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0411 finishes.

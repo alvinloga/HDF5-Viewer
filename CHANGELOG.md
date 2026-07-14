@@ -40,6 +40,7 @@ All notable Data Viewer changes are recorded here.
 - Added the read-only restricted YAML adapter (DV-0407): `.yaml` and `.yml` sources now parse strict UTF-8/BOM input with `yaml.safe_load`, reject unsafe/custom tags, expose JSON Pointer resource paths, surface alias/merge semantics and typed nonstring key metadata, enforce size/depth/collection/string/alias budgets, and render structured previews in the target shell.
 - Added the read-only MATLAB MAT adapter (DV-0408): `.mat` sources now dispatch legacy MAT files through SciPy and HDF5-backed v7.3 files through h5py, expose a unified stable variable tree, hide internal metadata nodes by default, represent arrays/text/sparse/cell/struct/nested resources explicitly, bound traversal, and register in the target shell.
 - Added the read-only safe XLSX adapter (DV-0409): `.xlsx` workbooks now open with external links disabled, expose workbook/sheet/cell/table/defined-name/merged-range metadata, distinguish formulas from cached values without execution, preserve blank cells inside used ranges, support bounded worksheet page reads, reject encrypted/malformed inputs, and register in the target shell.
+- Added the read-only NIfTI adapter and coordinate model (DV-0410): `.nii` and native `.nii.gz` volumes now expose spatial metadata, proxy-backed bounded slices, scaling/intent/header provenance, exact voxel↔world affine mapping, and register in the target shell without canonicalization or resampling.
 
 ### Fixed
 

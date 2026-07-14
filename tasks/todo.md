@@ -311,7 +311,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: workbook/sheet/cell/table/name/merge inspection; bounded read-only iteration; formula text/cached distinction; external links disabled; encrypted file error; blank vs missing preserved; no `.xlsm` claim.
 - Verify: conformance and formulas/external/encrypted/merged/sparse/unicode workbook fixtures.
 
-### [ ] DV-0410 Implement NIfTI adapter and coordinate model
+### [x] DV-0410 Implement NIfTI adapter and coordinate model
 
 - Depends: DV-0102, DV-0108.
 - Read: Format Support §4.7.
