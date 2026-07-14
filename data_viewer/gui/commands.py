@@ -96,6 +96,12 @@ class OpenFileCommand:
             handle.cancel()
         return len(active)
 
+    def active_count(self) -> int:
+        """Return the number of in-flight open requests."""
+
+        with self._active_lock:
+            return len(self._active_threads)
+
     def _run_open(self, source_path: Path, cancellation: CancellationToken) -> None:
         try:
             document = DocumentController.open_path(
