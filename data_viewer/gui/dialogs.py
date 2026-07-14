@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from data_viewer.editing.review import SaveReview
+from data_viewer.gui.i18n import Locale, UiStringKey, tr
 
 
 class PathValidationWidget(QWidget):
@@ -89,12 +90,19 @@ class PathValidationWidget(QWidget):
 class SaveSummaryDialog(QDialog):
     """Modal save authorization summary."""
 
-    def __init__(self, review: SaveReview, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        review: SaveReview,
+        parent: QWidget | None = None,
+        *,
+        locale: Locale = Locale.EN_US,
+    ) -> None:
         if review.patch_count <= 0:
             raise ValueError("save summary requires at least one reviewed patch")
         super().__init__(parent)
+        self._locale = Locale(locale)
         self.setObjectName("save_summary_dialog")
-        self.setWindowTitle("Save summary")
+        self.setWindowTitle(tr(UiStringKey.DIALOG_SAVE_SUMMARY_TITLE, self._locale))
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
 
         layout = QVBoxLayout(self)
@@ -134,11 +142,11 @@ class SaveSummaryDialog(QDialog):
 
         row = QHBoxLayout()
         row.addStretch(1)
-        self._cancel_button = QPushButton("Cancel", self)
+        self._cancel_button = QPushButton(tr(UiStringKey.COMMAND_CANCEL, self._locale), self)
         self._cancel_button.setObjectName("cancel_button")
         self._cancel_button.setDefault(True)
         self._cancel_button.clicked.connect(self.reject)
-        self._save_button = QPushButton("Save reviewed changes", self)
+        self._save_button = QPushButton(tr(UiStringKey.DIALOG_SAVE_CONFIRM, self._locale), self)
         self._save_button.setObjectName("confirm_save_button")
         self._save_button.setDefault(False)
         self._save_button.clicked.connect(self.accept)
@@ -161,12 +169,14 @@ class DestructiveConfirmationDialog(QDialog):
         resource_label: str,
         consequence: str,
         parent: QWidget | None = None,
+        locale: Locale = Locale.EN_US,
     ) -> None:
         if not resource_label or not consequence:
             raise ValueError("destructive confirmation needs resource and consequence")
         super().__init__(parent)
+        self._locale = Locale(locale)
         self.setObjectName("destructive_confirmation_dialog")
-        self.setWindowTitle("Confirm destructive operation")
+        self.setWindowTitle(tr(UiStringKey.DIALOG_DESTRUCTIVE_TITLE, self._locale))
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
 
         layout = QVBoxLayout(self)
@@ -185,11 +195,11 @@ class DestructiveConfirmationDialog(QDialog):
 
         row = QHBoxLayout()
         row.addStretch(1)
-        cancel = QPushButton("Cancel", self)
+        cancel = QPushButton(tr(UiStringKey.COMMAND_CANCEL, self._locale), self)
         cancel.setObjectName("cancel_button")
         cancel.setDefault(True)
         cancel.clicked.connect(self.reject)
-        confirm = QPushButton("Confirm operation", self)
+        confirm = QPushButton(tr(UiStringKey.DIALOG_DESTRUCTIVE_CONFIRM, self._locale), self)
         confirm.setObjectName("confirm_button")
         confirm.setDefault(False)
         confirm.clicked.connect(self.accept)
@@ -201,10 +211,17 @@ class DestructiveConfirmationDialog(QDialog):
 class ImportOptionsDialog(QDialog):
     """Preview-first nonmodal import options dialog."""
 
-    def __init__(self, source_path: Path, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        source_path: Path,
+        parent: QWidget | None = None,
+        *,
+        locale: Locale = Locale.EN_US,
+    ) -> None:
         super().__init__(parent)
+        self._locale = Locale(locale)
         self.setObjectName("import_options_dialog")
-        self.setWindowTitle("Import options")
+        self.setWindowTitle(tr(UiStringKey.DIALOG_IMPORT_OPTIONS_TITLE, self._locale))
         self.setWindowModality(Qt.WindowModality.NonModal)
         self._source_path = source_path
 
@@ -231,11 +248,11 @@ class ImportOptionsDialog(QDialog):
 
         row = QHBoxLayout()
         row.addStretch(1)
-        cancel = QPushButton("Cancel", self)
+        cancel = QPushButton(tr(UiStringKey.COMMAND_CANCEL, self._locale), self)
         cancel.setObjectName("cancel_button")
         cancel.setDefault(True)
         cancel.clicked.connect(self.reject)
-        apply = QPushButton("Apply import options", self)
+        apply = QPushButton(tr(UiStringKey.DIALOG_IMPORT_APPLY, self._locale), self)
         apply.setObjectName("apply_import_button")
         apply.setDefault(False)
         apply.clicked.connect(self.accept)

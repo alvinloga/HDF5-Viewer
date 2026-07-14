@@ -1485,3 +1485,30 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - These are reusable dialog primitives; full shell command wiring, platform file picker adapters, and localization catalog integration remain follow-up P6 tasks.
+
+## DV-0607 accessibility/localization baseline slice - 2026-07-15
+
+Revision: working tree based on `fa61e2a` before committing the first DV-0607 implementation slice.
+
+Implementation evidence:
+
+- `data_viewer/gui/i18n.py` adds centralized English (`en-US`) and Simplified Chinese (`zh-CN`) UI string resources with a missing-entry gate.
+- `data_viewer/gui/accessibility.py` adds accessible-name audit helpers, focus-chain inspection, and 4 px grid high-DPI metric scaling.
+- `DataViewerShell` accepts a locale for initial shell text, uses centralized strings for command-row buttons, tabs, panels, placeholders, and status defaults, and installs deterministic keyboard focus order from path input through primary command buttons.
+- `SaveSummaryDialog`, `DestructiveConfirmationDialog`, `ImportOptionsDialog`, and standard state defaults now accept a locale while preserving English default behavior for existing callers.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing localization/accessibility test | `venv\Scripts\python.exe -m pytest tests\test_gui_i18n_accessibility.py -q` | failed as expected before implementation: `ModuleNotFoundError: No module named 'data_viewer.gui.accessibility'`; after adding dialog/state assertions failed as expected with `SaveSummaryDialog.__init__() got an unexpected keyword argument 'locale'` |
+| Focused localization/accessibility tests | `venv\Scripts\python.exe -m pytest tests\test_gui_i18n_accessibility.py -q` | 6 passed |
+| GUI localization/dialog/state/shell regression subset | `venv\Scripts\python.exe -m pytest tests\test_gui_i18n_accessibility.py tests\test_gui_dialogs.py tests\test_gui_state_components.py tests\test_gui_shell.py -q` | 32 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\gui tests\test_gui_i18n_accessibility.py tests\test_gui_dialogs.py tests\test_gui_state_components.py tests\test_gui_shell.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\gui tests\test_gui_i18n_accessibility.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 85 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 407 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- DV-0607 is not complete yet: base data view labels, plot screen-reader summary contracts, automated missing-string scans beyond the new catalog gate, and dual-platform CI evidence remain follow-up work before `tasks/todo.md` can be checked.

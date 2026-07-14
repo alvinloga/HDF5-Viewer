@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
 )
 
 from data_viewer.gui.theme import IconName
+from data_viewer.gui.i18n import Locale, UiStringKey, tr
 
 
 class StateKind(StrEnum):
@@ -121,40 +122,69 @@ _STATE_DEFAULTS: dict[StateKind, tuple[str, str, IconName]] = {
     ),
 }
 
+_STATE_TEXT_KEYS: dict[StateKind, tuple[UiStringKey, UiStringKey]] = {
+    StateKind.INITIAL: (UiStringKey.STATE_INITIAL_TITLE, UiStringKey.STATE_INITIAL_SUMMARY),
+    StateKind.LOADING: (UiStringKey.STATE_LOADING_TITLE, UiStringKey.STATE_LOADING_SUMMARY),
+    StateKind.EMPTY: (UiStringKey.STATE_EMPTY_TITLE, UiStringKey.STATE_EMPTY_SUMMARY),
+    StateKind.READY: (UiStringKey.STATE_READY_TITLE, UiStringKey.STATE_READY_SUMMARY),
+    StateKind.PARTIAL: (UiStringKey.STATE_PARTIAL_TITLE, UiStringKey.STATE_PARTIAL_SUMMARY),
+    StateKind.ERROR: (UiStringKey.STATE_ERROR_TITLE, UiStringKey.STATE_ERROR_SUMMARY),
+    StateKind.DISABLED: (UiStringKey.STATE_DISABLED_TITLE, UiStringKey.STATE_DISABLED_SUMMARY),
+    StateKind.DIRTY: (UiStringKey.STATE_DIRTY_TITLE, UiStringKey.STATE_DIRTY_SUMMARY),
+    StateKind.READ_ONLY: (UiStringKey.STATE_READ_ONLY_TITLE, UiStringKey.STATE_READ_ONLY_SUMMARY),
+    StateKind.CONFLICTED: (UiStringKey.STATE_CONFLICTED_TITLE, UiStringKey.STATE_CONFLICTED_SUMMARY),
+    StateKind.STALE: (UiStringKey.STATE_STALE_TITLE, UiStringKey.STATE_STALE_SUMMARY),
+}
 
-def default_state_model(kind: StateKind, *, target: str) -> StateViewModel:
+
+def default_state_model(
+    kind: StateKind,
+    *,
+    target: str,
+    locale: Locale = Locale.EN_US,
+) -> StateViewModel:
     """Build a useful default state model for component tests and simple views."""
 
-    title, summary, _icon = _STATE_DEFAULTS[kind]
+    title_key, summary_key = _STATE_TEXT_KEYS[kind]
+    title = tr(title_key, locale)
+    summary = tr(summary_key, locale)
     actions: tuple[StateAction, ...]
     if kind is StateKind.LOADING:
-        actions = (StateAction("Cancel", "state.cancel", primary=True),)
+        actions = (StateAction(tr(UiStringKey.COMMAND_CANCEL, locale), "state.cancel", primary=True),)
     elif kind is StateKind.INITIAL:
-        actions = (StateAction("Open source", "app.open_file", primary=True),)
+        actions = (StateAction(tr(UiStringKey.COMMAND_OPEN_SOURCE, locale), "app.open_file", primary=True),)
     elif kind is StateKind.EMPTY:
-        actions = (StateAction("Clear filter", "app.clear_filter"),)
+        actions = (StateAction(tr(UiStringKey.COMMAND_CLEAR_FILTER, locale), "app.clear_filter"),)
     elif kind is StateKind.PARTIAL:
-        actions = (StateAction("Refine", "state.refine", primary=True),)
+        actions = (StateAction(tr(UiStringKey.COMMAND_REFINE, locale), "state.refine", primary=True),)
     elif kind is StateKind.ERROR:
-        actions = (StateAction("Retry", "state.retry", primary=True),)
+        actions = (StateAction(tr(UiStringKey.COMMAND_RETRY, locale), "state.retry", primary=True),)
     elif kind is StateKind.DISABLED:
         actions = (
-            StateAction("Unavailable", "state.disabled", enabled=False, reason=summary),
+            StateAction(
+                tr(UiStringKey.COMMAND_UNAVAILABLE, locale),
+                "state.disabled",
+                enabled=False,
+                reason=summary,
+            ),
         )
     elif kind is StateKind.DIRTY:
         actions = (
-            StateAction("Review changes", "app.review_changes", primary=True),
-            StateAction("Save", "app.save_document", primary=True),
+            StateAction(tr(UiStringKey.COMMAND_REVIEW_CHANGES, locale), "app.review_changes", primary=True),
+            StateAction(tr(UiStringKey.COMMAND_SAVE, locale), "app.save_document", primary=True),
         )
     elif kind is StateKind.READ_ONLY:
-        actions = (StateAction("Save As", "app.save_as"), StateAction("Export", "app.export"))
+        actions = (
+            StateAction(tr(UiStringKey.COMMAND_SAVE_AS, locale), "app.save_as"),
+            StateAction(tr(UiStringKey.COMMAND_EXPORT, locale), "app.export"),
+        )
     elif kind is StateKind.CONFLICTED:
         actions = (
-            StateAction("Reload source", "app.reload_source"),
-            StateAction("Save As", "app.save_as", primary=True),
+            StateAction(tr(UiStringKey.COMMAND_RELOAD_SOURCE, locale), "app.reload_source"),
+            StateAction(tr(UiStringKey.COMMAND_SAVE_AS, locale), "app.save_as", primary=True),
         )
     elif kind is StateKind.STALE:
-        actions = (StateAction("Recompute", "state.recompute", primary=True),)
+        actions = (StateAction(tr(UiStringKey.COMMAND_RECOMPUTE, locale), "state.recompute", primary=True),)
     else:
         actions = ()
     return StateViewModel(
@@ -173,6 +203,7 @@ def error_state_model(
     summary: str,
     safe_details: str,
     retry_command: str,
+    locale: Locale = Locale.EN_US,
 ) -> StateViewModel:
     """Build a safe error state with retry and details affordances."""
 
@@ -183,8 +214,8 @@ def error_state_model(
         target=target,
         details=safe_details,
         actions=(
-            StateAction("Retry", retry_command, primary=True),
-            StateAction("Details", "state.show_details"),
+            StateAction(tr(UiStringKey.COMMAND_RETRY, locale), retry_command, primary=True),
+            StateAction(tr(UiStringKey.COMMAND_DETAILS, locale), "state.show_details"),
         ),
     )
 

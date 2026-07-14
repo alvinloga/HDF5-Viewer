@@ -92,6 +92,8 @@ from data_viewer.sources.xlsx import XLSXAdapter
 from data_viewer.sources.yaml import YAMLAdapter
 
 from .commands import OpenCommandHandle, OpenCommandResult, OpenFileCommand
+from .accessibility import set_accessible
+from .i18n import Locale, UiStringKey, tr
 
 
 TreeNodeKey = tuple[str, str]
@@ -355,9 +357,11 @@ class DataViewerShell(QMainWindow):
         *,
         source_registry: SourceRegistry | None = None,
         command_registry: CommandRegistry | None = None,
+        locale: Locale = Locale.EN_US,
     ) -> None:
         super().__init__()
-        self.setWindowTitle("Data Viewer")
+        self._locale = Locale(locale)
+        self.setWindowTitle(self._tr(UiStringKey.APP_TITLE))
         self.setMinimumSize(1024, 720)
 
         self._registry = source_registry or create_source_registry()
@@ -402,54 +406,67 @@ class DataViewerShell(QMainWindow):
         self._open_drain_timer.start()
 
     # ----------------------------- UI construction -----------------------------
+    def _tr(self, key: UiStringKey, **values: object) -> str:
+        return tr(key, self._locale, **values)
+
     def _build_controls(self) -> None:
         self._path_input = QLineEdit(self)
-        self._path_input.setPlaceholderText("Enter source path, then open")
+        self._path_input.setPlaceholderText(self._tr(UiStringKey.PATH_INPUT_PLACEHOLDER))
         self._path_input.setObjectName("path_input")
+        set_accessible(self._path_input, name=self._tr(UiStringKey.ACCESSIBLE_PATH_INPUT))
         self._path_input.returnPressed.connect(self._handle_open_triggered)
 
-        self._open_button = QPushButton("Open", self)
+        self._open_button = QPushButton(self._tr(UiStringKey.COMMAND_OPEN), self)
         self._open_button.setObjectName("open_button")
+        set_accessible(self._open_button, name=self._tr(UiStringKey.COMMAND_OPEN))
         self._open_button.clicked.connect(self._handle_open_triggered)
 
-        self._cancel_open_button = QPushButton("Cancel Open", self)
+        self._cancel_open_button = QPushButton(self._tr(UiStringKey.COMMAND_CANCEL_OPEN), self)
         self._cancel_open_button.setObjectName("cancel_open_button")
+        set_accessible(self._cancel_open_button, name=self._tr(UiStringKey.COMMAND_CANCEL_OPEN))
         self._cancel_open_button.clicked.connect(self._handle_cancel_open)
         self._cancel_open_button.setEnabled(False)
 
-        self._review_changes_button = QPushButton("Review Changes", self)
+        self._review_changes_button = QPushButton(self._tr(UiStringKey.COMMAND_REVIEW_CHANGES), self)
         self._review_changes_button.setObjectName("review_changes_button")
+        set_accessible(
+            self._review_changes_button,
+            name=self._tr(UiStringKey.COMMAND_REVIEW_CHANGES),
+        )
         self._review_changes_button.clicked.connect(self.review_active_edits)
         self._review_changes_button.setEnabled(False)
 
-        self._save_button = QPushButton("Save", self)
+        self._save_button = QPushButton(self._tr(UiStringKey.COMMAND_SAVE), self)
         self._save_button.setObjectName("save_button")
+        set_accessible(self._save_button, name=self._tr(UiStringKey.COMMAND_SAVE))
         self._save_button.clicked.connect(self.save_active_edits)
         self._save_button.setEnabled(False)
 
-        self._save_as_button = QPushButton("Save As", self)
+        self._save_as_button = QPushButton(self._tr(UiStringKey.COMMAND_SAVE_AS), self)
         self._save_as_button.setObjectName("save_as_button")
+        set_accessible(self._save_as_button, name=self._tr(UiStringKey.COMMAND_SAVE_AS))
         self._save_as_button.setEnabled(False)
         self._save_as_button.clicked.connect(
             lambda: self._append_bottom("Save As requires a target path in this shell build.")
         )
 
-        self._export_button = QPushButton("Export", self)
+        self._export_button = QPushButton(self._tr(UiStringKey.COMMAND_EXPORT), self)
         self._export_button.setObjectName("export_button")
+        set_accessible(self._export_button, name=self._tr(UiStringKey.COMMAND_EXPORT))
         self._export_button.setEnabled(False)
         self._export_button.clicked.connect(
             lambda: self._append_bottom("Export requires a target path. Use export_active_to_path(path).")
         )
 
-        self._edit_state_label = QLabel("edit: clean (0 pending)", self)
+        self._edit_state_label = QLabel(self._tr(UiStringKey.EDIT_CLEAN), self)
         self._edit_state_label.setObjectName("edit_state_label")
-        self._readonly_hint_label = QLabel("No source loaded", self)
+        self._readonly_hint_label = QLabel(self._tr(UiStringKey.HINT_NO_SOURCE), self)
         self._readonly_hint_label.setObjectName("readonly_hint_label")
 
         self._navigation = QTreeWidget(self)
         self._navigation.setObjectName("navigation_region")
-        self._navigation.setAccessibleName("Files and structure")
-        self._navigation.setHeaderLabel("Structure")
+        set_accessible(self._navigation, name=self._tr(UiStringKey.ACCESSIBLE_NAVIGATION))
+        self._navigation.setHeaderLabel(self._tr(UiStringKey.NAVIGATION_HEADER))
         self._navigation.itemExpanded.connect(self._on_navigation_item_expanded)
         self._navigation.itemClicked.connect(self._on_navigation_item_clicked)
         self._navigation.itemActivated.connect(self._on_navigation_item_activated)
@@ -461,37 +478,48 @@ class DataViewerShell(QMainWindow):
 
         self._inspector = QPlainTextEdit(self)
         self._inspector.setObjectName("inspector_region")
-        self._inspector.setAccessibleName("Inspector overview")
+        set_accessible(self._inspector, name=self._tr(UiStringKey.ACCESSIBLE_INSPECTOR_OVERVIEW))
         self._inspector.setReadOnly(True)
-        self._inspector.setPlaceholderText("Select a node to inspect metadata.")
+        self._inspector.setPlaceholderText(self._tr(UiStringKey.INSPECTOR_OVERVIEW_PLACEHOLDER))
 
         self._inspector_attributes = QPlainTextEdit(self)
         self._inspector_attributes.setObjectName("inspector_attributes")
-        self._inspector_attributes.setAccessibleName("Inspector attributes")
+        set_accessible(
+            self._inspector_attributes,
+            name=self._tr(UiStringKey.ACCESSIBLE_INSPECTOR_ATTRIBUTES),
+        )
         self._inspector_attributes.setReadOnly(True)
-        self._inspector_attributes.setPlaceholderText("Attributes for the selected resource appear here.")
+        self._inspector_attributes.setPlaceholderText(
+            self._tr(UiStringKey.INSPECTOR_ATTRIBUTES_PLACEHOLDER)
+        )
 
         self._inspector_statistics = QPlainTextEdit(self)
         self._inspector_statistics.setObjectName("inspector_statistics")
-        self._inspector_statistics.setAccessibleName("Inspector statistics")
+        set_accessible(
+            self._inspector_statistics,
+            name=self._tr(UiStringKey.ACCESSIBLE_INSPECTOR_STATISTICS),
+        )
         self._inspector_statistics.setReadOnly(True)
         self._inspector_statistics.setPlaceholderText(
-            "Statistics from built-in plugins will appear here."
+            self._tr(UiStringKey.INSPECTOR_STATISTICS_PLACEHOLDER)
         )
 
         self._inspector_plugins = QPlainTextEdit(self)
         self._inspector_plugins.setObjectName("inspector_plugins")
-        self._inspector_plugins.setAccessibleName("Inspector plugin provenance")
+        set_accessible(
+            self._inspector_plugins,
+            name=self._tr(UiStringKey.ACCESSIBLE_INSPECTOR_PLUGINS),
+        )
         self._inspector_plugins.setReadOnly(True)
         self._inspector_plugins.setPlaceholderText(
-            "Compatible plugins and result provenance appear here."
+            self._tr(UiStringKey.INSPECTOR_PLUGINS_PLACEHOLDER)
         )
 
-        self._workspace_status = QLabel("Workspace: not ready", self)
+        self._workspace_status = QLabel(self._tr(UiStringKey.WORKSPACE_NOT_READY), self)
         self._workspace_status.setObjectName("workspace_status")
-        self._active_split_label = QLabel("split: main / view: data", self)
+        self._active_split_label = QLabel(self._tr(UiStringKey.ACTIVE_SPLIT_DATA), self)
         self._active_split_label.setObjectName("active_split_label")
-        self._active_split_label.setAccessibleName("Active split and view")
+        set_accessible(self._active_split_label, name=self._tr(UiStringKey.ACCESSIBLE_ACTIVE_SPLIT))
         self._axis_area = QWidget(self)
         self._axis_area.setObjectName("axis_controls_container")
         self._axis_area_layout = QVBoxLayout(self._axis_area)
@@ -530,8 +558,9 @@ class DataViewerShell(QMainWindow):
         self._col_limit_input.setValue(256)
         self._col_limit_input.valueChanged.connect(self._mark_workspace_dirty)
 
-        self._load_slice_button = QPushButton("Load Slice", self)
+        self._load_slice_button = QPushButton(self._tr(UiStringKey.COMMAND_LOAD_SLICE), self)
         self._load_slice_button.setObjectName("load_slice_button")
+        set_accessible(self._load_slice_button, name=self._tr(UiStringKey.COMMAND_LOAD_SLICE))
         self._load_slice_button.clicked.connect(self._on_load_slice_clicked)
         self._load_slice_button.setEnabled(False)
 
@@ -569,48 +598,50 @@ class DataViewerShell(QMainWindow):
 
         self._workspace_model = _ArrayTableModel()
         self._workspace_view.setModel(self._workspace_model)
-        self._set_workspace_status("ready", "Open a source and select an ARRAY node.")
+        set_accessible(self._workspace_view, name=self._tr(UiStringKey.TAB_DATA))
+        self._set_workspace_status("ready", self._tr(UiStringKey.WORKSPACE_READY_MESSAGE))
 
         self._bottom = QPlainTextEdit(self)
         self._bottom.setObjectName("bottom_region")
-        self._bottom.setAccessibleName("Output log")
+        set_accessible(self._bottom, name=self._tr(UiStringKey.ACCESSIBLE_OUTPUT_LOG))
         self._bottom.setReadOnly(True)
         self._bottom.setPlaceholderText("Task and diagnostics appear here.")
 
         self._tasks_panel = QPlainTextEdit(self)
         self._tasks_panel.setObjectName("tasks_panel")
-        self._tasks_panel.setAccessibleName("Task activity")
+        set_accessible(self._tasks_panel, name=self._tr(UiStringKey.ACCESSIBLE_TASK_ACTIVITY))
         self._tasks_panel.setReadOnly(True)
-        self._tasks_panel.setPlainText("No active tasks.")
+        self._tasks_panel.setPlainText(self._tr(UiStringKey.TASKS_NONE))
 
         self._problems_panel = QPlainTextEdit(self)
         self._problems_panel.setObjectName("problems_panel")
-        self._problems_panel.setAccessibleName("Problems")
+        set_accessible(self._problems_panel, name=self._tr(UiStringKey.ACCESSIBLE_PROBLEMS))
         self._problems_panel.setReadOnly(True)
-        self._problems_panel.setPlainText("No problems reported.")
+        self._problems_panel.setPlainText(self._tr(UiStringKey.PROBLEMS_NONE))
 
         self._status_bar = QStatusBar(self)
         self._status_bar.setObjectName("status_bar")
         self.setStatusBar(self._status_bar)
-        self._status_label = QLabel("Ready", self)
+        self._status_label = QLabel(self._tr(UiStringKey.STATUS_READY), self)
         self._status_label.setObjectName("status_label")
-        self._status_source = QLabel("source: -", self)
+        set_accessible(self._status_label, name=self._tr(UiStringKey.ACCESSIBLE_STATUS))
+        self._status_source = QLabel(self._tr(UiStringKey.STATUS_SOURCE_EMPTY), self)
         self._status_source.setObjectName("status_source")
-        self._status_path = QLabel("Path: -", self)
+        self._status_path = QLabel(self._tr(UiStringKey.STATUS_PATH_EMPTY), self)
         self._status_path.setObjectName("status_path")
-        self._status_shape = QLabel("shape: -", self)
+        self._status_shape = QLabel(self._tr(UiStringKey.STATUS_SHAPE_EMPTY), self)
         self._status_shape.setObjectName("status_shape")
-        self._status_dtype = QLabel("dtype: -", self)
+        self._status_dtype = QLabel(self._tr(UiStringKey.STATUS_DTYPE_EMPTY), self)
         self._status_dtype.setObjectName("status_dtype")
-        self._status_scope = QLabel("slice: -", self)
+        self._status_scope = QLabel(self._tr(UiStringKey.STATUS_SLICE_EMPTY), self)
         self._status_scope.setObjectName("status_scope")
-        self._status_mode = QLabel("mode: -", self)
+        self._status_mode = QLabel(self._tr(UiStringKey.STATUS_MODE_EMPTY), self)
         self._status_mode.setObjectName("status_mode")
-        self._status_readonly = QLabel("mode: -", self)
+        self._status_readonly = QLabel(self._tr(UiStringKey.STATUS_MODE_EMPTY), self)
         self._status_readonly.setObjectName("status_readonly")
-        self._status_task = QLabel("task: idle", self)
+        self._status_task = QLabel(self._tr(UiStringKey.STATUS_TASK_IDLE), self)
         self._status_task.setObjectName("status_task")
-        self._status_coordinates = QLabel("coordinates: -", self)
+        self._status_coordinates = QLabel(self._tr(UiStringKey.STATUS_COORDINATES_EMPTY), self)
         self._status_coordinates.setObjectName("status_coordinates")
         self._status_bar.addWidget(self._status_label)
         self._status_bar.addPermanentWidget(self._status_source)
@@ -623,8 +654,8 @@ class DataViewerShell(QMainWindow):
         self._status_bar.addPermanentWidget(self._status_task)
         self._status_bar.addPermanentWidget(self._status_coordinates)
         self._status_bar.addPermanentWidget(self._edit_state_label)
-        self._append_bottom("Ready")
-        self._set_workspace_state("initial", "No source opened yet.")
+        self._append_bottom(self._tr(UiStringKey.OUTPUT_READY))
+        self._set_workspace_state("initial", self._tr(UiStringKey.WORKSPACE_INITIAL_MESSAGE))
         self._refresh_edit_actions()
         self._refresh_command_actions()
 
@@ -637,7 +668,7 @@ class DataViewerShell(QMainWindow):
         command_layout = QHBoxLayout(command_row)
         command_layout.setContentsMargins(8, 8, 8, 8)
         command_layout.setSpacing(8)
-        command_layout.addWidget(QLabel("Source path", self))
+        command_layout.addWidget(QLabel(self._tr(UiStringKey.SOURCE_PATH_LABEL), self))
         command_layout.addWidget(self._path_input, 1)
         command_layout.addWidget(self._open_button)
         command_layout.addWidget(self._cancel_open_button)
@@ -658,15 +689,18 @@ class DataViewerShell(QMainWindow):
 
         self._workspace_tabs = QTabWidget(self)
         self._workspace_tabs.setObjectName("workspace_tabs")
-        self._workspace_tabs.setAccessibleName("Workspace tabs and split group")
-        self._workspace_tabs.addTab(workspace_container, "Data")
+        set_accessible(
+            self._workspace_tabs,
+            name=self._tr(UiStringKey.ACCESSIBLE_WORKSPACE_TABS),
+        )
+        self._workspace_tabs.addTab(workspace_container, self._tr(UiStringKey.TAB_DATA))
 
         top_splitter = QSplitter(Qt.Orientation.Horizontal, self)
         top_splitter.setObjectName("main_splitter")
         top_splitter.setChildrenCollapsible(True)
-        top_splitter.addWidget(self._build_panel("Navigation", self._navigation))
-        top_splitter.addWidget(self._build_panel("Workspace", self._workspace_tabs))
-        top_splitter.addWidget(self._build_panel("Inspector", self._build_inspector_tabs()))
+        top_splitter.addWidget(self._build_panel(self._tr(UiStringKey.PANEL_NAVIGATION), self._navigation))
+        top_splitter.addWidget(self._build_panel(self._tr(UiStringKey.PANEL_WORKSPACE), self._workspace_tabs))
+        top_splitter.addWidget(self._build_panel(self._tr(UiStringKey.PANEL_INSPECTOR), self._build_inspector_tabs()))
         top_splitter.setStretchFactor(0, 2)
         top_splitter.setStretchFactor(1, 4)
         top_splitter.setStretchFactor(2, 2)
@@ -696,6 +730,13 @@ class DataViewerShell(QMainWindow):
         container = QWidget(self)
         container.setLayout(layout)
         self.setCentralWidget(container)
+        self.setTabOrder(self._path_input, self._open_button)
+        self.setTabOrder(self._open_button, self._cancel_open_button)
+        self.setTabOrder(self._cancel_open_button, self._review_changes_button)
+        self.setTabOrder(self._review_changes_button, self._save_button)
+        self.setTabOrder(self._save_button, self._save_as_button)
+        self.setTabOrder(self._save_as_button, self._export_button)
+        self.setTabOrder(self._export_button, self._navigation)
 
         self._navigation.setMinimumWidth(280)
         self._workspace_view.setMinimumWidth(320)
@@ -704,9 +745,9 @@ class DataViewerShell(QMainWindow):
         self._workspace_view.setMinimumHeight(220)
 
     def _build_command_bar(self) -> QToolBar:
-        toolbar = QToolBar("Command bar", self)
+        toolbar = QToolBar(self._tr(UiStringKey.ACCESSIBLE_COMMAND_BAR), self)
         toolbar.setObjectName("command_bar")
-        toolbar.setAccessibleName("Command bar")
+        set_accessible(toolbar, name=self._tr(UiStringKey.ACCESSIBLE_COMMAND_BAR))
         toolbar.setMovable(False)
         for command_id in (
             CommandId.OPEN_FILE,
@@ -733,20 +774,20 @@ class DataViewerShell(QMainWindow):
     def _build_inspector_tabs(self) -> QTabWidget:
         tabs = QTabWidget(self)
         tabs.setObjectName("inspector_tabs")
-        tabs.setAccessibleName("Inspector tabs")
-        tabs.addTab(self._inspector, "Overview")
-        tabs.addTab(self._inspector_attributes, "Attributes")
-        tabs.addTab(self._inspector_statistics, "Statistics")
-        tabs.addTab(self._inspector_plugins, "Plugins")
+        set_accessible(tabs, name=self._tr(UiStringKey.ACCESSIBLE_INSPECTOR_OVERVIEW))
+        tabs.addTab(self._inspector, self._tr(UiStringKey.TAB_OVERVIEW))
+        tabs.addTab(self._inspector_attributes, self._tr(UiStringKey.TAB_ATTRIBUTES))
+        tabs.addTab(self._inspector_statistics, self._tr(UiStringKey.TAB_STATISTICS))
+        tabs.addTab(self._inspector_plugins, self._tr(UiStringKey.TAB_PLUGINS))
         return tabs
 
     def _build_bottom_tabs(self) -> QTabWidget:
         tabs = QTabWidget(self)
         tabs.setObjectName("bottom_panel")
-        tabs.setAccessibleName("Tasks, output, and problems")
-        tabs.addTab(self._tasks_panel, "Tasks")
-        tabs.addTab(self._bottom, "Output")
-        tabs.addTab(self._problems_panel, "Problems")
+        set_accessible(tabs, name=self._tr(UiStringKey.ACCESSIBLE_BOTTOM_TABS))
+        tabs.addTab(self._tasks_panel, self._tr(UiStringKey.TAB_TASKS))
+        tabs.addTab(self._bottom, self._tr(UiStringKey.TAB_OUTPUT))
+        tabs.addTab(self._problems_panel, self._tr(UiStringKey.TAB_PROBLEMS))
         return tabs
 
     def _build_panel(self, title: str, widget: QWidget) -> QGroupBox:

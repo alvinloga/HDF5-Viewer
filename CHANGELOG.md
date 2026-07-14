@@ -50,6 +50,7 @@ All notable Data Viewer changes are recorded here.
 - Added standard Qt state component contracts (DV-0604): initial/loading/empty/ready/partial/error/disabled/dirty/read-only/conflicted/stale view models, keyboard-reachable actions, safe error details, and non-color-only labels.
 - Added base workspace view contracts and widgets (DV-0605): virtual table, bounded array projection, paged text preview, and image projection views with explicit scope, coordinates, shape, slice, cursor, and plugin result-channel metadata.
 - Added safe dialog primitives (DV-0606): inline path validation, modal save summaries, safe-default destructive confirmations, and preview-first nonmodal import options.
+- Added the first DV-0607 accessibility/localization baseline slice: centralized English/Simplified Chinese UI string resources, shell/dialog/state locale wiring, accessible-name audit helpers, deterministic command-row focus order, and compact high-DPI metric scaling helpers.
 
 ### Fixed
 
