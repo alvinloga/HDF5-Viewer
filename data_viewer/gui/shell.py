@@ -455,12 +455,12 @@ class DataViewerShell(QMainWindow):
         self._workspace_view.setSelectionBehavior(
             QAbstractItemView.SelectionBehavior.SelectItems
         )
-        self._workspace_view.horizontalHeader().setSectionResizeMode(
-            QHeaderView.ResizeMode.Interactive
-        )
-        self._workspace_view.verticalHeader().setSectionResizeMode(
-            QHeaderView.ResizeMode.ResizeToContents
-        )
+        horizontal_header = self._workspace_view.horizontalHeader()
+        if horizontal_header is not None:
+            horizontal_header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        vertical_header = self._workspace_view.verticalHeader()
+        if vertical_header is not None:
+            vertical_header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
         self._workspace_model = _ArrayTableModel()
         self._workspace_view.setModel(self._workspace_model)
@@ -1092,7 +1092,8 @@ class DataViewerShell(QMainWindow):
 
     def _on_navigation_item_activated(self, item: QTreeWidgetItem, _column: int) -> None:
         if item.data(0, ROLE_LOAD_MORE):
-            parent_key = item.parent().data(0, ROLE_NODE_KEY) if item.parent() else None
+            parent_item = item.parent()
+            parent_key = parent_item.data(0, ROLE_NODE_KEY) if parent_item is not None else None
             if parent_key is None:
                 return
             parent_resource = ResourceId(parent_key[0], parent_key[1])
@@ -1336,8 +1337,11 @@ class DataViewerShell(QMainWindow):
         ndim = len(shape)
         while self._axis_dynamic_form.rowCount() > 0:
             child = self._axis_dynamic_form.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+            if child is None:
+                continue
+            widget = child.widget()
+            if widget is not None:
+                widget.deleteLater()
 
         self._row_offset_input.setMaximum(max(0, shape[0] - 1) if ndim >= 1 else 0)
         self._row_limit_input.setMaximum(max(1, shape[0]) if ndim >= 1 else 1)
@@ -1493,7 +1497,7 @@ class DataViewerShell(QMainWindow):
     def _clear_load_more_children(self, item: QTreeWidgetItem) -> None:
         for row in range(item.childCount() - 1, -1, -1):
             child = item.child(row)
-            if bool(child.data(0, ROLE_LOAD_MORE)):
+            if child is not None and bool(child.data(0, ROLE_LOAD_MORE)):
                 item.removeChild(child)
 
     def _open_resource_in_workspace(self, resource_id: ResourceId, document: DocumentController) -> None:
