@@ -264,7 +264,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: bounded preview; explicit encoding/dialect/header/missing/dtype schema; strict decoding; chunked stable row identity; no silent inference after confirmation.
 - Verify: delimiter/quote/BOM/unicode/malformed/large chunk fixtures and conformance.
 
-### [ ] DV-0404 Implement CSV/TSV verified writer
+### [x] DV-0404 Implement CSV/TSV verified writer
 
 - Depends: DV-0301, DV-0403.
 - Scope: delimited writer/validator and tests.

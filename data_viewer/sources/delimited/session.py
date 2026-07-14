@@ -23,6 +23,8 @@ from data_viewer.domain import (
     SourceFingerprint,
 )
 from data_viewer.domain.payload import TablePayload
+from data_viewer.editing import ChangeSet
+from data_viewer.persistence.transaction import AtomicReplacementService
 from data_viewer.sources.api import NodePage, ProgressCallback, ReadRequest
 
 from .options import (
@@ -30,6 +32,11 @@ from .options import (
     DelimitedTextOptions,
     iter_converted_rows,
     preview_delimited_source,
+)
+from .writer import (
+    DelimitedPersistenceFailureInjector,
+    DelimitedPersistenceResult,
+    apply_delimited_change_set,
 )
 
 TABLE_NODE_PATH = "/table"
@@ -69,6 +76,8 @@ class DelimitedSourceSession:
             | SourceCapability.PAGED_ROWS
             | SourceCapability.SEARCH
             | SourceCapability.COLUMN_SCHEMA
+            | SourceCapability.EDIT_PATCH
+            | SourceCapability.ATOMIC_REWRITE
             | SourceCapability.SAVE_AS
         )
 
@@ -149,6 +158,8 @@ class DelimitedSourceSession:
                 SourceCapability.PAGED_ROWS
                 | SourceCapability.SEARCH
                 | SourceCapability.COLUMN_SCHEMA
+                | SourceCapability.EDIT_PATCH
+                | SourceCapability.ATOMIC_REWRITE
                 | SourceCapability.SAVE_AS
             ),
             attributes=self._metadata_attributes(root=False),
@@ -274,6 +285,32 @@ class DelimitedSourceSession:
         self._fingerprint = _fingerprint(self._path)
         return self._fingerprint
 
+    def apply_change_set(
+        self,
+        changeset: ChangeSet,
+        *,
+        cancellation: object,
+        replacement_service: AtomicReplacementService | None = None,
+        failure_injector: DelimitedPersistenceFailureInjector | None = None,
+    ) -> DelimitedPersistenceResult:
+        """Apply reviewed CSV/TSV cell patches through verified full replacement."""
+
+        self._ensure_open(operation="source.delimited.apply_change_set")
+        result = apply_delimited_change_set(
+            path=self._path,
+            source_uri=self._source_uri,
+            options=self._preview.options,
+            schema=self._preview.schema,
+            changeset=changeset,
+            assert_unchanged=self._assert_unchanged,
+            cancellation=cancellation,
+            replacement_service=replacement_service,
+            failure_injector=failure_injector,
+        )
+        self._fingerprint = result.source_fingerprint
+        self._preview = preview_delimited_source(self._path, options=self._preview.options)
+        return result
+
     def close(self) -> None:
         self._closed = True
 
@@ -318,6 +355,21 @@ class DelimitedSourceSession:
                 message="Delimited source session is closed.",
                 operation=operation,
                 details={"source_uri": self._source_uri},
+            )
+
+    def _assert_unchanged(self, expected: SourceFingerprint) -> None:
+        current = _fingerprint(self._path)
+        if current != expected or self._fingerprint != expected:
+            raise DataViewerError(
+                code=ErrorCode.SOURCE_CHANGED,
+                message="Delimited source changed before save; refusing to overwrite.",
+                operation="source.delimited.apply_change_set",
+                details={
+                    "expected_fingerprint": expected.to_json(),
+                    "observed_fingerprint": current.to_json(),
+                    "session_fingerprint": self._fingerprint.to_json(),
+                },
+                retryable=True,
             )
 
 

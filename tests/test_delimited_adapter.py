@@ -16,8 +16,12 @@ from data_viewer.domain import (
     OperationScope,
     ResourceId,
     SourceCapability,
+    SourceFingerprint,
 )
 from data_viewer.domain.payload import TablePayload
+from data_viewer.editing import CellPatch, ChangeSet, fingerprint_value
+from data_viewer.editing.review import SaveStrategy
+from data_viewer.persistence.transaction import TransactionStep
 from data_viewer.sources import api as source_api
 from data_viewer.sources.api import ReadRequest
 from data_viewer.sources.delimited import (
@@ -36,6 +40,11 @@ def _write_text(path: Path, text: str, *, encoding: str = "utf-8") -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding=encoding, newline="")
     return path
+
+
+def _read_text(path: Path, *, encoding: str = "utf-8") -> str:
+    with path.open("r", encoding=encoding, newline="") as handle:
+        return handle.read()
 
 
 def _table_resource(session: source_api.SourceSession) -> ResourceId:
@@ -210,7 +219,8 @@ def test_csv_preview_records_explicit_options_schema_bom_and_missing_tokens(
     assert confirmed_options["delimiter"] == ","
     assert metadata.attributes["preview_row_count"] == 2
     assert SourceCapability.PAGED_ROWS in metadata.capabilities
-    assert SourceCapability.EDIT_PATCH not in metadata.capabilities
+    assert SourceCapability.EDIT_PATCH in metadata.capabilities
+    assert SourceCapability.ATOMIC_REWRITE in metadata.capabilities
     assert isinstance(result.payload, TablePayload)
     assert result.payload.column_values[1].tolist() == ["Alice", "Bob, Jr"]
     assert np.isnan(result.payload.column_values[2][1])
@@ -344,4 +354,147 @@ def test_delimited_malformed_missing_source_and_wrong_resource_errors(
             progress=lambda _done, _total, _message: None,
         )
     assert resource_error.value.code is ErrorCode.RESOURCE_NOT_FOUND
+    session.close()
+
+
+def test_csv_apply_cell_patches_rewrites_with_confirmed_dialect_and_schema(
+    tmp_path: Path,
+) -> None:
+    path = _write_text(
+        tmp_path / "editable.csv",
+        'id,name,score\n1,"Alice, A",9.5\n2,Bob,NA\n',
+    )
+    session = DelimitedTextAdapter().open(path, cancellation=CancellationToken())
+    resource = _table_resource(session)
+    metadata = session.get_metadata(resource, cancellation=CancellationToken())
+    changeset = ChangeSet(
+        source_fingerprint=session.fingerprint,
+        patches=(
+            CellPatch(
+                resource_id=resource,
+                coordinate=(1, 1),
+                old_value_fingerprint=fingerprint_value("Bob"),
+                new_value="Bobby",
+            ),
+            CellPatch(
+                resource_id=resource,
+                coordinate=(0, 2),
+                old_value_fingerprint=fingerprint_value(9.5),
+                new_value=10.25,
+            ),
+        ),
+    )
+
+    result = session.apply_change_set(changeset, cancellation=CancellationToken())
+
+    assert result.strategy is SaveStrategy.REPLACEMENT
+    assert result.changed_coordinates == 2
+    assert SourceCapability.EDIT_PATCH in session.capabilities
+    assert SourceCapability.ATOMIC_REWRITE in session.capabilities
+    assert metadata.columns[2].dtype == "float64"
+    assert _read_text(path) == (
+        'id,name,score\n1,"Alice, A",10.25\n2,Bobby,NA\n'
+    )
+    read_back = session.read(
+        ReadRequest(resource_id=resource, scope=OperationScope.PAGE, row_offset=0, row_limit=2),
+        cancellation=CancellationToken(),
+        progress=lambda _done, _total, _message: None,
+    )
+    assert isinstance(read_back.payload, TablePayload)
+    assert read_back.payload.column_values[1].tolist() == ["Alice, A", "Bobby"]
+    assert read_back.payload.column_values[2].tolist()[0] == 10.25
+    assert np.isnan(read_back.payload.column_values[2].tolist()[1])
+    session.close()
+
+
+def test_tsv_apply_cell_patch_preserves_tab_dialect_and_original_row_coordinates(
+    tmp_path: Path,
+) -> None:
+    path = _write_text(tmp_path / "editable.tsv", "id\tlabel\tvalue\n1\talpha\t10\n2\tbeta\t20\n")
+    session = DelimitedTextAdapter().open(path, cancellation=CancellationToken())
+    resource = _table_resource(session)
+    changeset = ChangeSet(
+        source_fingerprint=session.fingerprint,
+        patches=(
+            CellPatch(
+                resource_id=resource,
+                coordinate=(1, 2),
+                old_value_fingerprint=fingerprint_value(20),
+                new_value=25,
+            ),
+        ),
+    )
+
+    session.apply_change_set(changeset, cancellation=CancellationToken())
+
+    assert _read_text(path) == (
+        "id\tlabel\tvalue\n1\talpha\t10\n2\tbeta\t25\n"
+    )
+    session.close()
+
+
+def test_delimited_apply_patch_preserves_line_endings_and_final_newline_state(
+    tmp_path: Path,
+) -> None:
+    path = _write_text(tmp_path / "line-endings.csv", "id,value\r\n1,10\r\n2,20")
+    session = DelimitedTextAdapter().open(path, cancellation=CancellationToken())
+    resource = _table_resource(session)
+    changeset = ChangeSet(
+        source_fingerprint=session.fingerprint,
+        patches=(
+            CellPatch(
+                resource_id=resource,
+                coordinate=(1, 1),
+                old_value_fingerprint=fingerprint_value(20),
+                new_value=21,
+            ),
+        ),
+    )
+
+    session.apply_change_set(changeset, cancellation=CancellationToken())
+
+    assert _read_text(path) == "id,value\r\n1,10\r\n2,21"
+    session.close()
+
+
+def test_delimited_apply_changeset_rejects_stale_source_fingerprint(
+    tmp_path: Path,
+) -> None:
+    path = _write_text(tmp_path / "stale.csv", "id,value\n1,10\n")
+    session = DelimitedTextAdapter().open(path, cancellation=CancellationToken())
+    resource = _table_resource(session)
+    changeset = ChangeSet(
+        source_fingerprint=SourceFingerprint(size_bytes=0, modified_time_ns=0),
+        patches=(CellPatch(resource, (0, 1), fingerprint_value(10), 20),),
+    )
+
+    with pytest.raises(DataViewerError) as error:
+        session.apply_change_set(changeset, cancellation=CancellationToken())
+
+    assert error.value.code is ErrorCode.SOURCE_CHANGED
+    assert _read_text(path) == "id,value\n1,10\n"
+    session.close()
+
+
+def test_delimited_edit_fault_leaves_original_table_unchanged(tmp_path: Path) -> None:
+    path = _write_text(tmp_path / "fault.csv", "id,value\n1,10\n")
+    session = DelimitedTextAdapter().open(path, cancellation=CancellationToken())
+    resource = _table_resource(session)
+    changeset = ChangeSet(
+        source_fingerprint=session.fingerprint,
+        patches=(CellPatch(resource, (0, 1), fingerprint_value(10), 20),),
+    )
+
+    def fail_on_replace(step: TransactionStep) -> None:
+        if step is TransactionStep.REPLACE:
+            raise RuntimeError("injected replace failure")
+
+    with pytest.raises(DataViewerError):
+        session.apply_change_set(
+            changeset,
+            cancellation=CancellationToken(),
+            failure_injector=fail_on_replace,
+        )
+
+    assert _read_text(path) == "id,value\n1,10\n"
     session.close()

@@ -806,3 +806,30 @@ Known gaps:
 - This is local Windows task evidence only; dual-platform CI evidence is pending the committed branch run.
 - This is DV-0403 adapter/read evidence only. Verified CSV/TSV source overwrite, dialect-preserving rewrite, conflict handling, and transaction fault tests remain owned by DV-0404.
 - This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0404 through DV-0411 finish.
+
+## DV-0404 CSV/TSV verified writer - 2026-07-15
+
+Revision: working tree on `codex/data-viewer-foundation` with task-local writer additions in `data_viewer/sources/delimited/writer.py`, `DelimitedSourceSession.apply_change_set()`, and focused CSV/TSV writer tests in `tests/test_delimited_adapter.py`.
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing writer test | `venv\Scripts\python.exe -m pytest tests\test_delimited_adapter.py -q` | failed as expected before implementation: 4 new writer tests failed because `DelimitedSourceSession` had no `apply_change_set` |
+| Focused delimited adapter/writer suite | `venv\Scripts\python.exe -m pytest tests\test_delimited_adapter.py -q` | 14 passed |
+| Source/edit/persistence regression subset | `venv\Scripts\python.exe -m pytest tests\test_source_registry.py tests\test_document_controller.py tests\test_numpy_adapter.py tests\test_npz_adapter.py tests\test_delimited_adapter.py tests\test_persistence_transaction.py -q` | 63 passed |
+| Lint gate | `venv\Scripts\ruff.exe check data_viewer\sources\delimited tests\test_delimited_adapter.py` | passed |
+| Type check | `venv\Scripts\python.exe -m mypy data_viewer tests\test_delimited_adapter.py` | Success: no issues found in 57 source files |
+| Syntax check | `venv\Scripts\python.exe -m compileall data_viewer\sources\delimited tests\test_delimited_adapter.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 329 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Notes:
+
+- Added a delimited writer that accepts reviewed `CellPatch` changesets for the stable `/table` resource and applies patches by original zero-based data-row coordinate and schema column index.
+- Save uses the shared `AtomicReplacementService`: write a sibling temporary file, flush, reopen/validate the candidate, atomically replace, reopen/validate the destination, then refresh session fingerprint and preview metadata.
+- Confirmed CSV/TSV dialect and encoding are reused for output; tests cover CSV quoting, TSV tab dialect, missing-token preservation, dtype conversion, CRLF preservation, and no-final-newline preservation.
+- Validation rejects stale source fingerprints, wrong source/resource, non-cell patches, invalid table coordinates, old-value conflicts, row-count drift, column-count drift, and patched-value mismatch with structured `DataViewerError` values.
+- Failure injection at the replacement step leaves the original delimited source unchanged in the focused task test; broader transaction failure-step behavior remains covered by `tests/test_persistence_transaction.py`.
+
+Known gaps:
+
+- This is local Windows task evidence only; dual-platform CI evidence is pending because the current Codex shell reports an invalid GitHub CLI token.
+- This is not Checkpoint 4 evidence. The full uncompressed format matrix is still incomplete until DV-0405 through DV-0411 finish.
