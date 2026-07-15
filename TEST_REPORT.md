@@ -2000,7 +2000,7 @@ Known gaps:
 
 ## DV-0805 Declarative line/scatter/histogram/box plot plugins - 2026-07-15
 
-Revision: working tree based on `1b2ce9e` before committing the DV-0805 implementation.
+Revision: implementation commits `deb3839d7084f41fc782353e4e25f2d813a96e28` and `a0281cd1e3a8009a507b12cb94c54ce9cbb670fe`.
 
 Implementation evidence:
 
@@ -2018,7 +2018,7 @@ Local Windows verification in the repository `venv`:
 | Plugin P7/P8 regression subset | `venv\Scripts\python.exe -m pytest tests\test_builtin_plot_plugins.py tests\test_builtin_dataset_compare_plugin.py tests\test_builtin_correlation_covariance_plugin.py tests\test_builtin_distribution_summary_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_dataset_profile_plugin.py tests\test_plugin_results.py tests\test_plugin_runner.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py -q` | 65 passed |
 | Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_distribution_summary_plugin.py tests\test_builtin_correlation_covariance_plugin.py tests\test_builtin_dataset_compare_plugin.py tests\test_builtin_plot_plugins.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py tests\test_plugin_runner.py tests\test_plugin_results.py` | passed |
 | Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_distribution_summary_plugin.py tests\test_builtin_correlation_covariance_plugin.py tests\test_builtin_dataset_compare_plugin.py tests\test_builtin_plot_plugins.py` | passed |
-| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 99 source files |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 100 source files |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 474 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 | Wheel package-data smoke | `venv\Scripts\python.exe -m pip wheel . -w .tmp-wheel --no-deps --no-build-isolation --no-cache-dir`; then inspect wheel with `zipfile` for all current built-in plugin manifests and `data_viewer/plugins/builtin/plots/plugin.py` | wheel built successfully; all nine `plugin.json` files plus the plot implementation module present; temporary `.tmp-wheel` removed |
 
@@ -2026,7 +2026,10 @@ Dual-platform CI verification after commit:
 
 | Check | Command/source | Observed result |
 |---|---|---|
-| GitHub Actions run | pending after DV-0805 commit/push | pending |
+| Initial GitHub Actions run | `gh run watch 29386141056 --exit-status --interval 10` | failed in Windows/Ubuntu type-check for head SHA `deb3839d7084f41fc782353e4e25f2d813a96e28`; fixed by `a0281cd1e3a8009a507b12cb94c54ce9cbb670fe` after matching the CI mypy target locally |
+| GitHub Actions run | `gh run view 29386336372 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `a0281cd1e3a8009a507b12cb94c54ce9cbb670fe`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29386336372 |
+| Ubuntu quality | GitHub Actions job `87260308308` | success; started `2026-07-15T03:21:42Z`, completed `2026-07-15T03:23:15Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87260308313` | success; started `2026-07-15T03:21:42Z`, completed `2026-07-15T03:23:45Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
 
 Known gaps:
 
