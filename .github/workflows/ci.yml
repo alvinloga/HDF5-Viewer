@@ -90,6 +90,7 @@ jobs:
           tests/test_data_viewer_package.py
           tests/test_installed_artifact_smoke.py
           tests/test_packaging_artifacts.py
+          tests/test_release_evidence.py
           tests/test_document_controller.py
           tests/test_domain_types.py tests/test_error_diagnostics.py
           tests/test_fixture_factories.py tests/test_selection_payload_types.py
@@ -100,6 +101,7 @@ jobs:
         run: >-
           uv run --locked mypy data_viewer
           .github/scripts/write_quality_manifest.py
+          .github/scripts/generate_release_evidence.py
           .github/scripts/smoke_pyinstaller_artifact.py
           tools/build_pyinstaller_artifact.py
 
@@ -137,6 +139,12 @@ jobs:
           --functional-report ci-reports/${{ matrix.name }}/installed-smoke/installed-smoke-report.json
           --functional-screenshot ci-reports/${{ matrix.name }}/installed-smoke/installed-smoke-screenshot.png
 
+      - name: Generate release evidence
+        run: >-
+          uv run --locked python .github/scripts/generate_release_evidence.py
+          --package-dir artifacts/${{ matrix.name }}/package
+          --evidence-dir ci-reports/${{ matrix.name }}/release-evidence
+
       - name: Upload quality evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -156,6 +164,10 @@ jobs:
           path: |
             artifacts/${{ matrix.name }}/package/DataViewer-*
             artifacts/${{ matrix.name }}/package/pyinstaller-manifest.json
+            artifacts/${{ matrix.name }}/package/*.sha256
+            artifacts/${{ matrix.name }}/package/sbom.json
+            artifacts/${{ matrix.name }}/package/third-party-licenses.txt
+            artifacts/${{ matrix.name }}/package/release-security-review.json
           if-no-files-found: error
           retention-days: 14
 

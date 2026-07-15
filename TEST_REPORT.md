@@ -2655,3 +2655,32 @@ Known gaps:
 
 - DV-1006 proves installed-artifact functional smoke and release-chain dependency on the reusable quality workflow. DV-1007 still owns checksums, SBOM, license notices, dependency/security evidence, and path/credential leakage review before public binary release.
 - The public release workflow remains intentionally blocked until every v1 release gate is complete and the PyQt distribution licensing decision is resolved.
+
+## DV-1007 release evidence automation pre-license slice - 2026-07-15
+
+Revision: working tree before commit.
+
+Implementation evidence:
+
+- `.github/scripts/generate_release_evidence.py` generates one SHA-256 checksum file per Data Viewer archive, `sbom.json`, `third-party-licenses.txt`, and `release-security-review.json` from the locked CI Python environment without adding a new dependency.
+- `.github/workflows/ci.yml` runs release-evidence generation only after the installed-artifact functional smoke passes, then includes checksums, SBOM, notices, and security review files in the package upload artifact.
+- `release-security-review.json` records dependency-consistency enforcement, path/credential leak-scan results, and release-blocker findings with owner/expiry.
+- Because `docs/DEPENDENCIES.md` still records the PyQt binary distribution decision as unresolved, generated release evidence intentionally reports `release_status: blocked` and the release workflow remains fail-closed.
+- `RELEASE.md` documents the expanded package artifact layout and the PyQt licensing fail-closed behavior.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial release-evidence contract tests | `venv\Scripts\python.exe -m pytest tests\test_release_evidence.py -q` | failed as expected before implementation because `.github/scripts/generate_release_evidence.py` did not exist and CI did not generate evidence |
+| Release-evidence target tests | `venv\Scripts\python.exe -m pytest tests\test_release_evidence.py -q` | 3 passed |
+| Release/package related tests | `venv\Scripts\python.exe -m pytest tests\test_release_evidence.py tests\test_packaging_artifacts.py tests\test_installed_artifact_smoke.py tests\test_data_viewer_package.py -q` | 16 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer .github\scripts tools tests\test_release_evidence.py tests\test_installed_artifact_smoke.py tests\test_packaging_artifacts.py tests\test_data_viewer_package.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py .github\scripts\generate_release_evidence.py .github\scripts\smoke_pyinstaller_artifact.py tools\build_pyinstaller_artifact.py` | passed; no issues in 114 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools core gui plugins services utils main.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 540 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
+
+Known gaps:
+
+- DV-1007 remains unchecked until the PyQt distribution-license decision is documented as satisfied and the generated evidence is verified from Windows and Linux CI package outputs for the committed revision.

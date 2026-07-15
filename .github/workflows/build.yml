@@ -24,5 +24,5 @@ jobs:
           echo "Data Viewer v1 release is intentionally blocked."
           echo "Windows and Ubuntu quality jobs passed before this job was eligible to run."
           echo "Dry-run tag: ${{ inputs.dry_run_tag }}"
-          echo "A publication workflow will be added only after v1 artifact smoke tests and the PyQt licensing decision are complete."
+          echo "A publication workflow will be added only after all v1 gates pass and the PyQt licensing decision is satisfied."
           exit 1
