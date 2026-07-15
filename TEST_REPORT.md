@@ -2841,3 +2841,32 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This is a command-resolution guard only. It does not mark DV-1008 complete; remaining legacy runtime modules and historical regression tests still require separate migration/removal evidence.
+
+## DV-1008 legacy packaged-smoke test removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed `tests/test_packaged.py`, the obsolete "packaged build" smoke suite that imported legacy `core`, `plugins`, and `services` modules directly from the source tree instead of exercising Data Viewer release artifacts.
+- The current package-smoke responsibility remains with `tests/test_installed_artifact_smoke.py` and `.github/scripts/smoke_pyinstaller_artifact.py`, which run the Data Viewer executable with `--version` and the hidden `--ci-smoke` workflow used by CI package artifacts.
+- `tests/test_packaging_artifacts.py` now asserts the obsolete legacy packaged-smoke file stays absent and that the target installed-artifact smoke path does not import legacy runtime modules.
+- Parity rationale: the removed legacy test covered source imports, HDF5 reading, slicing, cache, legacy plugins, and CSV export. These release-facing concerns are now covered by target package/version tests, source adapter suites, Plugin API/built-in plugin tests, export tests, and the installed-artifact functional smoke that opens HDF5/CSV/NIfTI/gzip/workspace data, runs `org.dataviewer.dataset_profile`, exports a result, and closes documents.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy packaged-smoke removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_packaged_build_smoke_suite_is_removed -q` | failed as expected before implementation because `tests/test_packaged.py` still existed |
+| Targeted regression test after removal | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_packaged_build_smoke_suite_is_removed -q` | passed |
+| Release/package related tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_installed_artifact_smoke.py tests\test_release_evidence.py tests\test_data_viewer_package.py -q` | 21 passed |
+| Target package-smoke legacy import audit | `rg -n "test_packaged\\.py|Legacy HDF5 Viewer - Packaged Build Tests|from (core|gui|plugins|services)" tests\test_packaging_artifacts.py tests\test_installed_artifact_smoke.py .github\scripts\smoke_pyinstaller_artifact.py` | only intentional guard strings remained in `tests/test_packaging_artifacts.py`; target smoke code had no legacy runtime imports |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_installed_artifact_smoke.py .github\scripts\smoke_pyinstaller_artifact.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy .github\scripts\smoke_pyinstaller_artifact.py data_viewer\installed_smoke.py` | passed; no issues in 2 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tests\test_packaging_artifacts.py tests\test_installed_artifact_smoke.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 539 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
+
+Known gaps:
+
+- This removes only the obsolete legacy packaged-smoke test group. Other legacy regression suites still import `core`, `gui`, `plugins`, `services`, and `main.py` as migration references until each remaining capability/removal group satisfies the full removal criteria.

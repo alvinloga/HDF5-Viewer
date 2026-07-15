@@ -95,3 +95,19 @@ def test_root_build_wrapper_does_not_shadow_pypa_build_module() -> None:
         assert "build " in result.stdout
     else:
         assert "PyPA build is not installed" in result.stderr
+
+
+def test_legacy_packaged_build_smoke_suite_is_removed() -> None:
+    """DV-1008 uses target artifact smoke tests instead of legacy source imports."""
+
+    legacy_packaged_suite = PROJECT_ROOT / "tests" / "test_packaged.py"
+    assert not legacy_packaged_suite.exists()
+
+    target_smoke = (PROJECT_ROOT / "tests" / "test_installed_artifact_smoke.py").read_text(
+        encoding="utf-8"
+    )
+    assert "run_installed_artifact_smoke" in target_smoke
+    assert "--ci-smoke" in target_smoke
+
+    for legacy_import in ("from core", "from gui", "from plugins", "from services"):
+        assert legacy_import not in target_smoke
