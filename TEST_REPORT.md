@@ -2721,7 +2721,16 @@ Local Windows verification in the repository `venv`:
 | Removed fallback scan | `rg -n -g "*.md" -g "*.py" -g "*.yml" -- "--legacy|DATA_VIEWER_LEGACY|legacy fallback|legacy-fallback" README.md README_EN.md docs tasks data_viewer tests .github tools packaging` | only the DV-1008 acceptance text and negative regression tests mention removed fallback surfaces |
 | Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29408402126 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `4450ac3a557e5937ece32dfd62dae09649bc88d5`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29408402126 |
+| Ubuntu quality | GitHub Actions job `87329357125` | success; started `2026-07-15T10:31:09Z`, completed `2026-07-15T10:35:21Z`; full offscreen regression suite, wheel/sdist build, PyInstaller artifact build, packaged `--version` smoke, installed functional smoke, `Generate release evidence`, and artifact uploads passed |
+| Windows quality | GitHub Actions job `87329357104` | success; started `2026-07-15T10:31:09Z`, completed `2026-07-15T10:36:22Z`; full offscreen regression suite, wheel/sdist build, PyInstaller artifact build, packaged `--version` smoke, installed functional smoke, `Generate release evidence`, and artifact uploads passed |
+| GitHub Actions artifacts | `gh api repos/alvinloga/HDF5-Viewer/actions/runs/29408402126/artifacts --jq '.artifacts[] | [.name,.size_in_bytes,.expired] | @tsv'` | uploaded non-expired artifacts `data-viewer-package-Windows-29408402126-1` (178387903 bytes), `data-viewer-quality-Windows-29408402126-1` (179071936 bytes), `data-viewer-package-Ubuntu-29408402126-1` (218882756 bytes), and `data-viewer-quality-Ubuntu-29408402126-1` (219613411 bytes) |
+
 Known gaps:
 
 - This is a safe DV-1008 slice, not full DV-1008 completion. Legacy `main.py`, `core/`, `gui/`, `plugins/`, `services/`, and legacy regression tests remain as migration references until each eligible capability/removal group is proven separately.
-- DV-1008 remains unchecked until no removed legacy path is imported by runtime, tests, or build outputs, and Windows/Linux CI evidence exists for the final committed revision.
+- DV-1008 remains unchecked until the remaining legacy capability/removal groups prove no obsolete runtime, test, or build imports and Windows/Linux CI evidence exists for that full removal revision.
