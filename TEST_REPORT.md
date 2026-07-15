@@ -2290,3 +2290,40 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Full interactive comparison widgets and deeper visual diff rendering remain future UI slices. DV-0903 supplies the validated domain/controller/view-state contract and workspace persistence.
+
+## DV-0904 Recent, pinned, favorites, history, and global search - 2026-07-15
+
+Revision: implementation commit `08ed8340335fea7be30304f80aa07223578da5e5`.
+
+Implementation evidence:
+
+- `data_viewer/app/navigation.py` adds Qt-free models and `NavigationService` for recent files, pinned recent files, resource favorites, semantic back/forward history, missing-recent remediation, and grouped global search.
+- Recent and pinned file state is serialized as application configuration via `to_app_config()` and is intentionally kept out of `.dvw` workspace manifests.
+- Resource favorites use `(source_id, resource_path)` identity; display labels are mutable presentation and do not define identity.
+- `NavigationHistory` stores semantic source/resource/view/split targets so Back and Forward restore active split/resource intent instead of widget focus.
+- `SearchQuery` supports path text, name text, domain, dtype substring, exact shape, and optional regular-expression matching. Results are grouped by resource domain.
+- Search validates regular expressions up front and honors cooperative cancellation with `TASK_CANCELLED`.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing navigation/search tests | `venv\Scripts\python.exe -m pytest tests\test_navigation_search.py -q` | failed as expected before implementation: `data_viewer.app.navigation` module was missing |
+| Focused navigation/search tests | `venv\Scripts\python.exe -m pytest tests\test_navigation_search.py -q` | 5 passed |
+| Navigation/comparison/workspace subset | `venv\Scripts\python.exe -m pytest tests\test_navigation_search.py tests\test_comparison_workspace.py tests\test_workspace_manifest.py -q` | 15 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\app\navigation.py data_viewer\app\__init__.py tests\test_navigation_search.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests\test_navigation_search.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 106 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 501 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29391772848 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `08ed8340335fea7be30304f80aa07223578da5e5`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29391772848 |
+| Ubuntu quality | GitHub Actions job `87276624485` | success; started `2026-07-15T05:33:52Z`, completed `2026-07-15T05:35:29Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87276624320` | success; started `2026-07-15T05:33:53Z`, completed `2026-07-15T05:36:02Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- Full Qt navigation rail/search/favorites panels remain later UI integration work. DV-0904 supplies the validated application state and search contract.

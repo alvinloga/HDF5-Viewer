@@ -552,7 +552,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: left/right identity/alignment/difference visible; compatible index/axis/column modes; linked navigation toggle; no implicit broadcast; workspace persistence/provenance.
 - Verify: alignment/difference/incompatibility/rapid navigation/restore tests.
 
-### [ ] DV-0904 Implement recent/pinned/favorites/history and global search
+### [x] DV-0904 Implement recent/pinned/favorites/history and global search
 
 - Depends: DV-0603, DV-0901.
 - Scope: navigation/recent/favorite/search services and UI models/tests.
