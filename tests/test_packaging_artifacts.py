@@ -150,8 +150,10 @@ def test_legacy_all_features_smoke_script_is_removed() -> None:
     assert "test_all_features.py" not in environment_test
 
     for retained_suite in (
-        "tests/test_gui_interaction.py",
         "tests/test_comprehensive.py",
+        "tests/test_gui_shell.py",
+        "tests/test_gui_base_views.py",
+        "tests/test_gui_state_components.py",
         "tests/test_source_registry.py",
         "tests/test_hdf5_adapter.py",
     ):
@@ -223,16 +225,22 @@ def test_legacy_phase1_gui_smoke_suite_is_removed() -> None:
         assert (PROJECT_ROOT / retained_target_suite).exists()
 
 
-def test_legacy_gui_interaction_test_manual_runner_is_removed() -> None:
-    """DV-1008 keeps legacy GUI interaction coverage under pytest collection only."""
+def test_legacy_gui_interaction_suite_is_removed() -> None:
+    """DV-1008 removes the obsolete legacy GUI interaction source-import suite."""
 
-    gui_interaction_test = (
-        PROJECT_ROOT / "tests" / "test_gui_interaction.py"
-    ).read_text(encoding="utf-8")
+    assert not (PROJECT_ROOT / "tests" / "test_gui_interaction.py").exists()
 
-    assert "Legacy HDF5 Viewer - GUI Interaction Tests" not in gui_interaction_test
-    assert "def main(" not in gui_interaction_test
-    assert '__name__ == "__main__"' not in gui_interaction_test
+    for retained_target_suite in (
+        "tests/test_gui_shell.py",
+        "tests/test_gui_base_views.py",
+        "tests/test_gui_dialogs.py",
+        "tests/test_gui_i18n_accessibility.py",
+        "tests/test_gui_state_components.py",
+        "tests/test_gui_theme.py",
+        "tests/test_navigation_search.py",
+        "tests/test_command_registry.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_suite).exists()
 
 
 def test_legacy_stress_suite_is_removed() -> None:

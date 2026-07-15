@@ -3292,3 +3292,30 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete legacy stress suite. Other retained legacy regression suites still import `core/`, `gui/`, `plugins/`, and `services/` until each is removed or ported with parity evidence.
+
+## DV-1008 legacy GUI interaction suite removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed obsolete `tests/test_gui_interaction.py`, a legacy source-import suite that directly exercised `gui.main_window`, `gui.editor.*`, `gui.sidebar.*`, `gui.status_bar`, `gui.bottom_panel`, `gui.activity_bar`, `services.search`, and legacy `core.*` values.
+- Replaced the previous manual-runner-only guard with `tests/test_packaging_artifacts.py::test_legacy_gui_interaction_suite_is_removed`, which asserts the file stays removed and target GUI shell, base-view, dialog, i18n/accessibility, state, theme, navigation/search, and command-registry suites remain present.
+- Updated the retained GUI collection lifecycle test to collect `tests/test_gui_shell.py` plus the remaining comprehensive legacy suite, instead of referencing the removed GUI interaction suite.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy GUI interaction suite removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_interaction_suite_is_removed -q` | failed as expected before implementation because `tests/test_gui_interaction.py` still existed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_interaction_suite_is_removed tests\test_gui_shell.py tests\test_gui_base_views.py tests\test_gui_dialogs.py tests\test_gui_i18n_accessibility.py tests\test_gui_state_components.py tests\test_gui_theme.py tests\test_navigation_search.py tests\test_command_registry.py -q` | 59 passed |
+| Affected packaging/target subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_test_environment.py::test_gui_module_collection_exits_after_importing_multiple_modules tests\test_gui_shell.py tests\test_gui_base_views.py tests\test_gui_dialogs.py tests\test_gui_i18n_accessibility.py tests\test_gui_state_components.py tests\test_gui_theme.py tests\test_navigation_search.py tests\test_command_registry.py -q` | 75 passed |
+| Active reference audit | `rg "test_gui_interaction\.py|test_legacy_gui_interaction_test_manual_runner" tests docs tasks CHANGELOG.md README.md ARCHITECTURE.md` | only the current removal note and intentional absence guard remained |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_test_environment.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q tests\test_packaging_artifacts.py tests\test_test_environment.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 493 passed, 1 skipped |
+
+Known gaps:
+
+- This removes only the obsolete legacy GUI interaction suite. The retained comprehensive and environment lifecycle suites still import `core/`, `gui/`, `plugins/`, and `services/` until each is removed or ported with parity evidence.

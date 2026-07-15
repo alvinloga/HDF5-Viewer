@@ -96,7 +96,7 @@ All notable Data Viewer changes are recorded here.
 - Removed the obsolete legacy `tests/test_integration.py` source-import suite; source, HDF5, plugin, registry, and export coverage is now guarded by target Data Viewer suites.
 - Removed the obsolete legacy `tests/test_edge_cases.py` source-import suite; edge-case coverage is now guarded by target HDF5, selection, statistics, export, cache, diagnostics, and base-view tests.
 - Removed the obsolete manual script runner from `tests/test_phase1.py`; retained legacy Phase 1 GUI smoke coverage now runs only through pytest collection.
-- Removed the obsolete manual script runner from `tests/test_gui_interaction.py`; retained legacy GUI interaction coverage now runs only through pytest collection.
+- Removed the obsolete legacy `tests/test_gui_interaction.py` source-import suite; GUI interaction coverage is now guarded by target shell, base-view, dialog, i18n/accessibility, state, theme, navigation/search, and command-registry tests.
 - Removed the obsolete legacy `tests/test_stress.py` source-import suite; stress coverage is now guarded by target hardening, HDF5 adapter, cache, gzip extraction, task lifecycle, and performance-budget tests.
 - Removed the root legacy `main.py` bootstrap; current launch documentation now points to `python -m data_viewer`.
 - Removed the legacy GUI dependency from first-release format-scope tests so those checks now target the Data Viewer registry and entrypoint only.
