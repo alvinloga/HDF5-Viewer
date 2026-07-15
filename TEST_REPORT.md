@@ -1764,6 +1764,16 @@ Local Windows verification in the repository `venv`:
 | Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 94 source files |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 440 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `56098ac910f9fedaa15ae6d196197d9cf13ecac4` |
+| GitHub Actions run | `gh run watch 29380543601 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29380543601 --json status,conclusion,headSha,jobs,url` | head SHA `56098ac910f9fedaa15ae6d196197d9cf13ecac4`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29380543601` |
+| Windows quality job | GitHub Actions run `29380543601` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m55s |
+| Ubuntu quality job | GitHub Actions run `29380543601` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m38s |
+
 Known gaps:
 
-- DV-0704 is not checked complete until the implementation commit has green Windows and Ubuntu CI evidence.
+- Reference plugin conformance, concrete plugin implementations, and GUI renderer integration remain later P7/P8 tasks.

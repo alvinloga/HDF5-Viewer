@@ -449,7 +449,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: no raw source/library handles; bounded reads/chunks; memory/temp budgets; progress/cancel; no partial final result; traceback only diagnostics.
 - Verify: conformance runner tests, cancel under multiple chunks, budget/error/close/stale input tests.
 
-### [ ] DV-0704 Implement typed results, declarative PlotSpec, and provenance
+### [x] DV-0704 Implement typed results, declarative PlotSpec, and provenance
 
 - Depends: DV-0703, DV-0605.
 - Scope: result validators/store, PlotSpec types/renderer interface, provenance UI/export, tests.
