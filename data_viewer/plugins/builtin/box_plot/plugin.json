@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "api_version": 1,
+  "id": "org.dataviewer.box_plot",
+  "name": "Box Plot",
+  "version": "1.0.0",
+  "description": "Creates a declarative box PlotSpec from finite numeric values.",
+  "entry_point": "data_viewer.plugins.builtin.plots.plugin:BoxPlotPlugin",
+  "kind": "visualization",
+  "required_dependencies": [],
+  "input": {
+    "domains": ["array", "volume"],
+    "min_ndim": 1,
+    "max_ndim": null,
+    "dtype_families": ["boolean", "integer", "floating", "complex"],
+    "requires_random_access": false,
+    "supports_chunked_input": true,
+    "supports_selection": true
+  },
+  "parameters_schema": {
+    "type": "object",
+    "properties": {
+      "sample_size": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "Sample size",
+        "description": "0 uses all finite values; positive values request deterministic sampling before summary."
+      },
+      "seed": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "Random seed"
+      }
+    },
+    "additionalProperties": false
+  },
+  "result_kinds": ["plot"]
+}

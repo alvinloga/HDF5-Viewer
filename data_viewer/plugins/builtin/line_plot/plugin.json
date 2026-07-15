@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "api_version": 1,
+  "id": "org.dataviewer.line_plot",
+  "name": "Line Plot",
+  "version": "1.0.0",
+  "description": "Creates a declarative line PlotSpec from finite 1D numeric values.",
+  "entry_point": "data_viewer.plugins.builtin.plots.plugin:LinePlotPlugin",
+  "kind": "visualization",
+  "required_dependencies": [],
+  "input": {
+    "domains": ["array", "volume"],
+    "min_ndim": 1,
+    "max_ndim": null,
+    "dtype_families": ["boolean", "integer", "floating", "complex"],
+    "requires_random_access": false,
+    "supports_chunked_input": true,
+    "supports_selection": true
+  },
+  "parameters_schema": {
+    "type": "object",
+    "properties": {
+      "sample_size": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "Sample size",
+        "description": "0 plots all finite points; positive values request deterministic point sampling."
+      },
+      "seed": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "Random seed"
+      }
+    },
+    "additionalProperties": false
+  },
+  "result_kinds": ["plot"]
+}

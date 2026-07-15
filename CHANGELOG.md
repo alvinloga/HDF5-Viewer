@@ -62,6 +62,7 @@ All notable Data Viewer changes are recorded here.
 - Added the Distribution Summary built-in plugin (DV-0802): histogram rows, IQR/MAD robust spread, skewness/kurtosis only when valid, nonfinite accounting, and explicit deterministic sampling metadata.
 - Added the Correlation/Covariance built-in plugin (DV-0803): labeled symmetric matrix output, listwise/pairwise missing-data alignment, contiguous variable-axis selection, constant-variable warnings, and variable-count budget refusal.
 - Added the Dataset Compare built-in plugin (DV-0804): exact-shape compatibility checks, no-broadcast refusal, equality counts, finite/nonfinite accounting, absolute and left-relative error metrics, and explicit zero-denominator handling.
+- Added the first declarative visualization plugins (DV-0805): line, scatter, histogram, and box plot built-ins now emit renderer-owned `PlotSpec` results with finite-value filtering, deterministic sampling metadata, accessible summaries, export provenance, and JSON-safe data-table metadata.
 
 ### Fixed
 

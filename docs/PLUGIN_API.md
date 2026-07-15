@@ -17,7 +17,8 @@ Current implementation status:
 - DV-0802 adds `org.dataviewer.distribution_summary` for histogram, robust spread, skewness/kurtosis, nonfinite accounting, and explicit deterministic sampling metadata.
 - DV-0803 adds `org.dataviewer.correlation_covariance` for labeled correlation/covariance matrices with explicit variable-axis selection, contiguous variable ranges, listwise/pairwise missing-data alignment, constant-variable warnings, and matrix-size budget refusal.
 - DV-0804 adds `org.dataviewer.dataset_compare` for exact-shape numeric dataset comparisons with metadata compatibility rows, equality counts, finite/nonfinite accounting, absolute/relative error metrics, and explicit no-broadcast refusal.
-- The remaining P8 catalog still owns visualization plugins and concrete plot renderers.
+- DV-0805 adds `org.dataviewer.line_plot`, `org.dataviewer.scatter_plot`, `org.dataviewer.histogram_plot`, and `org.dataviewer.box_plot` for renderer-owned declarative `PlotSpec` results with explicit point sampling, finite-value filtering, accessible summaries, export provenance, and JSON-safe data-table metadata.
+- The remaining P8 catalog still owns image/slice/navigation visualization plugins, correlation heatmap, missing-data map, NIfTI viewer, and concrete Qt plot renderer widgets.
 
 ## 2. Package boundary
 
@@ -42,6 +43,16 @@ data_viewer/
         plugin.json
       dataset_compare/
         plugin.json
+      line_plot/
+        plugin.json
+      scatter_plot/
+        plugin.json
+      histogram_plot/
+        plugin.json
+      box_plot/
+        plugin.json
+      plots/
+        plugin.py
 ```
 
 A plugin may import `data_viewer.plugins.api` and documented domain value types. It must not import `data_viewer.gui`, adapters, controllers, private modules, or another plugin's internals.
@@ -259,10 +270,10 @@ All results display plugin/version, exact inputs, selection/scope, parameters, s
 
 ### Visualization
 
-- Line Plot
-- Scatter Plot
-- Histogram
-- Box Plot
+- Line Plot: declarative line `PlotSpec` from finite 1D numeric values, with optional deterministic point sampling and data-table metadata.
+- Scatter Plot: declarative scatter `PlotSpec` from selected numeric columns, with finite-pair filtering and optional deterministic point sampling.
+- Histogram: declarative histogram `PlotSpec` from finite numeric values, with configurable bins and optional deterministic sampling before binning.
+- Box Plot: declarative box `PlotSpec` from finite numeric values, with five-number summary and optional deterministic sampling before summary.
 - Image Viewer
 - 3D+ Slice Navigator
 - Correlation Heatmap
@@ -275,6 +286,7 @@ Each catalog entry is its own manifest/package and may ship incrementally withou
 
 - Default computation scope is explicit: full resource, current slice, selection, filtered rows, or sample.
 - Sampling never occurs silently. Results state method, seed, requested size, actual size, and population estimate.
+- Plot plugins omit nonfinite points before creating `PlotSpec` marks because renderer-owned plot marks require finite coordinates; omissions are reported as result warnings and data-table metadata remains exportable.
 - Stable algorithms are required for large sums/variance; expected tolerance is dtype-aware.
 - `NaN`, infinity, complex numbers, masked/missing values, strings, booleans, and empty inputs have documented behavior.
 - Dataset Compare refuses ambiguous broadcasting or alignment; v1 computes pairwise finite error metrics and treats nonfinite equality separately from finite error statistics.

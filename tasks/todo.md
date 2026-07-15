@@ -497,7 +497,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: identity/shape/dtype/schema compatibility; no ambiguous broadcasting; exact equality and absolute/relative errors with zero/nonfinite rules; alignment/scope visible.
 - Verify: identical/near/different/incompatible/aligned coordinate goldens.
 
-### [ ] DV-0805 Implement line, scatter, histogram, and box plots
+### [x] DV-0805 Implement line, scatter, histogram, and box plots
 
 - Depends: DV-0801, DV-0802.
 - Acceptance: declarative plots; axes/series/units/legends; bounded points or explicit sampling; theme/accessibility/data-table/copy/export.

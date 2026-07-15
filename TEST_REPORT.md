@@ -1997,3 +1997,37 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Plot plugins, correlation heatmap, missing-data map, and GUI renderer integration remain later P8 tasks.
+
+## DV-0805 Declarative line/scatter/histogram/box plot plugins - 2026-07-15
+
+Revision: working tree based on `1b2ce9e` before committing the DV-0805 implementation.
+
+Implementation evidence:
+
+- `data_viewer/plugins/builtin/plots/plugin.py` adds `LinePlotPlugin`, `ScatterPlotPlugin`, `HistogramPlotPlugin`, and `BoxPlotPlugin`. Each returns a renderer-owned `PlotSpec` with finite coordinates only, explicit warnings for omitted nonfinite points, provenance-complete parameters, optional deterministic point/value sampling, and JSON-safe `data_table` metadata for copy/export/table alternatives.
+- `data_viewer/plugins/builtin/{line_plot,scatter_plot,histogram_plot,box_plot}/plugin.json` add independent packaged built-in visualization manifests with immutable scalar parameters supported by Plugin API v1.
+- `pyproject.toml` includes the four plot manifests as package data and packages the new `data_viewer.plugins.builtin.plots` implementation module.
+- `tests/test_builtin_plot_plugins.py` adds coverage for packaged discovery, line PlotSpec/accessibility/export metadata, deterministic scatter sampling, histogram/box goldens, empty-finite refusal, and forbidden-import boundaries.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing plot plugin tests | `venv\Scripts\python.exe -m pytest tests\test_builtin_plot_plugins.py -q` | failed as expected before implementation: plot plugin manifests/module not discovered |
+| Focused plot plugin tests | `venv\Scripts\python.exe -m pytest tests\test_builtin_plot_plugins.py -q` | 6 passed |
+| Plugin P7/P8 regression subset | `venv\Scripts\python.exe -m pytest tests\test_builtin_plot_plugins.py tests\test_builtin_dataset_compare_plugin.py tests\test_builtin_correlation_covariance_plugin.py tests\test_builtin_distribution_summary_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_dataset_profile_plugin.py tests\test_plugin_results.py tests\test_plugin_runner.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py -q` | 65 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_distribution_summary_plugin.py tests\test_builtin_correlation_covariance_plugin.py tests\test_builtin_dataset_compare_plugin.py tests\test_builtin_plot_plugins.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py tests\test_plugin_runner.py tests\test_plugin_results.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_distribution_summary_plugin.py tests\test_builtin_correlation_covariance_plugin.py tests\test_builtin_dataset_compare_plugin.py tests\test_builtin_plot_plugins.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 99 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 474 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Wheel package-data smoke | `venv\Scripts\python.exe -m pip wheel . -w .tmp-wheel --no-deps --no-build-isolation --no-cache-dir`; then inspect wheel with `zipfile` for all current built-in plugin manifests and `data_viewer/plugins/builtin/plots/plugin.py` | wheel built successfully; all nine `plugin.json` files plus the plot implementation module present; temporary `.tmp-wheel` removed |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | pending after DV-0805 commit/push | pending |
+
+Known gaps:
+
+- Concrete Qt plot renderer widgets, image/slice navigator, correlation heatmap, missing-data map, and NIfTI viewer remain later P8 tasks.

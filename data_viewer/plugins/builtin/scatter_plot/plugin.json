@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "api_version": 1,
+  "id": "org.dataviewer.scatter_plot",
+  "name": "Scatter Plot",
+  "version": "1.0.0",
+  "description": "Creates a declarative scatter PlotSpec from two selected numeric columns.",
+  "entry_point": "data_viewer.plugins.builtin.plots.plugin:ScatterPlotPlugin",
+  "kind": "visualization",
+  "required_dependencies": [],
+  "input": {
+    "domains": ["array", "volume"],
+    "min_ndim": 2,
+    "max_ndim": 2,
+    "dtype_families": ["boolean", "integer", "floating", "complex"],
+    "requires_random_access": false,
+    "supports_chunked_input": true,
+    "supports_selection": true
+  },
+  "parameters_schema": {
+    "type": "object",
+    "properties": {
+      "x_column": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "X column"
+      },
+      "y_column": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 1,
+        "title": "Y column"
+      },
+      "sample_size": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "Sample size",
+        "description": "0 plots all finite point pairs; positive values request deterministic point sampling."
+      },
+      "seed": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "Random seed"
+      }
+    },
+    "additionalProperties": false
+  },
+  "result_kinds": ["plot"]
+}
