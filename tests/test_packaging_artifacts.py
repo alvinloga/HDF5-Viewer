@@ -235,16 +235,20 @@ def test_legacy_gui_interaction_test_manual_runner_is_removed() -> None:
     assert '__name__ == "__main__"' not in gui_interaction_test
 
 
-def test_legacy_stress_test_manual_runner_is_removed() -> None:
-    """DV-1008 keeps legacy stress coverage under pytest collection only."""
+def test_legacy_stress_suite_is_removed() -> None:
+    """DV-1008 removes the obsolete legacy stress source-import suite."""
 
-    stress_test = (PROJECT_ROOT / "tests" / "test_stress.py").read_text(
-        encoding="utf-8"
-    )
+    assert not (PROJECT_ROOT / "tests" / "test_stress.py").exists()
 
-    assert "Legacy HDF5 Viewer - Stress Tests" not in stress_test
-    assert "def main(" not in stress_test
-    assert '__name__ == "__main__"' not in stress_test
+    for retained_target_suite in (
+        "tests/test_hardening_stress.py",
+        "tests/test_hdf5_adapter.py",
+        "tests/test_infrastructure_cache.py",
+        "tests/test_gzip_extraction_cache.py",
+        "tests/test_task_lifecycle.py",
+        "tests/test_performance_budgets.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_suite).exists()
 
 
 def test_format_scope_tests_do_not_import_legacy_gui() -> None:

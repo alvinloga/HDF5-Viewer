@@ -3265,3 +3265,30 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete legacy edge-case suite. Other retained legacy regression suites still import `core/`, `gui/`, `plugins/`, and `services/` until each is removed or ported with parity evidence.
+
+## DV-1008 legacy stress suite removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed obsolete `tests/test_stress.py`, a legacy source-import suite that directly exercised `core.h5_source`, `core.cache`, `core.event_bus`, and `core.slicer`.
+- Replaced the previous manual-runner-only guard with `tests/test_packaging_artifacts.py::test_legacy_stress_suite_is_removed`, which asserts the file stays removed and target hardening, HDF5 adapter, cache, gzip extraction, task lifecycle, and performance-budget suites remain present.
+- Updated `CHANGELOG.md` so the user-visible note describes full suite removal rather than only manual-runner cleanup.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy stress suite removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_stress_suite_is_removed -q` | failed as expected before implementation because `tests/test_stress.py` still existed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_stress_suite_is_removed tests\test_hardening_stress.py tests\test_hdf5_adapter.py tests\test_infrastructure_cache.py tests\test_gzip_extraction_cache.py tests\test_task_lifecycle.py tests\test_performance_budgets.py -q` | 51 passed |
+| Affected packaging/target subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_hardening_stress.py tests\test_hdf5_adapter.py tests\test_infrastructure_cache.py tests\test_gzip_extraction_cache.py tests\test_task_lifecycle.py tests\test_performance_budgets.py -q` | 66 passed |
+| Active reference audit | `rg "test_stress\.py|test_legacy_stress_test_manual_runner" tests docs tasks CHANGELOG.md README.md ARCHITECTURE.md` | only the current removal note and intentional absence guard remained |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 502 passed, 1 skipped |
+
+Known gaps:
+
+- This removes only the obsolete legacy stress suite. Other retained legacy regression suites still import `core/`, `gui/`, `plugins/`, and `services/` until each is removed or ported with parity evidence.
