@@ -2107,3 +2107,38 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - NIfTI orthogonal viewer, result renderer widgets, and final P8 plugin catalog evidence remain later tasks.
+
+## DV-0808 NIfTI orthogonal viewer and inspector - 2026-07-15
+
+Revision: implementation commit `fba69cda8cbeaed68c8c0a5ecc9e8ddef15c3e24`.
+
+Implementation evidence:
+
+- `data_viewer/gui/views.py` adds `NiftiOrthogonalViewerWidget`, a bounded `VolumePayload` workspace view with axial/coronal/sagittal orientation labels, linked crosshair metadata, voxel-to-world affine projection, 4D volume/time index status, display-only window/level state, explicit no-resampling status, and a read-only affine/spatial inspector.
+- The widget consumes already-bounded `VolumePayload` instances and does not open NIfTI files, access NiBabel proxies, infer active resources from GUI fields, or resample source data.
+- `tests/test_gui_base_views.py` adds offscreen GUI coverage for known affine voxel/world coordinates, RAS/LPI orientation labels, 4D volume index display, scaled/display value semantics, window/level labels, and affine/header inspector text.
+- `CHANGELOG.md` and `docs/PLUGIN_API.md` update the user-visible state and P8 remaining-work language.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing NIfTI viewer tests | `venv\Scripts\python.exe -m pytest tests\test_gui_base_views.py -q` | failed as expected before implementation: `NiftiOrthogonalViewerWidget` could not be imported |
+| Focused base view tests | `venv\Scripts\python.exe -m pytest tests\test_gui_base_views.py -q` | 9 passed |
+| GUI/NIfTI regression subset | `venv\Scripts\python.exe -m pytest tests\test_gui_base_views.py tests\test_nifti_adapter.py tests\test_gui_shell.py tests\test_gui_i18n_accessibility.py -q` | 39 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\gui\views.py tests\test_gui_base_views.py tests\test_nifti_adapter.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests\test_gui_base_views.py tests\test_nifti_adapter.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 100 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 482 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29388571926 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `fba69cda8cbeaed68c8c0a5ecc9e8ddef15c3e24`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29388571926 |
+| Ubuntu quality | GitHub Actions job `87266834075` | success; started `2026-07-15T04:16:17Z`, completed `2026-07-15T04:17:50Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87266834088` | success; started `2026-07-15T04:16:18Z`, completed `2026-07-15T04:18:22Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- DV-0809 still needs final Checkpoint 8 catalog evidence. Deeper renderer integration can continue in later UI tasks.

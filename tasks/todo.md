@@ -515,7 +515,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: labeled axes/legend/range; large table budget/sampling; missing semantics; accessible table alternative.
 - Verify: known matrix/missing pattern PlotSpec and render tests.
 
-### [ ] DV-0808 Implement NIfTI orthogonal viewer and inspector
+### [x] DV-0808 Implement NIfTI orthogonal viewer and inspector
 
 - Depends: DV-0410, DV-0806.
 - Acceptance: axial/coronal/sagittal linked crosshairs; correct orientation labels; voxel/world coordinates; 4D volume index; window/level; raw/scaled values; header/affine inspection; no source resampling.
