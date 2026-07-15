@@ -435,7 +435,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: packaged built-ins only; validate before import; unique stable IDs; API/schema versions; deterministic order; bad plugin does not fail startup.
 - Verify: valid/invalid/duplicate/unsupported/lazy import tests.
 
-### [ ] DV-0702 Implement compatibility evaluator and parameter form
+### [x] DV-0702 Implement compatibility evaluator and parameter form
 
 - Depends: DV-0701, DV-0602.
 - Scope: compatibility service, supported JSON Schema subset, standard form renderer, tests.

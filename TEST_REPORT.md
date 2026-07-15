@@ -1687,6 +1687,17 @@ Local Windows verification in the repository `venv`:
 | Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 92 source files |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 432 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Completion commits | `git push origin codex/data-viewer-foundation` | pushed implementation commit `3d25170df75a4be055e755e41ff8b5e9e97219ed` and CI typing fix `ee05230ee1e3303bb82bc3692d39c2dec362a8c3` |
+| Initial CI run | `gh run watch 29378889971 --exit-status --interval 10` | failed in Windows and Ubuntu type-checking because CI mypy caught a reused Qt widget variable name in `plugin_forms.py`; fixed by `ee05230ee1e3303bb82bc3692d39c2dec362a8c3` |
+| Final GitHub Actions run | `gh run watch 29379097065 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29379097065 --json status,conclusion,headSha,jobs,url` | head SHA `ee05230ee1e3303bb82bc3692d39c2dec362a8c3`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29379097065` |
+| Windows quality job | GitHub Actions run `29379097065` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 2m08s |
+| Ubuntu quality job | GitHub Actions run `29379097065` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m33s |
+
 Known gaps:
 
-- DV-0702 is not checked complete until the implementation commit has green Windows and Ubuntu CI evidence.
+- Plugin runner/input access, result validation/materialization, multi-input shape/alignment semantics, and reference plugin conformance remain later P7 tasks.
