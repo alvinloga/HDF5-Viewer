@@ -463,7 +463,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: manifest, compatibility, params, chunks, cancel, progress, errors, numerical golden, edge inputs, result/provenance, forbidden imports all demonstrated.
 - Verify: run conformance suite on reference plugin on Windows/Linux.
 
-### [ ] DV-0706 Record Checkpoint 7 plugin platform evidence
+### [x] DV-0706 Record Checkpoint 7 plugin platform evidence
 
 - Depends: DV-0701 through DV-0705.
 - Verify: platform/conformance/UI integration and ledger update.

@@ -1817,3 +1817,36 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - DV-0705 provides the reusable conformance kit and one reference plugin only. P8 still owns the complete statistics/visualization plugin catalog and GUI renderer integration.
+
+## Checkpoint 7 plugin platform evidence - 2026-07-15
+
+Revision: working tree based on `342e926` before committing DV-0706.
+
+Checkpoint scope:
+
+- DV-0701 Plugin API v1 public skeleton, strict manifest validation, deterministic packaged built-in registry, structured diagnostics, duplicate-ID handling, and lazy entry-point import.
+- DV-0702 single-input compatibility decisions, exact disabled reasons, immutable parameter validation/defaults, and standard keyboard-accessible Qt parameter forms.
+- DV-0703 document-backed budgeted `InputAccess`, runner task integration, bounded reads/chunks, cooperative cancellation, stale-result rejection, and safe plugin error mapping.
+- DV-0704 typed result validators, declarative plot payloads, provenance/export records, and bounded result materialization.
+- DV-0705 reusable conformance helpers and packaged `org.dataviewer.dataset_profile` reference plugin with discovery, parameters, chunking, cancellation/progress, numerical golden, edge-input, result/provenance, forbidden-import, and package-data coverage.
+
+Local and CI evidence already recorded in the per-task sections above:
+
+| Task | Completion/evidence commit | CI run |
+|---|---|---|
+| DV-0701 | `02a6d63`, `628f2cc` | `29377713330` |
+| DV-0702 | `3d25170`, `ee05230`, `4107f6a` | `29379097065`, `29379294866` |
+| DV-0703 | `03e1c47`, `959a076` | `29379856832`, `29380056827` |
+| DV-0704 | `56098ac`, `f4e346e` | `29380543601`, `29380735005` |
+| DV-0705 | `3781a46`, `342e926` | `29381483677`, `29381616206` |
+
+DV-0706 verification:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Checkpoint documentation/status update | manual review of `tasks/todo.md`, `CHANGELOG.md`, and this section | DV-0706 checked; Checkpoint 7 evidence summarized without changing product code |
+
+Known gaps moving into P8:
+
+- P7 provides the plugin platform foundation and one reference plugin. The production statistics/visualization catalog, concrete plot renderers, and full plugin UI routing remain P8 work.
+- Third-party plugin installation, signing, process isolation, marketplace distribution, and permission systems remain explicitly out of v1 scope.

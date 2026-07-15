@@ -77,6 +77,7 @@ All notable Data Viewer changes are recorded here.
 - Recorded Checkpoint 4 uncompressed format evidence for all v1 first-release adapters on Windows and Ubuntu CI.
 - Recorded Checkpoint 5 gzip evidence for stream wrappers, managed random-access extraction, full gzip registry integration, read-only/nested-compression UX metadata, and Windows/Ubuntu CI.
 - Recorded Checkpoint 6 UI evidence for semantic themes, command context, shell layout, standard states, base views, safe dialogs, localization/accessibility, high-DPI baseline, and Windows/Ubuntu CI.
+- Recorded Checkpoint 7 plugin-platform evidence for manifest validation, compatibility/parameters, runner/input access, typed results/provenance, the reference Dataset Profile plugin, reusable conformance checks, and Windows/Ubuntu CI.
 
 ### Known legacy limitations
 
