@@ -613,7 +613,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: validate/preview/migrate atomically; legacy file not modified/deleted; corrupt/unknown safe; tests use temp paths; QStandardPaths/platformdirs target.
 - Verify: first-run/migrate/decline/corrupt/upgrade/downgrade tests on both platforms.
 
-### [ ] DV-1005 Build Windows and Linux Data Viewer artifacts
+### [x] DV-1005 Build Windows and Linux Data Viewer artifacts
 
 - Depends: DV-0002, DV-1003, DV-1004.
 - Read: Dependencies, Release, ADR-008.

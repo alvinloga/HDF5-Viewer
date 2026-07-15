@@ -2579,3 +2579,42 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - DV-1004 prepares and tests the non-destructive migration machinery. A later UI task should surface the migration preview/decision to users instead of applying migration automatically, and DV-1008 still owns final legacy config write removal from the old GUI path.
+
+## DV-1005 Windows and Linux Data Viewer artifacts - 2026-07-15
+
+Revision: implementation commit `931583060a486c7e2217c43419e145561239e13e`.
+
+Implementation evidence:
+
+- `packaging/DataViewer.spec` builds the target `DataViewer` PyInstaller bundle through `tools/pyinstaller_entry.py`.
+- `tools/build_pyinstaller_artifact.py` creates platform-specific archives named `DataViewer-<version>-windows-x86_64.zip` and `DataViewer-<version>-linux-x86_64.tar.gz`, plus `pyinstaller-manifest.json`.
+- The CI quality workflow now builds the PyInstaller artifact after locked install, lint, type-check, compile, full regression tests, and wheel/sdist build.
+- `.github/scripts/smoke_pyinstaller_artifact.py` runs the packaged executable with `--version` on both platforms before package artifact upload.
+- `tests/test_packaging_artifacts.py` guards current product naming, platform-specific artifact naming, executable names, and CI packaging steps.
+- `RELEASE.md` documents the package artifact upload names and manifest layout.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial packaging contract tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py -q` | failed as expected before implementation because `tools.build_pyinstaller_artifact` did not exist |
+| Packaging/name subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_data_viewer_package.py -q` | 10 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tools .github\scripts tests\test_packaging_artifacts.py tests\test_data_viewer_package.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py .github\scripts\smoke_pyinstaller_artifact.py tools\build_pyinstaller_artifact.py` | passed; no issues in 112 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools core gui plugins services utils main.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 534 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Local PyInstaller build attempt | `venv\Scripts\python.exe tools\build_pyinstaller_artifact.py --output-dir artifacts\local-package` | blocked by local mixed conda/venv PyInstaller hook pollution: imported `hook-numpy.py` from the historical legacy migration environment `C:\Users\Alvin\anaconda3\envs\hdf5viewer_build`; clean CI builds below are authoritative |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29400222068 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `931583060a486c7e2217c43419e145561239e13e`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29400222068 |
+| Ubuntu quality | GitHub Actions job `87302819079` | success; started `2026-07-15T08:16:46Z`, completed `2026-07-15T08:21:12Z`; full offscreen regression suite, wheel/sdist build, `Build Data Viewer PyInstaller artifact`, `Smoke-test Data Viewer executable`, and artifact upload passed |
+| Windows quality | GitHub Actions job `87302819069` | success; started `2026-07-15T08:16:45Z`, completed `2026-07-15T08:22:45Z`; full offscreen regression suite, wheel/sdist build, `Build Data Viewer PyInstaller artifact`, `Smoke-test Data Viewer executable`, and artifact upload passed |
+| GitHub Actions artifacts | `gh api repos/alvinloga/HDF5-Viewer/actions/runs/29400222068/artifacts --jq '.artifacts[] | [.name,.size_in_bytes,.expired] | @tsv'` | uploaded non-expired artifacts `data-viewer-package-Windows-29400222068-1` (178330685 bytes), `data-viewer-package-Ubuntu-29400222068-1` (218842324 bytes), plus matching quality evidence artifacts |
+
+Known gaps:
+
+- DV-1005 proves clean CI artifact construction and packaged `--version` launch smoke. DV-1006 owns richer installed-artifact functional workflows for opening representative HDF5/CSV/NIfTI/gzip/workspace data, running plugins, exporting, screenshots/logs, and release-chain blocking.
+- DV-1007 owns checksums, SBOM, license notices, security evidence, and path/credential leakage review before public release publication.
