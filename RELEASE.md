@@ -38,7 +38,7 @@ The quality workflow builds the current PyInstaller package from `packaging/Data
 - `data-viewer-package-windows-<run_id>-<run_attempt>`
 - `data-viewer-package-ubuntu-<run_id>-<run_attempt>`
 
-Each package upload contains the platform archive and `pyinstaller-manifest.json`. The manifest records the Data Viewer version, platform tag, archive path, bundle directory, and packaged executable path used by the CI smoke step. The smoke step extracts from the built bundle and runs the packaged executable with `--version`; richer installed-artifact workflows belong to DV-1006.
+Each package upload contains the platform archive and `pyinstaller-manifest.json`. The manifest records the Data Viewer version, platform tag, archive path, bundle directory, and packaged executable path used by the CI smoke steps. The CI smoke first runs the packaged executable with `--version`, then runs the hidden installed-artifact functional workflow with `--ci-smoke`. That workflow opens representative HDF5, CSV, NIfTI, gzip-wrapped CSV, and workspace fixtures; runs the packaged Dataset Profile reference plugin; exports the plugin result; closes opened documents; and writes `installed-smoke-report.json` plus `installed-smoke-screenshot.png` into the quality evidence artifact.
 
 ## Release sequence
 

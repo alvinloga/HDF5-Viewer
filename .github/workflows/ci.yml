@@ -88,6 +88,7 @@ jobs:
           tests/conftest.py
           tests/conformance tests/fixtures tests/test_ci_reporting.py
           tests/test_data_viewer_package.py
+          tests/test_installed_artifact_smoke.py
           tests/test_packaging_artifacts.py
           tests/test_document_controller.py
           tests/test_domain_types.py tests/test_error_diagnostics.py
@@ -127,6 +128,14 @@ jobs:
         run: >-
           uv run --locked python .github/scripts/smoke_pyinstaller_artifact.py
           --manifest artifacts/${{ matrix.name }}/package/pyinstaller-manifest.json
+
+      - name: Functional smoke installed Data Viewer artifact
+        run: >-
+          uv run --locked python .github/scripts/smoke_pyinstaller_artifact.py
+          --manifest artifacts/${{ matrix.name }}/package/pyinstaller-manifest.json
+          --functional-workspace-dir ci-reports/${{ matrix.name }}/installed-smoke/workspace
+          --functional-report ci-reports/${{ matrix.name }}/installed-smoke/installed-smoke-report.json
+          --functional-screenshot ci-reports/${{ matrix.name }}/installed-smoke/installed-smoke-screenshot.png
 
       - name: Upload quality evidence
         if: ${{ always() }}

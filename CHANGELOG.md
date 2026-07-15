@@ -77,6 +77,7 @@ All notable Data Viewer changes are recorded here.
 - Completed the current Data Viewer name/version migration slice (DV-1003): workspace app metadata now reads the canonical package version and target runtime scans guard against non-historical HDF5 Viewer naming.
 - Added the platform configuration migration slice (DV-1004): target config now has versioned UI preferences, legacy repository config preview/migration is explicit and non-destructive, and bootstrap prepares platform config/cache/log paths.
 - Added the initial Data Viewer PyInstaller packaging slice (DV-1005): Windows and Linux CI now build `DataViewer-<version>-<platform>` archives from a locked environment, run a packaged `--version` smoke test, upload package artifacts, and lint/type-check the packaging scripts.
+- Added the installed-artifact functional smoke slice (DV-1006): packaged Data Viewer executables now run a hidden CI workflow that opens representative HDF5, CSV, NIfTI, gzip, and workspace data, runs the Dataset Profile reference plugin, exports a plugin result, closes documents, captures an offscreen screenshot, and uploads smoke evidence before package artifacts are accepted.
 
 ### Fixed
 
