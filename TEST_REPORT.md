@@ -3623,3 +3623,32 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the legacy async-loader module from `core/`. Remaining legacy `core/` modules and `gui/` still exist as separate migration/removal groups.
+
+## DV-1008 legacy GUI sidebar package removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `gui/sidebar/`, including the old Explorer, Folder Explorer, and Plugin panels that depended on removed legacy event-bus, slicer, service, and plugin APIs.
+- Added `tests/test_packaging_artifacts.py::test_legacy_gui_sidebar_package_is_removed`, which asserts the old sidebar package stays absent and retained target navigation, shell, and plugin registry coverage remains present.
+- Target navigation/search ownership remains under `data_viewer/app/navigation.py`, `data_viewer/gui/shell.py`, and Plugin API v1 registry/runner surfaces rather than legacy GUI-side panel classes.
+- Updated migration inventory and changelog wording so `gui/` remains a current legacy migration input while its sidebar package is recorded as removed.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy sidebar package removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_sidebar_package_is_removed -q` | failed as expected before implementation because `gui/sidebar/` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_sidebar_package_is_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_navigation_search.py tests\test_gui_shell.py tests\test_plugin_registry.py -q` | 40 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_navigation_search.py tests\test_gui_shell.py tests\test_plugin_registry.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 432 passed |
+
+Known gaps:
+
+- This removes only the legacy sidebar package from `gui/`. Remaining legacy `gui/` groups and coupled `core/` modules still exist as separate migration/removal groups.
+- Remaining legacy `gui/main_window.py` and `gui/secondary_panel.py` still contain historical imports of the removed sidebar classes; those files are not target runtime/build inputs and must be removed in their own DV-1008 GUI shell slices before `gui/` is fully retired.

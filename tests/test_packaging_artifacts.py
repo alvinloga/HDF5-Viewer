@@ -435,3 +435,19 @@ def test_legacy_core_async_loader_module_is_removed() -> None:
         "tests/test_document_controller.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_gui_sidebar_package_is_removed() -> None:
+    """DV-1008 removes obsolete legacy sidebar panels after target parity coverage."""
+
+    assert not (PROJECT_ROOT / "gui" / "sidebar").exists()
+
+    for retained_target_path in (
+        "data_viewer/app/navigation.py",
+        "data_viewer/gui/shell.py",
+        "data_viewer/plugins/registry.py",
+        "tests/test_navigation_search.py",
+        "tests/test_gui_shell.py",
+        "tests/test_plugin_registry.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()
