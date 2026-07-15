@@ -1808,7 +1808,11 @@ Dual-platform CI verification after commit:
 
 | Check | Command/source | Observed result |
 |---|---|---|
-| GitHub Actions run | pending after DV-0705 commit/push | pending |
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `3781a4616f8f5ffdd1c96e54a3be8acba5a1f04d` |
+| GitHub Actions run | `gh run watch 29381483677 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29381483677 --json status,conclusion,headSha,jobs,url` | head SHA `3781a4616f8f5ffdd1c96e54a3be8acba5a1f04d`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29381483677` |
+| Windows quality job | GitHub Actions run `29381483677` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m47s |
+| Ubuntu quality job | GitHub Actions run `29381483677` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m39s |
 
 Known gaps:
 
