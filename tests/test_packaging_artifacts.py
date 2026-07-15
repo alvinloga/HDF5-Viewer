@@ -467,3 +467,19 @@ def test_legacy_gui_secondary_panel_module_is_removed() -> None:
         "tests/test_plugin_registry.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_gui_main_window_module_is_removed() -> None:
+    """DV-1008 removes the obsolete legacy MainWindow shell module."""
+
+    assert not (PROJECT_ROOT / "gui" / "main_window.py").exists()
+
+    for retained_target_path in (
+        "data_viewer/gui/app.py",
+        "data_viewer/gui/shell.py",
+        "data_viewer/gui/commands.py",
+        "tests/test_gui_shell.py",
+        "tests/test_data_viewer_package.py",
+        "tests/test_packaging_artifacts.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()

@@ -3651,7 +3651,7 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the legacy sidebar package from `gui/`. Remaining legacy `gui/` groups and coupled `core/` modules still exist as separate migration/removal groups.
-- Remaining legacy `gui/main_window.py` still contains historical imports of the removed sidebar and secondary-panel classes; that file is not a target runtime/build input and must be removed in its own DV-1008 GUI shell slice before `gui/` is fully retired.
+- At this slice, legacy `gui/main_window.py` still contained historical imports of the removed sidebar and secondary-panel classes; that follow-up gap is resolved by later DV-1008 secondary-panel and main-window removal slices.
 
 ## DV-1008 legacy GUI secondary panel removal slice - 2026-07-16
 
@@ -3680,4 +3680,32 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the legacy secondary panel module from `gui/`. Remaining legacy `gui/` groups and coupled `core/` modules still exist as separate migration/removal groups.
-- Remaining legacy `gui/main_window.py` still contains historical imports of removed legacy sidebar and secondary-panel classes; that file is not a target runtime/build input and must be removed in its own DV-1008 GUI shell slice before `gui/` is fully retired.
+- The historical `gui/main_window.py` references to removed sidebar and secondary-panel classes are resolved by the following DV-1008 main-window removal slice.
+
+## DV-1008 legacy GUI main window removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `gui/main_window.py`, the obsolete HDF5 Viewer shell that depended on removed legacy event-bus, slicer, sidebar, secondary-panel, services, and plugin compatibility paths.
+- Added `tests/test_packaging_artifacts.py::test_legacy_gui_main_window_module_is_removed`, which asserts the old module stays absent and retained target bootstrap/shell/command coverage remains present.
+- Target application-window ownership remains under `data_viewer/gui/app.py`, `data_viewer/gui/shell.py`, and `data_viewer/gui/commands.py`, with open/navigation/package behavior covered by target GUI and package tests.
+- Updated migration inventory and changelog wording so `gui/` remains a current legacy migration input while its main-window module is recorded as removed.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy main-window module removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_main_window_module_is_removed -q` | failed as expected before implementation because `gui/main_window.py` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_main_window_module_is_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_gui_shell.py tests\test_data_viewer_package.py -q` | 26 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_gui_shell.py tests\test_data_viewer_package.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 434 passed |
+
+Known gaps:
+
+- This removes only the legacy main-window module from `gui/`. Remaining legacy `gui/` component groups and coupled `core/` modules still exist as separate migration/removal groups.
