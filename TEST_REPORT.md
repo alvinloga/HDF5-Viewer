@@ -1928,7 +1928,7 @@ Known gaps:
 
 ## DV-0803 Correlation/Covariance plugin - 2026-07-15
 
-Revision: working tree based on `b4768d6` before committing the DV-0803 implementation.
+Revision: implementation commit `8e5b0b688858062c20f9178b33e8aa0f5f4c8d29`.
 
 Implementation evidence:
 
@@ -1954,7 +1954,9 @@ Dual-platform CI verification after commit:
 
 | Check | Command/source | Observed result |
 |---|---|---|
-| GitHub Actions run | pending after DV-0803 commit/push | pending |
+| GitHub Actions run | `gh run view 29384243369 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `8e5b0b688858062c20f9178b33e8aa0f5f4c8d29`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29384243369 |
+| Windows quality | GitHub Actions job `87254090309` | success; started `2026-07-15T02:30:22Z`, completed `2026-07-15T02:32:22Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Ubuntu quality | GitHub Actions job `87254090327` | success; started `2026-07-15T02:30:22Z`, completed `2026-07-15T02:32:18Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
 
 Known gaps:
 
