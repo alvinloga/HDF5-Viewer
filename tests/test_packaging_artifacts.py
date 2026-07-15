@@ -419,3 +419,19 @@ def test_legacy_core_slicer_module_is_removed() -> None:
         "tests/test_gui_base_views.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_core_async_loader_module_is_removed() -> None:
+    """DV-1008 removes the obsolete synchronous legacy async-loader shim."""
+
+    assert not (PROJECT_ROOT / "core" / "async_loader.py").exists()
+
+    for retained_target_path in (
+        "data_viewer/tasks/cancellation.py",
+        "data_viewer/tasks/dispatcher.py",
+        "data_viewer/tasks/state.py",
+        "data_viewer/app/documents.py",
+        "tests/test_task_lifecycle.py",
+        "tests/test_document_controller.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()
