@@ -1964,7 +1964,7 @@ Known gaps:
 
 ## DV-0804 Dataset Compare plugin - 2026-07-15
 
-Revision: working tree based on `8ff8744` before committing the DV-0804 implementation.
+Revision: implementation commit `6cd5798b491194d59dbfdf4198e7e417600e8d0c`.
 
 Implementation evidence:
 
@@ -1990,7 +1990,9 @@ Dual-platform CI verification after commit:
 
 | Check | Command/source | Observed result |
 |---|---|---|
-| GitHub Actions run | pending after DV-0804 commit/push | pending |
+| GitHub Actions run | `gh run view 29384924387 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `6cd5798b491194d59dbfdf4198e7e417600e8d0c`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29384924387 |
+| Windows quality | GitHub Actions job `87256081306` | success; started `2026-07-15T02:47:03Z`, completed `2026-07-15T02:49:10Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Ubuntu quality | GitHub Actions job `87256081369` | success; started `2026-07-15T02:47:01Z`, completed `2026-07-15T02:48:34Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
 
 Known gaps:
 
