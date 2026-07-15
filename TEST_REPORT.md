@@ -3483,3 +3483,31 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the GUI-coupled legacy built-in plugin implementations. The legacy `plugins/base.py` API and package initializer remain for a separate removal slice after their import/reference audit is recorded.
+
+## DV-1008 legacy plugins package removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `plugins/__init__.py` and `plugins/base.py`, completing removal of the old root `plugins/` package after the built-in and external subpackages were removed in prior DV-1008 slices.
+- The removed legacy API depended on `core.datasource` and exposed Qt widget-producing plugin contracts, which conflicts with Plugin API v1's GUI-independent manifest/runner/result model.
+- Added `tests/test_packaging_artifacts.py::test_legacy_plugins_package_is_removed`, which asserts the old root `plugins/` package stays absent and retained target Plugin API v1 files plus `docs/PLUGIN_API.md` remain present.
+- Updated README, target architecture, migration inventory, and changelog wording so only `core/` and `gui/` remain current legacy migration inputs.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy plugins package removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_plugins_package_is_removed -q` | failed as expected before implementation because `plugins/` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_plugins_package_is_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_plugin_registry.py tests\test_plugin_runner.py tests\test_plugin_results.py tests\test_plugin_compatibility_parameters.py -q` | 31 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_plugin_registry.py tests\test_plugin_runner.py tests\test_plugin_results.py tests\test_plugin_compatibility_parameters.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 427 passed |
+
+Known gaps:
+
+- This completes legacy `plugins/` package removal. Legacy product packages `core/` and `gui/` still exist as migration reference inputs until their individual removal groups are proven.

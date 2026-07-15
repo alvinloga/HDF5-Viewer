@@ -359,3 +359,18 @@ def test_legacy_builtin_plugins_package_is_removed() -> None:
         "tests/test_builtin_heatmap_plugins.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_plugins_package_is_removed() -> None:
+    """DV-1008 removes the obsolete legacy plugin API package."""
+
+    assert not (PROJECT_ROOT / "plugins").exists()
+
+    for retained_target_path in (
+        "data_viewer/plugins/api.py",
+        "data_viewer/plugins/manifests.py",
+        "data_viewer/plugins/registry.py",
+        "data_viewer/plugins/runner.py",
+        "docs/PLUGIN_API.md",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()

@@ -15,7 +15,7 @@ Current source areas:
 | `main.py` | historical entry point and legacy app bootstrap | removed in DV-1008; target launch is `python -m data_viewer` |
 | `core/` | HDF5-centric loading/models/cache | extract behavior; replace through DataSource/domain contracts |
 | `gui/` | shell, tabs, trees, views | retain useful interaction patterns; rebuild against controllers/state |
-| `plugins/` | legacy plugin base/API; built-in analyses/plots coupled to current app | legacy built-ins removed in DV-1008 after Plugin API v1 parity coverage; remove remaining base/API separately |
+| `plugins/` | legacy plugin base/API and GUI-coupled built-in analyses/plots | removed in DV-1008 after Plugin API v1 parity coverage |
 | `services/` | legacy export/search services | removed in DV-1008 after target export queue/exporting/navigation coverage |
 | `utils/` | empty compatibility package by DV-1008 review | removed in DV-1008; no target code depends on it |
 | `config.json` | repository-local settings | migrate to versioned platform config |
