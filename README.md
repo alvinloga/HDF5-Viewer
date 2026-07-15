@@ -118,6 +118,7 @@ Data Viewer 使用专业、安静、高信息密度的桌面工具语言：
 | [UI/UX 规范](docs/UI_UX_SPEC.md) | 信息架构、设计系统、状态和无障碍 |
 | [测试规范](docs/TESTING.md) | 测试层级、CI、性能预算 |
 | [依赖策略](docs/DEPENDENCIES.md) | 运行时/开发依赖和安全规则 |
+| [配置规范](docs/CONFIGURATION.md) | 平台配置、schema 和 legacy config 迁移 |
 | [迁移策略](docs/MIGRATION.md) | 从旧版 HDF5 Viewer 增量迁移及删除条件 |
 | [ADR 索引](docs/decisions/README.md) | 已接受架构决策 |
 | [文档总索引](docs/INDEX.md) | 权威顺序和按任务必读文档 |

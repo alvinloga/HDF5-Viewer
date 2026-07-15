@@ -80,6 +80,7 @@ NetCDF and Zarr are explicitly outside the first-release scope. See [Format Supp
 | [UI/UX Spec](docs/UI_UX_SPEC.md) | Information architecture, design system, states, accessibility |
 | [Testing](docs/TESTING.md) | Test levels, CI, performance budgets |
 | [Dependencies](docs/DEPENDENCIES.md) | Runtime, development, and license policy |
+| [Configuration](docs/CONFIGURATION.md) | Platform config, schema, and legacy config migration |
 | [Migration](docs/MIGRATION.md) | Incremental legacy migration and removal criteria |
 | [ADRs](docs/decisions/README.md) | Accepted architecture decisions |
 | [Documentation Index](docs/INDEX.md) | Authority order and task-specific reading map |

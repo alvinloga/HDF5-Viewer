@@ -7,9 +7,17 @@ from .config import (
     CacheConfig,
     LoadConfigResult,
     LoggingConfig,
+    UIConfig,
     load_config,
     merge_and_save_config,
     save_config,
+)
+from .config_migration import (
+    LegacyConfigDecision,
+    LegacyConfigMigrationResult,
+    LegacyConfigPreview,
+    apply_legacy_config_migration,
+    preview_legacy_config,
 )
 from .logging import LogRedactor, LoggerPrimitives, RedactingFormatter, configure_logging
 from .paths import (
@@ -47,17 +55,23 @@ __all__ = [
     "CACHE_ENV_VAR",
     "DEFAULT_LIMITS",
     "LoadConfigResult",
+    "LegacyConfigDecision",
+    "LegacyConfigMigrationResult",
+    "LegacyConfigPreview",
     "LogRedactor",
     "LOG_DIR_NAME",
     "LOG_ENV_VAR",
     "LoggerPrimitives",
     "LoggingConfig",
+    "UIConfig",
     "RedactingFormatter",
     "configure_logging",
     "ensure_app_directories",
     "load_config",
     "merge_and_save_config",
     "platform_files",
+    "apply_legacy_config_migration",
+    "preview_legacy_config",
     "resolve_app_paths",
     "save_config",
 ]

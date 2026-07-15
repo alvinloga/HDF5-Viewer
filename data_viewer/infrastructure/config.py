@@ -52,6 +52,58 @@ def _expect_mapping(value: Any, label: str) -> Mapping[str, Any]:
 
 
 @dataclass(frozen=True, slots=True)
+class UIConfig:
+    """Application UI preference configuration."""
+
+    theme: str = "light"
+    sidebar_width: int = 280
+    secondary_panel_width: int = 280
+    secondary_panel_visible: bool = False
+
+    def __post_init__(self) -> None:
+        theme = str(self.theme or "light").lower()
+        if theme not in {"light", "dark", "system"}:
+            raise ValueError("theme must be light, dark, or system")
+        object.__setattr__(self, "theme", theme)
+        object.__setattr__(
+            self,
+            "sidebar_width",
+            _expect_non_negative_int(self.sidebar_width, "sidebar_width"),
+        )
+        object.__setattr__(
+            self,
+            "secondary_panel_width",
+            _expect_non_negative_int(self.secondary_panel_width, "secondary_panel_width"),
+        )
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "theme": self.theme,
+            "sidebar_width": self.sidebar_width,
+            "secondary_panel_width": self.secondary_panel_width,
+            "secondary_panel_visible": self.secondary_panel_visible,
+        }
+
+    @classmethod
+    def from_json(cls, value: Mapping[str, Any] | None) -> "UIConfig":
+        if value is None:
+            return cls()
+        data = _expect_mapping(value, "ui")
+        return cls(
+            theme=str(data.get("theme", cls().theme)),
+            sidebar_width=_expect_non_negative_int(
+                data.get("sidebar_width", cls().sidebar_width),
+                "sidebar_width",
+            ),
+            secondary_panel_width=_expect_non_negative_int(
+                data.get("secondary_panel_width", cls().secondary_panel_width),
+                "secondary_panel_width",
+            ),
+            secondary_panel_visible=bool(data.get("secondary_panel_visible", False)),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class CacheConfig:
     """Cache limit configuration."""
 
@@ -179,6 +231,7 @@ class AppConfig:
     """Versioned and validated application configuration value."""
 
     schema_version: int = CONFIG_SCHEMA_VERSION
+    ui: UIConfig = field(default_factory=UIConfig)
     cache: CacheConfig = field(default_factory=CacheConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
@@ -194,6 +247,7 @@ class AppConfig:
     def to_json(self) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
+            "ui": self.ui.to_json(),
             "cache": self.cache.to_json(),
             "logging": self.logging.to_json(),
             "updated_at_utc": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
@@ -210,6 +264,9 @@ class AppConfig:
             raise ValueError(f"Unsupported config schema version: {schema_version}")
         return cls(
             schema_version=schema_version,
+            ui=UIConfig.from_json(
+                data.get("ui") if isinstance(data.get("ui"), Mapping) else None
+            ),
             cache=CacheConfig.from_json(
                 data.get("cache") if isinstance(data.get("cache"), Mapping) else None
             ),
