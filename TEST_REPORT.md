@@ -2810,3 +2810,34 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - This removes obsolete legacy release entrypoints only. Legacy application runtime modules and historical regression tests remain until their individual migration/removal groups satisfy the full removal criteria.
+
+## DV-1008 PyPA build module shadowing guard slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- `build.py` remains the root `python build.py` Data Viewer PyInstaller release front end.
+- When the same file is resolved by `python -m build`, it now removes the repository root from module resolution and delegates to the installed PyPA `build` package instead of parsing Data Viewer release-wrapper arguments.
+- If PyPA `build` is absent from the local environment, `python -m build` now reports a clean missing-dev-dependency message rather than a misleading `build.py` argparse error or traceback.
+- `tests/test_packaging_artifacts.py` records the regression boundary so the standard wheel/sdist command cannot silently fall back into the Data Viewer PyInstaller wrapper again.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial PyPA build shadowing regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_root_build_wrapper_does_not_shadow_pypa_build_module -q` | failed as expected before implementation because `python -m build --version` entered root `build.py` and rejected `--version` |
+| Packaging contract tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py -q` | 6 passed |
+| Standard build-module smoke in stale local venv | `venv\Scripts\python.exe -m build --version` | failed cleanly with `PyPA build is not installed; install the project dev dependencies or run \`uv build --no-sources\`.`; this venv lacks the PyPA `build` package |
+| Data Viewer build front-end help smoke | `venv\Scripts\python.exe build.py --help` | printed Data Viewer release artifact usage |
+| Locked-environment command availability check | `uv run --locked python -m build --version` | not run locally because `uv` is not on this Windows shell PATH; GitHub Actions remains the authoritative locked-environment verification |
+| Release/package related tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_data_viewer_package.py tests\test_release_evidence.py tests\test_installed_artifact_smoke.py -q` | 20 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check build.py tools tests\test_packaging_artifacts.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy build.py tools\build_pyinstaller_artifact.py` | passed; no issues in 2 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q build.py tools data_viewer .github\scripts` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 544 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
+
+Known gaps:
+
+- This is a command-resolution guard only. It does not mark DV-1008 complete; remaining legacy runtime modules and historical regression tests still require separate migration/removal evidence.

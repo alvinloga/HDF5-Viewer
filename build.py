@@ -9,6 +9,7 @@ builder used by CI.
 from __future__ import annotations
 
 import argparse
+import runpy
 import shutil
 import subprocess
 import sys
@@ -29,6 +30,48 @@ def _platform_name() -> str:
 
 def _run(command: list[str]) -> None:
     subprocess.run(command, cwd=PROJECT_ROOT, check=True)
+
+
+def _is_project_root_path(path_entry: str) -> bool:
+    candidate = Path(path_entry or ".")
+    try:
+        return candidate.resolve() == PROJECT_ROOT
+    except OSError:
+        return False
+
+
+def _run_pypa_build(argv: list[str]) -> int:
+    """Delegate ``python -m build`` to the installed PyPA build package.
+
+    The repository keeps a root ``build.py`` for the legacy-compatible
+    ``python build.py`` release command.  Without this guard, Python resolves
+    ``python -m build`` to this file instead of the standard build frontend.
+    """
+
+    original_argv = sys.argv[:]
+    original_path = sys.path[:]
+    try:
+        sys.argv = ["python -m build", *argv]
+        sys.path = [entry for entry in sys.path if not _is_project_root_path(entry)]
+        sys.modules.pop("build", None)
+        runpy.run_module("build", run_name="__main__", alter_sys=True)
+    except ImportError as exc:
+        if exc.name == "build" or str(exc) == "No module named build":
+            print(
+                "PyPA build is not installed; install the project dev dependencies "
+                "or run `uv build --no-sources`.",
+                file=sys.stderr,
+            )
+            return 1
+        raise
+    except SystemExit as exc:
+        if isinstance(exc.code, int):
+            return exc.code
+        return 0 if exc.code is None else 1
+    finally:
+        sys.argv = original_argv
+        sys.path = original_path
+    return 0
 
 
 def _clean() -> None:
@@ -78,4 +121,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    module_spec = globals().get("__spec__")
+    if module_spec is not None and getattr(module_spec, "name", None) == "build":
+        raise SystemExit(_run_pypa_build(sys.argv[1:]))
     raise SystemExit(main())

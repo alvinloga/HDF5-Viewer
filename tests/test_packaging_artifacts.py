@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -74,3 +76,22 @@ def test_legacy_pyinstaller_build_entrypoints_are_removed() -> None:
     assert "tools/build_pyinstaller_artifact.py" in text
     for legacy_token in ("HDF5Viewer", "HDF5Viewer.spec", "main.py", "hdf5viewer_build"):
         assert legacy_token not in text
+
+
+def test_root_build_wrapper_does_not_shadow_pypa_build_module() -> None:
+    """DV-1008 keeps the standard wheel/sdist build entry point usable."""
+
+    result = subprocess.run(
+        [sys.executable, "-m", "build", "--version"],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "build.py: error" not in result.stderr
+    assert "Traceback" not in result.stderr
+    if result.returncode == 0:
+        assert "build " in result.stdout
+    else:
+        assert "PyPA build is not installed" in result.stderr
