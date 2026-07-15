@@ -1650,7 +1650,16 @@ Local Windows verification in the repository `venv`:
 | Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 89 source files |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 425 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Implementation commit | `git push origin codex/data-viewer-foundation` | pushed `02a6d63ca826bc8e76de96725149f75df2068a04` |
+| GitHub Actions run | `gh run watch 29377713330 --exit-status --interval 10` | completed successfully |
+| Run metadata | `gh run view 29377713330 --json status,conclusion,headSha,jobs,url` | head SHA `02a6d63ca826bc8e76de96725149f75df2068a04`; run URL `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29377713330` |
+| Windows quality job | GitHub Actions run `29377713330` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m52s |
+| Ubuntu quality job | GitHub Actions run `29377713330` | locked install, direct dependency smoke, target lint/type, compile, collection, full offscreen regression suite, sdist/wheel build, and evidence upload all passed in 1m31s |
+
 Known gaps:
 
-- DV-0701 is not checked until Windows/Linux CI passes for the implementation commit.
 - Compatibility evaluation, parameter forms, plugin runner/input access, typed result validation, and reference plugin conformance are later P7 tasks.

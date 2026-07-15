@@ -427,7 +427,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 
 ## P7 — Plugin platform
 
-### [ ] DV-0701 Implement plugin manifest schema and built-in registry
+### [x] DV-0701 Implement plugin manifest schema and built-in registry
 
 - Depends: DV-0105, DV-0608.
 - Read: Plugin API §2–3, §11, ADR-005.
