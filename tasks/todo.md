@@ -605,7 +605,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: one version source; every current surface says Data Viewer; remaining HDF5 Viewer occurrences are explicitly historical; git tags unchanged.
 - Verify: case-insensitive repository/artifact/runtime scan and version consistency test.
 
-### [ ] DV-1004 Migrate platform configuration and retire repository runtime config
+### [x] DV-1004 Migrate platform configuration and retire repository runtime config
 
 - Depends: DV-0107, DV-1003.
 - Read: Migration §6.

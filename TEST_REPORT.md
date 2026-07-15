@@ -2544,3 +2544,38 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - DV-1003 intentionally labels rather than deletes legacy GUI/build entrypoints. DV-1004 through DV-1008 own platform config migration, Data Viewer artifact builds, installed smoke validation, release assembly, and final legacy removal.
+
+## DV-1004 Platform configuration migration - 2026-07-15
+
+Revision: implementation commit `36aa5675fe31cffbbd6d34c8c2d6477808b2bc1a`.
+
+Implementation evidence:
+
+- `AppConfig` now includes versioned UI preferences for theme, sidebar width, secondary panel width, and secondary panel visibility.
+- `data_viewer.infrastructure.config_migration` previews and explicitly applies legacy repository `config.json` migration without modifying or deleting the legacy file.
+- Legacy migration maps known UI keys, reports unknown keys as warnings, rejects corrupt legacy JSON safely, supports explicit decline, and blocks stale legacy config from overwriting an existing target config.
+- Target bootstrap now prepares platform config/cache/log paths through `platformdirs`, loads target config, and creates a legacy migration preview by default without silently writing repository config.
+- `docs/CONFIGURATION.md` records target config schema, platform locations, test overrides, and legacy migration rules.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing config migration tests | `venv\Scripts\python.exe -m pytest tests\test_infrastructure_config.py -q` | failed as expected before implementation: `UIConfig` and `prepare_runtime_configuration` were missing |
+| Config/path/package subset | `venv\Scripts\python.exe -m pytest tests\test_infrastructure_config.py tests\test_infrastructure_paths.py tests\test_data_viewer_package.py -q` | 21 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\infrastructure data_viewer\gui\app.py tests\test_infrastructure_config.py tests\test_infrastructure_paths.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 110 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 531 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29398823919 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `36aa5675fe31cffbbd6d34c8c2d6477808b2bc1a`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29398823919 |
+| Ubuntu quality | GitHub Actions job `87298417557` | success; started `2026-07-15T07:52:49Z`, completed `2026-07-15T07:55:02Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87298417561` | success; started `2026-07-15T07:52:50Z`, completed `2026-07-15T07:55:29Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- DV-1004 prepares and tests the non-destructive migration machinery. A later UI task should surface the migration preview/decision to users instead of applying migration automatically, and DV-1008 still owns final legacy config write removal from the old GUI path.
