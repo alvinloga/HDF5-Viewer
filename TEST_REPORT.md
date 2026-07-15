@@ -2142,3 +2142,39 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - DV-0809 still needs final Checkpoint 8 catalog evidence. Deeper renderer integration can continue in later UI tasks.
+
+## DV-0809 Checkpoint 8 plugin catalog evidence - 2026-07-15
+
+Revision: documentation-only checkpoint ledger update over baseline head `09f2b34b23fb60c19333ac7da649af5d7f2f430d`.
+
+Checkpoint scope:
+
+- P8 statistics/analysis catalog completed: Dataset Profile, Descriptive Statistics, Distribution Summary, Correlation/Covariance, and Dataset Compare.
+- P8 visualization/catalog views completed: line, scatter, histogram, box, multidimensional slice navigator, correlation heatmap, missing-data map, and NIfTI orthogonal viewer/inspector.
+- All P8 catalog entries keep renderer/application ownership boundaries: plugins return declarative result payloads and metadata; GUI views consume bounded payloads and do not own source handles.
+- Sampling is explicit for distribution, plot, and missing-data map paths; result provenance records sampled/full status.
+- Large-input boundaries are covered through chunked `InputAccess`, variable-count budgets, point/observation sampling, result materialization budgets, and NIfTI bounded proxy reads.
+
+Checkpoint local evidence:
+
+| Evidence area | Command/source | Observed result |
+|---|---|---|
+| Latest full local suite | `venv\Scripts\python.exe -m pytest -q` | 482 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Latest target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 100 source files |
+| Latest focused P8 heatmap subset | `venv\Scripts\python.exe -m pytest tests\test_builtin_heatmap_plugins.py tests\test_builtin_plot_plugins.py tests\test_builtin_correlation_covariance_plugin.py tests\test_plugin_results.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py tests\test_plugin_runner.py -q` | 48 passed |
+| Latest focused GUI/NIfTI subset | `venv\Scripts\python.exe -m pytest tests\test_gui_base_views.py tests\test_nifti_adapter.py tests\test_gui_shell.py tests\test_gui_i18n_accessibility.py -q` | 39 passed |
+| Latest wheel/package smoke | `venv\Scripts\python.exe -m pip wheel . -w .tmp-wheel --no-deps --no-build-isolation --no-cache-dir`; inspect wheel with `zipfile`; remove `.tmp-wheel` | required P8 plugin manifests and modules present when checked during DV-0805 and DV-0807 |
+
+Checkpoint dual-platform evidence:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Final pre-checkpoint GitHub Actions run | `gh run view 29388764156 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `09f2b34b23fb60c19333ac7da649af5d7f2f430d`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29388764156 |
+| Ubuntu quality | GitHub Actions job `87267404774` | success; started `2026-07-15T04:21:07Z`, completed `2026-07-15T04:22:38Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87267404805` | success; started `2026-07-15T04:21:08Z`, completed `2026-07-15T04:23:17Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Checkpoint status:
+
+- `tasks/todo.md` marks DV-0801 through DV-0809 complete.
+- Checkpoint 8 exits with no known Critical or Required review issue recorded in this report.
+- Remaining work moves to P9 workspace, comparison, and usability tasks.

@@ -521,7 +521,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: axial/coronal/sagittal linked crosshairs; correct orientation labels; voxel/world coordinates; 4D volume index; window/level; raw/scaled values; header/affine inspection; no source resampling.
 - Verify: known affine/orientation/coordinate goldens and GUI navigation/screenshots.
 
-### [ ] DV-0809 Record Checkpoint 8 plugin catalog evidence
+### [x] DV-0809 Record Checkpoint 8 plugin catalog evidence
 
 - Depends: DV-0801 through DV-0808.
 - Verify: all conformance/numerical/render/performance/platform tests and ledger update.
