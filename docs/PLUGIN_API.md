@@ -11,7 +11,8 @@ Current implementation status:
 - DV-0701 implements the public type skeleton in `data_viewer.plugins.api`, strict manifest validation in `data_viewer.plugins.manifests`, and built-in registry discovery/lazy loading in `data_viewer.plugins.registry`.
 - DV-0702 implements the first compatibility evaluator in `data_viewer.plugins.compatibility`, the supported parameter-schema/default/value validator in `data_viewer.plugins.parameters`, and a standard keyboard-accessible Qt parameter form in `data_viewer.gui.plugin_forms`.
 - DV-0703 implements synchronous runner-core task integration and budgeted document-backed `InputAccess` in `data_viewer.plugins.runner`, including bounded reads/chunks, cooperative cancellation, stale-result rejection, and safe plugin exception mapping.
-- Result validation/materialization and reference plugin conformance remain later P7 tasks and must not be claimed as implemented by the presence of the API skeleton.
+- DV-0704 implements typed result payload validators, declarative `PlotSpec`, provenance/export records, and bounded in-memory array result materialization in `data_viewer.plugins.results`.
+- Reference plugin conformance remains later P7 work and must not be claimed as implemented by the presence of the API skeleton.
 
 ## 2. Package boundary
 
@@ -206,17 +207,25 @@ DV-0703's runner core is intentionally synchronous and UI-free so it can be test
 
 JSON-safe labeled metrics with units, descriptions, and warning status.
 
+DV-0704 validates summary payloads as JSON-safe mappings before they may reach workspace/export UI.
+
 ### Table
 
 A typed column schema plus bounded records or a Data Viewer-owned tabular result store. pandas objects do not cross the public boundary.
+
+DV-0704 provides `TableResultPayload`/`ResultColumn` for bounded JSON-safe table results.
 
 ### Array/image
 
 An ndarray plus axes, coordinates, units, value semantics, and source-selection mapping. Large results use a Data Viewer-owned temporary result store.
 
+DV-0704 provides `ArrayResultPayload`; object arrays are rejected and oversized arrays are materialized only through a bounded result store.
+
 ### Plot
 
 A declarative `PlotSpec`, not a Matplotlib `Figure`. Required v1 marks: line, scatter, histogram, box, heatmap, image. The renderer owns theme, accessibility, export, and lifecycle.
+
+DV-0704 provides declarative `PlotSpec`/`PlotMark` validation and accessible summaries, but concrete renderer widgets remain future UI integration work.
 
 ### Collection
 

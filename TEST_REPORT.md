@@ -1739,3 +1739,31 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Result schema validation/materialization, GUI/thread-pool scheduling, reference plugin conformance, and full multi-input result semantics remain later P7 tasks.
+
+## DV-0704 typed plugin results, PlotSpec, and provenance - 2026-07-15
+
+Revision: working tree based on `959a076` before committing the DV-0704 implementation.
+
+Implementation evidence:
+
+- `data_viewer/plugins/results.py` adds typed v1 result payloads for summary, table, array/image, declarative plot specs, and collections.
+- Summary and table results must be JSON-safe; table rows must match declared columns; array/image results reject object dtype and require axes/source-selection provenance; image payloads must be 2D.
+- `PlotSpec`/`PlotMark` are declarative data objects only, validate supported mark kinds and finite equal-length x/y values, and provide accessible summaries for future renderers.
+- `ValidatedPluginResult.to_export_record()` includes result ID, plugin ID/version/API version, inputs, parameters, kind, materialization, computation scope, sampled flag, and warnings for workspace/export provenance.
+- `BoundedResultStore` provides bounded in-memory array materialization for oversized array-like results until persistent result storage is introduced.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing result test | `venv\Scripts\python.exe -m pytest tests\test_plugin_results.py -q` | failed as expected before implementation: `ModuleNotFoundError: No module named 'data_viewer.plugins.results'` |
+| Focused result tests | `venv\Scripts\python.exe -m pytest tests\test_plugin_results.py -q` | 4 passed |
+| Plugin P7 regression subset | `venv\Scripts\python.exe -m pytest tests\test_plugin_results.py tests\test_plugin_runner.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py -q` | 31 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\plugins tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py tests\test_plugin_runner.py tests\test_plugin_results.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\plugins tests\test_plugin_results.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 94 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 440 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- DV-0704 is not checked complete until the implementation commit has green Windows and Ubuntu CI evidence.
