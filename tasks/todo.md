@@ -621,7 +621,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: clean locked builds; Qt/native libs/resources/translations/icons/schemas/plugins/licenses included; names correct; no NetCDF/Zarr; deterministic enough for checksum tracking.
 - Verify: CI build and extraction/import/launch smoke on both platforms.
 
-### [ ] DV-1006 Add installed-artifact functional smoke and release chain
+### [x] DV-1006 Add installed-artifact functional smoke and release chain
 
 - Depends: DV-1005.
 - Scope: packaged smoke harness/fixtures/workflow/release job dependencies.

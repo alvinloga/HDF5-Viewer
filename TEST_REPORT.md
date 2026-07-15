@@ -2618,3 +2618,40 @@ Known gaps:
 
 - DV-1005 proves clean CI artifact construction and packaged `--version` launch smoke. DV-1006 owns richer installed-artifact functional workflows for opening representative HDF5/CSV/NIfTI/gzip/workspace data, running plugins, exporting, screenshots/logs, and release-chain blocking.
 - DV-1007 owns checksums, SBOM, license notices, security evidence, and path/credential leakage review before public release publication.
+
+## DV-1006 installed-artifact functional smoke and release chain - 2026-07-15
+
+Revision: implementation commit `663b80c743dc024eef7633984539890c2347acec`.
+
+Implementation evidence:
+
+- `data_viewer/installed_smoke.py` implements the hidden installed-artifact workflow used by packaged executables through `data-viewer --ci-smoke`.
+- The workflow creates representative HDF5, CSV, gzip-wrapped CSV, NIfTI, and `.dvw` workspace fixtures; opens and reads them through the target source registry; runs the packaged `org.dataviewer.dataset_profile` reference plugin; exports the plugin result through `ExportService`; closes all opened documents; and writes `installed-smoke-report.json` plus `installed-smoke-screenshot.png`.
+- `.github/scripts/smoke_pyinstaller_artifact.py` still verifies packaged `--version`, and now optionally invokes the functional smoke against the built executable.
+- `.github/workflows/ci.yml` runs `Functional smoke installed Data Viewer artifact` after the PyInstaller build and before package artifact upload for both Windows and Ubuntu.
+- `.github/workflows/build.yml` keeps release gating dependent on the reusable quality workflow and adds a dry-run tag input for release-candidate evidence.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial installed-smoke contract tests | `venv\Scripts\python.exe -m pytest tests\test_installed_artifact_smoke.py -q` | failed as expected before implementation because `data_viewer.installed_smoke` did not exist |
+| Installed-smoke target tests | `venv\Scripts\python.exe -m pytest tests\test_installed_artifact_smoke.py tests\test_packaging_artifacts.py tests\test_data_viewer_package.py -q` | 13 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer .github\scripts tools tests\test_installed_artifact_smoke.py tests\test_packaging_artifacts.py tests\test_data_viewer_package.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py .github\scripts\smoke_pyinstaller_artifact.py tools\build_pyinstaller_artifact.py` | passed; no issues in 113 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools core gui plugins services utils main.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 537 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29403460120 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `663b80c743dc024eef7633984539890c2347acec`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29403460120 |
+| Ubuntu quality | GitHub Actions job `87313221250` | success; started `2026-07-15T09:09:46Z`, completed `2026-07-15T09:14:15Z`; full offscreen regression suite, wheel/sdist build, PyInstaller artifact build, packaged `--version` smoke, `Functional smoke installed Data Viewer artifact`, and artifact uploads passed |
+| Windows quality | GitHub Actions job `87313221143` | success; started `2026-07-15T09:09:46Z`, completed `2026-07-15T09:15:14Z`; full offscreen regression suite, wheel/sdist build, PyInstaller artifact build, packaged `--version` smoke, `Functional smoke installed Data Viewer artifact`, and artifact uploads passed |
+| GitHub Actions artifacts | `gh api repos/alvinloga/HDF5-Viewer/actions/runs/29403460120/artifacts --jq '.artifacts[] | [.name,.size_in_bytes,.expired] | @tsv'` | uploaded non-expired artifacts `data-viewer-package-Windows-29403460120-1` (178350340 bytes), `data-viewer-package-Ubuntu-29403460120-1` (218863210 bytes), plus matching quality evidence artifacts containing installed-smoke reports and screenshots |
+
+Known gaps:
+
+- DV-1006 proves installed-artifact functional smoke and release-chain dependency on the reusable quality workflow. DV-1007 still owns checksums, SBOM, license notices, dependency/security evidence, and path/credential leakage review before public binary release.
+- The public release workflow remains intentionally blocked until every v1 release gate is complete and the PyQt distribution licensing decision is resolved.
