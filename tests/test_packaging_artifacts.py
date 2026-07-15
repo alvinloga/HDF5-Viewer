@@ -159,3 +159,15 @@ def test_legacy_core_test_manual_runner_is_removed() -> None:
     assert "Legacy HDF5 Viewer - Core Module Tests" not in core_test
     assert "def main(" not in core_test
     assert '__name__ == "__main__"' not in core_test
+
+
+def test_legacy_integration_test_manual_runner_is_removed() -> None:
+    """DV-1008 keeps legacy integration coverage under pytest collection only."""
+
+    integration_test = (PROJECT_ROOT / "tests" / "test_integration.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Legacy HDF5 Viewer - Integration Tests" not in integration_test
+    assert "def main(" not in integration_test
+    assert '__name__ == "__main__"' not in integration_test

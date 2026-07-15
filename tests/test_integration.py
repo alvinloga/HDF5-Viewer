@@ -3,11 +3,9 @@
 
 import sys
 import os
-import tempfile
 import numpy as np
 import h5py
 import pytest
-from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -175,9 +173,6 @@ def test_plugin_integration():
     """测试插件集成"""
     from core.registry import PluginManager
     from plugins.builtin.statistics import StatisticsPlugin
-    from plugins.builtin.histogram import HistogramPlugin
-    from plugins.builtin.line_chart import LineChartPlugin
-    from plugins.builtin.heatmap import HeatmapPlugin
     from core.datasource import DataMeta
 
     # 加载插件
@@ -266,43 +261,3 @@ def test_event_bus_integration():
     # 清理
     bus.off(EventBus.FILE_OPENED, handler1)
     bus.off(EventBus.NODE_SELECTED, handler2)
-
-
-def main():
-    """运行所有测试"""
-    print("=" * 60)
-    print("Legacy HDF5 Viewer - Integration Tests")
-    print("=" * 60)
-
-    tests = [
-        test_file_operations,
-        test_slicer_integration,
-        test_cache_integration,
-        test_plugin_integration,
-        test_export_integration,
-        test_event_bus_integration,
-    ]
-
-    passed = 0
-    failed = 0
-
-    for test in tests:
-        try:
-            test()
-            passed += 1
-        except Exception as e:
-            failed += 1
-            print(f"  [FAIL] {test.__name__}: {e}")
-            import traceback
-            traceback.print_exc()
-
-    print("\n" + "=" * 60)
-    print(f"Results: {passed} passed, {failed} failed")
-    print("=" * 60)
-
-    return failed == 0
-
-
-if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)
