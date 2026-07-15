@@ -8,7 +8,7 @@ Data Viewer is a cross-platform desktop scientific data workbench for researcher
 
 This repository is preparing for an architectural migration.
 
-- `main.py`, `core/`, `gui/`, `plugins/`, and `services/` are the legacy HDF5 Viewer implementation.
+- `core/`, `gui/`, `plugins/`, and `services/` are the legacy HDF5 Viewer implementation; the root legacy `main.py` entrypoint was removed in DV-1008.
 - The legacy application is migration input. It does not implement the complete Data Viewer specification.
 - The target contract lives in `docs/`, `ARCHITECTURE.md`, and `tasks/`.
 - Future changes must migrate behavior incrementally and preserve a testable application after every task.
@@ -97,7 +97,7 @@ Windows PowerShell:
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python main.py
+python -m data_viewer
 ```
 
 Linux:
@@ -106,10 +106,10 @@ Linux:
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-QT_QPA_PLATFORM=xcb python main.py
+QT_QPA_PLATFORM=xcb python -m data_viewer
 ```
 
-The target commands will be established in Phase 0 and then maintained in `docs/PRODUCT_SPEC.md`.
+The target commands are maintained in `docs/PRODUCT_SPEC.md`.
 
 ## Current verification baseline
 

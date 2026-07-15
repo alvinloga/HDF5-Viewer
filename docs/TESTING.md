@@ -47,15 +47,17 @@ uv run mypy data_viewer
 uv run python -m compileall -q data_viewer
 ```
 
-Until migration, legacy commands remain:
+Current target commands:
 
 ```bash
 python -m pytest --collect-only -q
-python -m pytest tests/test_core.py -q
-python -m compileall -q core gui plugins services utils main.py
+python -m pytest -q
+python -m compileall -q data_viewer tests
 ```
 
-Phase 0 must make the full collection command succeed before feature work proceeds.
+Legacy runtime paths are retained only as migration reference inputs until their
+remaining parity tests are removed or ported. They are no longer application
+entrypoints or release compile targets.
 
 ## 5. Required fixture families
 

@@ -31,7 +31,8 @@ in `docs/FORMAT_SUPPORT.md`.
 
 ## Evidence summary
 
-Local Windows evidence on the repository `venv`:
+Historical local Windows evidence on the repository `venv` before DV-1008 removed
+the root legacy `main.py` entrypoint:
 
 - `venv\Scripts\python.exe -m pytest -q`: 364 passed, 1 skipped.
 - `venv\Scripts\python.exe -m ruff check data_viewer main.py core\registry.py gui\sidebar\folder_explorer.py tests\test_format_scope.py tests\test_nifti_adapter.py tests\test_gui_shell.py`: passed.

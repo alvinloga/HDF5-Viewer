@@ -12,7 +12,7 @@ Current source areas:
 
 | Legacy area | Role | Migration disposition |
 |---|---|---|
-| `main.py` | entry point and legacy app bootstrap | replace with thin target bootstrap after shell exists |
+| `main.py` | historical entry point and legacy app bootstrap | removed in DV-1008; target launch is `python -m data_viewer` |
 | `core/` | HDF5-centric loading/models/cache | extract behavior; replace through DataSource/domain contracts |
 | `gui/` | shell, tabs, trees, views | retain useful interaction patterns; rebuild against controllers/state |
 | `plugins/` | built-in analyses/plots coupled to current app | port one by one to Plugin API v1 |

@@ -23,7 +23,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 
 - Depends: none.
 - Read: Product Spec §2, Dependencies §1–4, Migration §3 Stage A.
-- Scope: `pyproject.toml`, `data_viewer/__init__.py`, `data_viewer/__main__.py`, minimal packaging metadata; keep legacy `main.py` runnable.
+- Scope: `pyproject.toml`, `data_viewer/__init__.py`, `data_viewer/__main__.py`, minimal packaging metadata; kept legacy `main.py` runnable at the time. Superseded by DV-1008, which removes the root legacy entrypoint.
 - Acceptance: one canonical package name/version source; Python 3.12 declared; runtime/dev/packaging groups separated; no NetCDF/Zarr dependency; `python -m data_viewer` exits with a clear development-shell message until bootstrap task.
 - Verify: `python -m pip install -e ".[dev]"`; `python -c "import data_viewer; print(data_viewer.__version__)"`; legacy compile command.
 
@@ -163,7 +163,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Depends: DV-0106, DV-0107.
 - Read: UI/UX §3–4, Migration Stage C.
 - Scope: `data_viewer/gui/app.py`, `shell.py`, `commands.py`, update `__main__.py`.
-- Acceptance: target app launches; Open command creates controller asynchronously; shell has navigation/workspace/inspector/bottom/status regions; legacy bootstrap remains available only as explicit development fallback.
+- Acceptance: target app launches; Open command creates controller asynchronously; shell has navigation/workspace/inspector/bottom/status regions; legacy bootstrap was available only as explicit development fallback at the time. Superseded by DV-1008, which removes that fallback.
 - Verify: offscreen launch/open/cancel/close tests; GUI-thread responsiveness probe.
 
 ### [x] DV-0205 Build HDF5 structure, array/table, and metadata vertical views

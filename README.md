@@ -8,7 +8,7 @@ Data Viewer 是面向科研人员、数据工程师和算法开发者的跨平�
 
 仓库目前处于架构重构准备阶段。
 
-- `main.py`、`core/`、`gui/`、`plugins/`、`services/` 是 legacy/旧版 HDF5 Viewer v0.3.1 之前的实现。
+- `core/`、`gui/`、`plugins/`、`services/` 是 legacy/旧版 HDF5 Viewer v0.3.1 之前的实现；根目录旧入口 `main.py` 已在 DV-1008 中移除。
 - 旧版只应视为迁移输入，不代表本文档描述的目标能力已经完成。
 - Data Viewer 的目标规范、公共接口和执行顺序已经写入 `docs/`、`ARCHITECTURE.md` 和 `tasks/`。
 - 后续实现必须按任务清单逐步迁移，不允许通过一次性重写跳过行为测试。
@@ -133,7 +133,7 @@ Data Viewer 使用专业、安静、高信息密度的桌面工具语言：
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python main.py
+python -m data_viewer
 ```
 
 Linux：
@@ -142,10 +142,10 @@ Linux：
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-QT_QPA_PLATFORM=xcb python main.py
+QT_QPA_PLATFORM=xcb python -m data_viewer
 ```
 
-目标开发环境和命令将在 Phase 0 建立，随后以 `docs/PRODUCT_SPEC.md` 中的命令为唯一准则。
+目标开发环境和命令以 `docs/PRODUCT_SPEC.md` 中的命令为唯一准则。
 
 ## 当前验证基线
 

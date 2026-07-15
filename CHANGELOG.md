@@ -98,6 +98,7 @@ All notable Data Viewer changes are recorded here.
 - Removed the obsolete manual script runner from `tests/test_phase1.py`; retained legacy Phase 1 GUI smoke coverage now runs only through pytest collection.
 - Removed the obsolete manual script runner from `tests/test_gui_interaction.py`; retained legacy GUI interaction coverage now runs only through pytest collection.
 - Removed the obsolete manual script runner from `tests/test_stress.py`; retained stress coverage now runs only through pytest collection and replaced legacy always-true timing checks with shape assertions.
+- Removed the root legacy `main.py` bootstrap; current launch documentation now points to `python -m data_viewer`.
 - Normalized lock-file evidence across Windows and Linux checkouts and verified release jobs stop when quality tests fail.
 
 ### Documentation

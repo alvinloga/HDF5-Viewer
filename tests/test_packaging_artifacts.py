@@ -67,7 +67,12 @@ def test_ci_compile_gate_excludes_legacy_runtime_paths() -> None:
 def test_legacy_pyinstaller_build_entrypoints_are_removed() -> None:
     """DV-1008 removes obsolete legacy release launchers from the root packaging surface."""
 
-    for legacy_entrypoint in ("HDF5Viewer.spec", "build_windows.py", "build_windows.bat"):
+    for legacy_entrypoint in (
+        "HDF5Viewer.spec",
+        "build_windows.py",
+        "build_windows.bat",
+        "main.py",
+    ):
         assert not (PROJECT_ROOT / legacy_entrypoint).exists()
 
     build_script = PROJECT_ROOT / "build.py"

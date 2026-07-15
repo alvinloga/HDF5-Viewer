@@ -3103,3 +3103,32 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete manual runner from the retained stress pytest module. Broader DV-1008 legacy runtime and compatibility-bridge removal continues in later slices.
+
+## DV-1008 root legacy bootstrap removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed the obsolete root `main.py` legacy bootstrap.
+- `tests/test_packaging_artifacts.py` now asserts the root legacy entrypoint stays absent along with the old legacy PyInstaller launchers.
+- `tests/test_format_scope.py` now checks the target `data_viewer/__main__.py` entrypoint for removed NetCDF/Zarr imports instead of reading the deleted legacy bootstrap.
+- Updated README, README_EN, Product Spec, Testing, Migration, Format Inventory, and task notes so current launch guidance points to `python -m data_viewer` and legacy `main.py` appears only as historical/superseded context.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial root legacy entrypoint regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_pyinstaller_build_entrypoints_are_removed -q` | failed as expected before implementation because root `main.py` still existed |
+| Targeted entrypoint/removal tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_pyinstaller_build_entrypoints_are_removed tests\test_format_scope.py::test_target_entrypoint_does_not_import_netcdf_or_zarr_sources tests\test_data_viewer_package.py::test_cli_defaults_to_target_bootstrap tests\test_data_viewer_package.py::test_cli_rejects_removed_legacy_fallback -q` | 4 passed |
+| Removed-entrypoint filesystem check | `Test-Path main.py` | False |
+| Affected packaging/format/CLI subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_format_scope.py tests\test_data_viewer_package.py tests\test_test_environment.py -q` | 37 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_format_scope.py tests\test_data_viewer_package.py data_viewer\__main__.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py tests\test_data_viewer_package.py data_viewer\__main__.py` | passed; no issues in 3 source files |
+| Compile target and tests | `venv\Scripts\python.exe -m compileall -q data_viewer tests` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 537 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- `tests/test_format_scope.py` intentionally remains outside the scoped type-check command because it imports the retained legacy `gui.sidebar.folder_explorer` reference module, which triggers pre-existing legacy `core/` mypy debt. The affected behavior is still covered by pytest and lint.
+- Retained legacy packages (`core/`, `gui/`, `plugins/`, `services/`) still exist as migration reference inputs and will be removed or ported in later DV-1008 slices.

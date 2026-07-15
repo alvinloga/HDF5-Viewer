@@ -214,15 +214,7 @@ Exact dependency pins are produced and verified during Phase 0. See `docs/DEPEND
 
 ## 6. Commands
 
-### Current legacy commands
-
-```bash
-python main.py
-python -m pytest tests/test_core.py -q
-python -m compileall -q core gui plugins services main.py
-```
-
-### Required target commands after Phase 0
+### Current target commands
 
 ```bash
 python -m pip install -r requirements-dev.txt

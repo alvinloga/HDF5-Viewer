@@ -43,8 +43,8 @@ def test_legacy_folder_explorer_defaults_do_not_advertise_zarr() -> None:
     assert all("zarr" not in extension.lower() for extension in filters)
 
 
-def test_legacy_main_does_not_import_netcdf_or_zarr_sources() -> None:
-    main_source = Path("main.py").read_text(encoding="utf-8")
+def test_target_entrypoint_does_not_import_netcdf_or_zarr_sources() -> None:
+    main_source = Path("data_viewer/__main__.py").read_text(encoding="utf-8")
 
     assert "plugins.external.netcdf_source" not in main_source
     assert "plugins.external.zarr_source" not in main_source
