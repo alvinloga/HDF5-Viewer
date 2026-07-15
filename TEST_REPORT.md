@@ -2878,7 +2878,7 @@ Revision: implementation and evidence are recorded together in the commit contai
 Implementation evidence:
 
 - Removed `tests/test_final.py`, an obsolete legacy "Final Integration Tests" script that performed module-level source imports from legacy `core`, `gui`, `services`, and `plugins`, printed ad-hoc status lines at import time, and duplicated smaller legacy/target coverage without exercising Data Viewer release artifacts.
-- Updated `tests/test_test_environment.py` so the GUI module collection lifecycle regression still collects multiple existing legacy GUI-heavy modules (`tests/test_all_features.py`, `tests/test_gui_interaction.py`, and `tests/test_phase1.py`) rather than referencing the removed script.
+- Updated `tests/test_test_environment.py` so the GUI module collection lifecycle regression still collects multiple existing legacy GUI-heavy modules rather than referencing the removed script.
 - `tests/test_packaging_artifacts.py` now asserts the obsolete final integration script stays absent and that the environment lifecycle test does not reintroduce it.
 - Parity rationale: the removed script's core HDF5, slicing/cache, plugin, export, and GUI import smoke coverage remains represented by focused legacy tests (`tests/test_integration.py`, `tests/test_gui_interaction.py`, `tests/test_test_environment.py`) plus target Data Viewer package and installed-artifact smoke tests.
 
@@ -2901,3 +2901,33 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete final integration script. Other legacy regression suites still import `core`, `gui`, `plugins`, `services`, and `main.py` as migration references until each remaining capability/removal group satisfies the full removal criteria.
+
+## DV-1008 legacy comprehensive all-features script removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed `tests/test_all_features.py`, an obsolete legacy "Comprehensive Feature Tests" script that created a `QApplication` at module import time, imported legacy `core`, `gui`, `services`, and `plugins` modules directly, and duplicated focused HDF5, slicing, plugin, export, event-bus, async-load, and table-model coverage.
+- Updated `tests/test_test_environment.py` so the GUI module collection lifecycle regression still collects multiple existing modules (`tests/test_gui_interaction.py`, `tests/test_phase1.py`, and `tests/test_comprehensive.py`) without referencing the removed script.
+- `tests/test_packaging_artifacts.py` now asserts the obsolete comprehensive script stays absent and that the environment lifecycle test does not reintroduce it.
+- Parity rationale: the removed script's HDF5, slicing, plugin, export, and event-bus coverage remains represented by `tests/test_integration.py`; GUI/model and broader legacy behavior remain represented by `tests/test_gui_interaction.py`, `tests/test_comprehensive.py`, and `tests/test_test_environment.py`; target release-facing behavior remains covered by package and installed-artifact smoke tests.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy all-features removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_all_features_smoke_script_is_removed -q` | failed as expected before implementation because `tests/test_all_features.py` still existed |
+| Targeted regression test after removal | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_all_features_smoke_script_is_removed -q` | passed |
+| GUI collection lifecycle regression | `venv\Scripts\python.exe -m pytest tests\test_test_environment.py::test_gui_module_collection_exits_after_importing_multiple_modules -q` | passed |
+| Affected legacy/target subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_test_environment.py tests\test_integration.py tests\test_gui_interaction.py tests\test_comprehensive.py tests\test_data_viewer_package.py tests\test_installed_artifact_smoke.py -q` | 110 passed, 1 skipped |
+| Removed-script reference audit | `rg -n "test_all_features\\.py|Legacy HDF5 Viewer - Comprehensive Feature Tests|from (core|gui|plugins|services)" tests\test_packaging_artifacts.py tests\test_test_environment.py tests\test_data_viewer_package.py tests\test_installed_artifact_smoke.py` | only intentional guard strings remained for `test_all_features.py`; target Data Viewer package/smoke tests had no legacy runtime imports; `tests/test_test_environment.py` retains expected legacy lifecycle imports |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_test_environment.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests\test_packaging_artifacts.py tests\test_test_environment.py tests\test_integration.py tests\test_gui_interaction.py tests\test_comprehensive.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 531 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
+
+Known gaps:
+
+- This removes only the obsolete comprehensive all-features script. Other legacy regression suites still import `core`, `gui`, `plugins`, `services`, and `main.py` as migration references until each remaining capability/removal group satisfies the full removal criteria.

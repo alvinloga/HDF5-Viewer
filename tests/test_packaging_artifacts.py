@@ -130,3 +130,22 @@ def test_legacy_final_integration_smoke_script_is_removed() -> None:
         "tests/test_integration.py",
     ):
         assert (PROJECT_ROOT / target_test).exists()
+
+
+def test_legacy_all_features_smoke_script_is_removed() -> None:
+    """DV-1008 removes the obsolete comprehensive legacy smoke script."""
+
+    legacy_all_features_suite = PROJECT_ROOT / "tests" / "test_all_features.py"
+    assert not legacy_all_features_suite.exists()
+
+    environment_test = (
+        PROJECT_ROOT / "tests" / "test_test_environment.py"
+    ).read_text(encoding="utf-8")
+    assert "test_all_features.py" not in environment_test
+
+    for retained_suite in (
+        "tests/test_integration.py",
+        "tests/test_gui_interaction.py",
+        "tests/test_comprehensive.py",
+    ):
+        assert (PROJECT_ROOT / retained_suite).exists()
