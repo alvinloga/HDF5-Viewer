@@ -94,7 +94,7 @@ All notable Data Viewer changes are recorded here.
 - Removed the obsolete legacy `tests/test_all_features.py` comprehensive source-import smoke script; HDF5, slicing, plugin, export, event-bus, and GUI/model coverage remains in focused retained suites.
 - Removed the obsolete manual script runner from `tests/test_core.py`; the retained core coverage now runs only through pytest collection.
 - Removed the obsolete legacy `tests/test_integration.py` source-import suite; source, HDF5, plugin, registry, and export coverage is now guarded by target Data Viewer suites.
-- Removed the obsolete manual script runner from `tests/test_edge_cases.py`; retained edge-case coverage now runs only through pytest collection.
+- Removed the obsolete legacy `tests/test_edge_cases.py` source-import suite; edge-case coverage is now guarded by target HDF5, selection, statistics, export, cache, diagnostics, and base-view tests.
 - Removed the obsolete manual script runner from `tests/test_phase1.py`; retained legacy Phase 1 GUI smoke coverage now runs only through pytest collection.
 - Removed the obsolete manual script runner from `tests/test_gui_interaction.py`; retained legacy GUI interaction coverage now runs only through pytest collection.
 - Removed the obsolete manual script runner from `tests/test_stress.py`; retained stress coverage now runs only through pytest collection and replaced legacy always-true timing checks with shape assertions.
