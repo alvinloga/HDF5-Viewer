@@ -16,7 +16,8 @@ Current implementation status:
 - DV-0801 expands the Dataset Profile built-in with storage estimates and value semantics, and adds `org.dataviewer.descriptive_statistics` for axis-aware count/missingness/nonfinite/mean/std/quantile/extrema table results.
 - DV-0802 adds `org.dataviewer.distribution_summary` for histogram, robust spread, skewness/kurtosis, nonfinite accounting, and explicit deterministic sampling metadata.
 - DV-0803 adds `org.dataviewer.correlation_covariance` for labeled correlation/covariance matrices with explicit variable-axis selection, contiguous variable ranges, listwise/pairwise missing-data alignment, constant-variable warnings, and matrix-size budget refusal.
-- The remaining P8 catalog still owns dataset comparison, visualization plugins, and concrete plot renderers.
+- DV-0804 adds `org.dataviewer.dataset_compare` for exact-shape numeric dataset comparisons with metadata compatibility rows, equality counts, finite/nonfinite accounting, absolute/relative error metrics, and explicit no-broadcast refusal.
+- The remaining P8 catalog still owns visualization plugins and concrete plot renderers.
 
 ## 2. Package boundary
 
@@ -38,6 +39,8 @@ data_viewer/
       distribution_summary/
         plugin.json
       correlation_covariance/
+        plugin.json
+      dataset_compare/
         plugin.json
 ```
 
@@ -252,7 +255,7 @@ All results display plugin/version, exact inputs, selection/scope, parameters, s
 - Descriptive Statistics: count, missing/nonfinite counts, mean, sample standard deviation, configurable quantiles, extrema, configurable axis, and explicit NaN policy.
 - Distribution Summary: histogram, IQR, MAD, skewness/kurtosis when valid, nonfinite counts, and explicit deterministic sampling metadata.
 - Correlation/Covariance: selected numeric columns/axes with listwise or pairwise missing policy, symmetric labeled output, constant-variable warnings, and variable-count budget refusal.
-- Dataset Compare: compatibility, shape/dtype differences, absolute/relative errors, equality counts.
+- Dataset Compare: exact-shape compatibility, dtype differences, equality counts, finite/nonfinite accounting, absolute/relative errors, zero-denominator rules, and no implicit broadcasting.
 
 ### Visualization
 
@@ -274,7 +277,7 @@ Each catalog entry is its own manifest/package and may ship incrementally withou
 - Sampling never occurs silently. Results state method, seed, requested size, actual size, and population estimate.
 - Stable algorithms are required for large sums/variance; expected tolerance is dtype-aware.
 - `NaN`, infinity, complex numbers, masked/missing values, strings, booleans, and empty inputs have documented behavior.
-- Dataset Compare refuses ambiguous broadcasting or alignment.
+- Dataset Compare refuses ambiguous broadcasting or alignment; v1 computes pairwise finite error metrics and treats nonfinite equality separately from finite error statistics.
 - Random operations use a recorded seed.
 
 ## 11. Registry behavior

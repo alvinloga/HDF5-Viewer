@@ -1961,3 +1961,37 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Dataset comparison, plot plugins, correlation heatmap, missing-data map, and GUI renderer integration remain later P8 tasks.
+
+## DV-0804 Dataset Compare plugin - 2026-07-15
+
+Revision: working tree based on `8ff8744` before committing the DV-0804 implementation.
+
+Implementation evidence:
+
+- `data_viewer/plugins/builtin/dataset_profile/plugin.py` adds `DatasetComparePlugin`, a built-in two-input analysis plugin that refuses shape mismatches before metric computation, produces compatibility/count/error table rows, and records both input descriptors in result provenance.
+- `data_viewer/plugins/builtin/dataset_compare/plugin.json` adds the packaged `org.dataviewer.dataset_compare` manifest with immutable parameters: `missing_policy` and `relative_error_mode`.
+- `pyproject.toml` includes the Dataset Compare manifest as package data so wheel/sdist discovery can find all five current statistics plugins.
+- `tests/test_builtin_dataset_compare_plugin.py` adds coverage for packaged discovery, identical arrays, near/different arrays with zero/nonfinite rules, no-broadcast shape refusal, and forbidden-import boundaries.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing dataset compare tests | `venv\Scripts\python.exe -m pytest tests\test_builtin_dataset_compare_plugin.py -q` | failed as expected before implementation: `org.dataviewer.dataset_compare` not discovered |
+| Focused dataset compare tests | `venv\Scripts\python.exe -m pytest tests\test_builtin_dataset_compare_plugin.py -q` | 5 passed |
+| Plugin P7/P8 regression subset | `venv\Scripts\python.exe -m pytest tests\test_builtin_dataset_compare_plugin.py tests\test_builtin_correlation_covariance_plugin.py tests\test_builtin_distribution_summary_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_dataset_profile_plugin.py tests\test_plugin_results.py tests\test_plugin_runner.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py -q` | 59 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_distribution_summary_plugin.py tests\test_builtin_correlation_covariance_plugin.py tests\test_builtin_dataset_compare_plugin.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py tests\test_plugin_runner.py tests\test_plugin_results.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_distribution_summary_plugin.py tests\test_builtin_correlation_covariance_plugin.py tests\test_builtin_dataset_compare_plugin.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 97 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 468 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Wheel package-data smoke | `venv\Scripts\python.exe -m pip wheel . -w .tmp-wheel --no-deps --no-build-isolation --no-cache-dir`; then inspect wheel with `zipfile` for Dataset Profile, Descriptive Statistics, Distribution Summary, Correlation/Covariance, and Dataset Compare `plugin.json` files | wheel built successfully; all five `plugin.json` files present; temporary `.tmp-wheel` removed |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | pending after DV-0804 commit/push | pending |
+
+Known gaps:
+
+- Plot plugins, correlation heatmap, missing-data map, and GUI renderer integration remain later P8 tasks.

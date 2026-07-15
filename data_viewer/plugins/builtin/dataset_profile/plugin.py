@@ -26,6 +26,8 @@ DISTRIBUTION_SUMMARY_PLUGIN_ID = "org.dataviewer.distribution_summary"
 DISTRIBUTION_SUMMARY_PLUGIN_VERSION = "1.0.0"
 CORRELATION_COVARIANCE_PLUGIN_ID = "org.dataviewer.correlation_covariance"
 CORRELATION_COVARIANCE_PLUGIN_VERSION = "1.0.0"
+DATASET_COMPARE_PLUGIN_ID = "org.dataviewer.dataset_compare"
+DATASET_COMPARE_PLUGIN_VERSION = "1.0.0"
 
 
 @dataclass(slots=True)
@@ -320,6 +322,75 @@ class CorrelationCovariancePlugin:
                 "missing_policy": missing_policy,
             },
             warnings=tuple(warnings),
+        )
+
+
+class DatasetComparePlugin:
+    """Exact-shape numeric dataset comparison with explicit error rules."""
+
+    def run(self, context: PluginContext) -> PluginResult:
+        if len(context.inputs) != 2:
+            raise ValueError("dataset compare requires exactly two inputs")
+        missing_policy = _parameter_str(context.parameters, "missing_policy")
+        relative_error_mode = _parameter_str(context.parameters, "relative_error_mode")
+        left_access, right_access = context.inputs
+        left_descriptor = left_access.descriptor
+        right_descriptor = right_access.descriptor
+
+        if left_descriptor.shape != right_descriptor.shape:
+            raise ValueError(f"shape mismatch: {left_descriptor.shape} != {right_descriptor.shape}")
+
+        left_values = _concatenate_chunks(
+            [np.asarray(chunk.values) for chunk in left_access.iter_chunks(target_bytes=context.memory_budget_bytes)],
+            left_descriptor.shape,
+            left_descriptor.dtype,
+        )
+        context.report_progress(None, "read left dataset")
+        right_values = _concatenate_chunks(
+            [np.asarray(chunk.values) for chunk in right_access.iter_chunks(target_bytes=context.memory_budget_bytes)],
+            right_descriptor.shape,
+            right_descriptor.dtype,
+        )
+        context.report_progress(None, "read right dataset")
+
+        rows = _dataset_compare_rows(
+            left_values,
+            right_values,
+            left_dtype=left_descriptor.dtype,
+            right_dtype=right_descriptor.dtype,
+            missing_policy=missing_policy,
+            relative_error_mode=relative_error_mode,
+        )
+        return PluginResult(
+            kind=ResultKind.TABLE,
+            title="Dataset Compare",
+            payload=TableResultPayload(
+                columns=(
+                    ResultColumn("section", "string"),
+                    ResultColumn("metric", "string"),
+                    ResultColumn("value", "number"),
+                ),
+                rows=tuple(rows),
+            ),
+            provenance=ResultProvenance(
+                plugin_id=DATASET_COMPARE_PLUGIN_ID,
+                plugin_version=DATASET_COMPARE_PLUGIN_VERSION,
+                api_version=PLUGIN_API_VERSION,
+                inputs=(left_descriptor, right_descriptor),
+                parameters=context.parameters,
+                computation_scope="full",
+                sampled=False,
+            ),
+            metadata={
+                "alignment_policy": "exact_shape",
+                "missing_policy": missing_policy,
+                "relative_error_mode": relative_error_mode,
+                "left_shape": list(left_descriptor.shape or ()),
+                "right_shape": list(right_descriptor.shape or ()),
+                "left_dtype": left_descriptor.dtype,
+                "right_dtype": right_descriptor.dtype,
+            },
+            warnings=(),
         )
 
 
@@ -707,3 +778,86 @@ def _sample_correlation_or_none(left: np.ndarray, right: np.ndarray) -> JsonValu
 
 def _is_constant(values: np.ndarray) -> bool:
     return values.size >= 2 and float(np.std(values, ddof=1)) == 0.0
+
+
+def _dataset_compare_rows(
+    left_values: np.ndarray,
+    right_values: np.ndarray,
+    *,
+    left_dtype: str | None,
+    right_dtype: str | None,
+    missing_policy: str,
+    relative_error_mode: str,
+) -> list[dict[str, JsonValue]]:
+    if missing_policy != "pairwise":
+        raise ValueError("dataset compare v1 supports only pairwise missing policy")
+    if relative_error_mode != "left":
+        raise ValueError("dataset compare v1 supports only left relative error mode")
+    if left_values.shape != right_values.shape:
+        raise ValueError(f"shape mismatch: {left_values.shape} != {right_values.shape}")
+
+    left = _numeric_values(left_values).reshape(-1)
+    right = _numeric_values(right_values).reshape(-1)
+    equal_mask = left == right
+    finite_mask = np.isfinite(left) & np.isfinite(right)
+    nonfinite_pair_count = int(left.size - int(finite_mask.sum()))
+    absolute_errors = np.abs(left[finite_mask] - right[finite_mask])
+    relative_errors, relative_undefined_count = _relative_errors_left(
+        left[finite_mask],
+        absolute_errors,
+    )
+    rows: list[dict[str, JsonValue]] = [
+        {"section": "compatibility", "metric": "shape_match", "value": left_values.shape == right_values.shape},
+        {"section": "compatibility", "metric": "dtype_match", "value": left_dtype == right_dtype},
+        {"section": "compatibility", "metric": "left_dtype", "value": left_dtype or "unknown"},
+        {"section": "compatibility", "metric": "right_dtype", "value": right_dtype or "unknown"},
+        {"section": "compatibility", "metric": "alignment_policy", "value": "exact_shape"},
+        {"section": "counts", "metric": "element_count", "value": int(left.size)},
+        {"section": "counts", "metric": "equal_count", "value": int(equal_mask.sum())},
+        {"section": "counts", "metric": "different_count", "value": int(left.size - int(equal_mask.sum()))},
+        {"section": "counts", "metric": "finite_pair_count", "value": int(finite_mask.sum())},
+        {"section": "counts", "metric": "nonfinite_pair_count", "value": nonfinite_pair_count},
+        {"section": "errors", "metric": "max_absolute_error", "value": _max_or_none(absolute_errors)},
+        {"section": "errors", "metric": "mean_absolute_error", "value": _mean_or_none(absolute_errors)},
+        {"section": "errors", "metric": "max_relative_error", "value": _max_or_none(relative_errors)},
+        {"section": "errors", "metric": "mean_relative_error", "value": _mean_or_none(relative_errors)},
+        {
+            "section": "errors",
+            "metric": "relative_error_undefined_count",
+            "value": relative_undefined_count,
+        },
+    ]
+    return rows
+
+
+def _relative_errors_left(
+    left: np.ndarray,
+    absolute_errors: np.ndarray,
+) -> tuple[np.ndarray, int]:
+    if left.size == 0:
+        return np.array([], dtype=np.float64), 0
+    denominator = np.abs(left)
+    zero_denominator = denominator == 0.0
+    undefined = zero_denominator & (absolute_errors != 0.0)
+    valid = ~undefined
+    relative = np.zeros(int(valid.sum()), dtype=np.float64)
+    if relative.size:
+        relative = np.divide(
+            absolute_errors[valid],
+            denominator[valid],
+            out=np.zeros_like(absolute_errors[valid], dtype=np.float64),
+            where=denominator[valid] != 0.0,
+        )
+    return relative, int(undefined.sum())
+
+
+def _max_or_none(values: np.ndarray) -> JsonValue:
+    if values.size == 0:
+        return None
+    return _rounded_or_none(float(np.max(values)))
+
+
+def _mean_or_none(values: np.ndarray) -> JsonValue:
+    if values.size == 0:
+        return None
+    return _rounded_or_none(float(np.mean(values)))

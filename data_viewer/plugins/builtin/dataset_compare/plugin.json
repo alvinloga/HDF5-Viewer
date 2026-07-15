@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "api_version": 1,
+  "id": "org.dataviewer.dataset_compare",
+  "name": "Dataset Compare",
+  "version": "1.0.0",
+  "description": "Compares two exact-shape numeric datasets with explicit equality and error metrics.",
+  "entry_point": "data_viewer.plugins.builtin.dataset_profile.plugin:DatasetComparePlugin",
+  "kind": "analysis",
+  "required_dependencies": [],
+  "input": {
+    "domains": ["array", "volume"],
+    "min_ndim": 1,
+    "max_ndim": null,
+    "dtype_families": ["boolean", "integer", "floating", "complex"],
+    "requires_random_access": false,
+    "supports_chunked_input": true,
+    "supports_selection": true
+  },
+  "parameters_schema": {
+    "type": "object",
+    "properties": {
+      "missing_policy": {
+        "type": "string",
+        "enum": ["pairwise"],
+        "default": "pairwise",
+        "title": "Missing policy",
+        "description": "pairwise computes finite-pair error metrics and keeps nonfinite equality counts explicit."
+      },
+      "relative_error_mode": {
+        "type": "string",
+        "enum": ["left"],
+        "default": "left",
+        "title": "Relative error mode",
+        "description": "left uses abs(left) as denominator; zero-denominator nonzero differences are counted as undefined."
+      }
+    },
+    "additionalProperties": false
+  },
+  "result_kinds": ["table"]
+}

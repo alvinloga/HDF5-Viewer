@@ -61,6 +61,7 @@ All notable Data Viewer changes are recorded here.
 - Added the first P8 statistics plugins (DV-0801): Dataset Profile now reports storage estimates and numeric/complex-magnitude semantics, and `org.dataviewer.descriptive_statistics` provides axis-aware count, missing/nonfinite counts, mean, sample standard deviation, configurable quantiles, and extrema as provenance-complete table results.
 - Added the Distribution Summary built-in plugin (DV-0802): histogram rows, IQR/MAD robust spread, skewness/kurtosis only when valid, nonfinite accounting, and explicit deterministic sampling metadata.
 - Added the Correlation/Covariance built-in plugin (DV-0803): labeled symmetric matrix output, listwise/pairwise missing-data alignment, contiguous variable-axis selection, constant-variable warnings, and variable-count budget refusal.
+- Added the Dataset Compare built-in plugin (DV-0804): exact-shape compatibility checks, no-broadcast refusal, equality counts, finite/nonfinite accounting, absolute and left-relative error metrics, and explicit zero-denominator handling.
 
 ### Fixed
 

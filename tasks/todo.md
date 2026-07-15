@@ -491,7 +491,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: selected numeric columns/axis, exact alignment/missing policy, symmetric labeled output, constant-column warning, size budget.
 - Verify: known matrices, pairwise/listwise policy tests, refusal cases.
 
-### [ ] DV-0804 Implement Dataset Compare
+### [x] DV-0804 Implement Dataset Compare
 
 - Depends: DV-0801.
 - Acceptance: identity/shape/dtype/schema compatibility; no ambiguous broadcasting; exact equality and absolute/relative errors with zero/nonfinite rules; alignment/scope visible.
