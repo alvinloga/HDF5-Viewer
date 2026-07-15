@@ -171,3 +171,15 @@ def test_legacy_integration_test_manual_runner_is_removed() -> None:
     assert "Legacy HDF5 Viewer - Integration Tests" not in integration_test
     assert "def main(" not in integration_test
     assert '__name__ == "__main__"' not in integration_test
+
+
+def test_legacy_edge_case_test_manual_runner_is_removed() -> None:
+    """DV-1008 keeps legacy edge-case coverage under pytest collection only."""
+
+    edge_case_test = (PROJECT_ROOT / "tests" / "test_edge_cases.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Legacy HDF5 Viewer - Edge Case Tests" not in edge_case_test
+    assert "def main(" not in edge_case_test
+    assert '__name__ == "__main__"' not in edge_case_test

@@ -2988,3 +2988,32 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete manual runner from the retained integration pytest module. Other legacy regression suites still have manual script runners and legacy imports until each group is cleaned or removed with parity evidence.
+
+## DV-1008 legacy edge-case manual runner removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed the obsolete `main()` / `if __name__ == "__main__"` manual runner from `tests/test_edge_cases.py`, including the historical "Legacy HDF5 Viewer - Edge Case Tests" banner.
+- Kept the pytest tests for HDF5 edge files, NaN/Inf statistics, large dataset reads, slicer/export/cache/event-bus edge cases, and `DataTableModel` edge cases intact.
+- Removed unused imports and no-op timing variables exposed by the runner cleanup from `tests/test_edge_cases.py`; normalized legacy `assert result == True` checks to direct truth assertions without changing expected behavior.
+- `tests/test_packaging_artifacts.py` now asserts the manual runner stays absent while preserving the edge-case pytest module.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy edge-case runner regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_edge_case_test_manual_runner_is_removed -q` | failed as expected before implementation because `tests/test_edge_cases.py` still contained the legacy banner and manual runner |
+| Targeted regression and retained edge-case tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_edge_case_test_manual_runner_is_removed tests\test_edge_cases.py -q` | 12 passed, 3 existing NumPy NaN/Inf warnings |
+| Affected legacy subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_edge_cases.py tests\test_core.py tests\test_integration.py -q` | 34 passed, 3 existing NumPy NaN/Inf warnings |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_edge_cases.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q tests\test_packaging_artifacts.py tests\test_edge_cases.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 534 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Removed-runner reference audit | `rg -n "Legacy HDF5 Viewer - Edge Case Tests|def main\\(|__main__" tests\test_edge_cases.py tests\test_packaging_artifacts.py` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
+
+Known gaps:
+
+- This removes only the obsolete manual runner from the retained edge-case pytest module. Other legacy regression suites still have manual script runners and legacy imports until each group is cleaned or removed with parity evidence.

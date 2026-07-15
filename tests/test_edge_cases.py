@@ -2,7 +2,6 @@
 
 import sys
 import os
-import tempfile
 import numpy as np
 import h5py
 import pytest
@@ -31,7 +30,7 @@ def tmp_csv(tmp_path):
 def test_empty_file(tmp_h5):
     """测试空 HDF5 文件"""
     # 创建空文件
-    with h5py.File(tmp_h5, 'w') as f:
+    with h5py.File(tmp_h5, 'w'):
         pass  # 空文件
 
     from core.h5_source import H5Source
@@ -156,26 +155,18 @@ def test_large_dataset_performance(tmp_h5):
     source = H5Source()
     source.open(tmp_h5)
 
-    import time
-
     # 测试元数据获取
-    start = time.time()
     meta = source.get_metadata('/big')
-    elapsed = time.time() - start
     assert meta.shape == (100000, 100)
 
     # 测试小切片
-    start = time.time()
     data = source.read_slice('/big', (slice(0, 100), slice(0, 10)))
-    elapsed = time.time() - start
     assert data.shape == (100, 10)
 
     # 测试默认切片
     from core.slicer import SliceParser
     slices = SliceParser.default_slice(meta.shape)
-    start = time.time()
     data = source.read_slice('/big', slices)
-    elapsed = time.time() - start
     assert data is not None
 
     source.close()
@@ -217,27 +208,27 @@ def test_export_edge_cases(tmp_csv):
     # 测试空数据
     empty_data = np.array([])
     result = DataExporter.to_csv(empty_data, tmp_csv)
-    assert result == True
+    assert result
 
     # 测试 1D 数据
     data_1d = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
     result = DataExporter.to_csv(data_1d, tmp_csv)
-    assert result == True
+    assert result
 
     # 测试 2D 数据
     data_2d = np.random.randn(10, 5)
     result = DataExporter.to_csv(data_2d, tmp_csv)
-    assert result == True
+    assert result
 
     # 测试 3D 数据
     data_3d = np.random.randn(3, 4, 5)
     result = DataExporter.to_csv(data_3d, tmp_csv)
-    assert result == True
+    assert result
 
     # 测试包含 NaN 的数据
     data_nan = np.array([1.0, np.nan, 3.0, np.inf, -np.inf])
     result = DataExporter.to_csv(data_nan, tmp_csv)
-    assert result == True
+    assert result
 
 
 def test_cache_edge_cases():
@@ -311,7 +302,7 @@ def test_datatable_model_edge_cases():
     from PyQt6.QtWidgets import QApplication
     from PyQt6.QtCore import QModelIndex
 
-    app = QApplication.instance() or QApplication(sys.argv)
+    QApplication.instance() or QApplication(sys.argv)
 
     model = DataTableModel()
 
@@ -352,46 +343,3 @@ def test_datatable_model_edge_cases():
     assert model._format_value(-np.inf) == "-Inf"
     assert model._format_value(3.14159) == "3.14159"
     assert model._format_value(42) == "42"
-
-
-def main():
-    """运行所有测试"""
-    print("=" * 60)
-    print("Legacy HDF5 Viewer - Edge Case Tests")
-    print("=" * 60)
-
-    tests = [
-        test_empty_file,
-        test_single_dataset,
-        test_deep_nested_groups,
-        test_string_datasets,
-        test_nan_inf_data,
-        test_large_dataset_performance,
-        test_slicer_edge_cases,
-        test_export_edge_cases,
-        test_cache_edge_cases,
-        test_event_bus_edge_cases,
-        test_datatable_model_edge_cases,
-    ]
-
-    passed = 0
-    failed = 0
-
-    for test in tests:
-        try:
-            test()
-            passed += 1
-        except Exception as e:
-            print(f"  [FAIL] {test.__name__}: {e}")
-            failed += 1
-
-    print("\n" + "=" * 60)
-    print(f"Results: {passed} passed, {failed} failed")
-    print("=" * 60)
-
-    return failed == 0
-
-
-if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)
