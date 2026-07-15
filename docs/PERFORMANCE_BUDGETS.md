@@ -32,3 +32,14 @@ The command emits JSON with `config_source`, per-metric `reports`, `median_ms`, 
 - `plugin_chunk_throughput`: deterministic chunked table reduction.
 
 The Phase 0 probes are intentionally stable and cheap enough for frequent local runs. Later packaged smoke and stress tasks should add artifact-level probes against real HDF5, CSV, NIfTI, gzip, workspace, and plugin fixtures. Thresholds must cite the Windows and Linux baseline reports used to set them.
+
+## Hardening stress coverage
+
+DV-1002 starts the retained stress/security suite in `tests/test_hardening_stress.py`. The current automated coverage includes:
+
+- many successful export tasks release retained task records and payload references after terminal receipts are stored;
+- rapid navigation search observes cooperative cancellation before returning partial grouped results;
+- adversarial deep workspace manifests fail through structured validation rather than unbounded recursion;
+- gzip extraction budget failures remove abandoned `.incomplete` cache files.
+
+Later P10 stress work should extend this same suite with packaged open/close loops, real adapter fixtures, plugin budget saturation, and retained log artifacts from both platforms.

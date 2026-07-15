@@ -96,6 +96,12 @@ class ExportQueueService:
     def pending_count(self) -> int:
         return len(self._queue)
 
+    @property
+    def retained_task_count(self) -> int:
+        """Number of non-pending task records still retained for retry/inspection."""
+
+        return len(self._jobs)
+
     def enqueue(
         self,
         plan: ExportPlan,
@@ -148,7 +154,9 @@ class ExportQueueService:
             self._receipts.append(receipt)
             queued.task.report_progress(completed=1, total=1, message="Finished")
             if receipt.outcome is ExportOutcome.SUCCEEDED:
-                return queued.task.succeed(receipt)
+                snapshot = queued.task.succeed(receipt)
+                self._jobs.pop(queued.entry.task_id, None)
+                return snapshot
             if receipt.outcome is ExportOutcome.CANCELLED:
                 return queued.task.cancelled()
             error = DataViewerError(

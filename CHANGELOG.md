@@ -73,6 +73,7 @@ All notable Data Viewer changes are recorded here.
 - Added session restore and external-change decision models (DV-0905): startup restore now records only a safe last-workspace pointer and clean-shutdown flag, while external file changes classify changed/replaced/deleted/self-save outcomes and prevent dirty patches from auto-overwriting source files.
 - Added background export queue and diagnostics bundle contracts (DV-0906): reviewed exports now have queued task state, progress, cancellation, retry, receipt history, Problems links to task/source/resource, and user-previewable diagnostics bundles with configured path redaction and plugin inventory.
 - Added the Phase 0 performance budget harness (DV-1001): reproducible benchmark reports now record median, p95, peak traced memory, path-free platform profiles, synthetic release-budget probes, and structured threshold evaluations.
+- Added the first hardening stress suite (DV-1002): export queues now release successful task payload records, and tests cover many-task retention, rapid-search cancellation, adversarial workspace depth, and gzip incomplete-cache cleanup.
 
 ### Fixed
 
