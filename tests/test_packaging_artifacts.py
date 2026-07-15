@@ -387,3 +387,19 @@ def test_legacy_core_cache_module_is_removed() -> None:
         "tests/test_gzip_extraction_cache.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_core_event_bus_module_is_removed() -> None:
+    """DV-1008 removes the obsolete global legacy event bus module."""
+
+    assert not (PROJECT_ROOT / "core" / "event_bus.py").exists()
+
+    for retained_target_path in (
+        "data_viewer/tasks/dispatcher.py",
+        "data_viewer/tasks/state.py",
+        "data_viewer/app/commands.py",
+        "data_viewer/app/diagnostics.py",
+        "tests/test_task_lifecycle.py",
+        "tests/test_command_registry.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()

@@ -3539,3 +3539,31 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the legacy cache module from `core/`. Remaining legacy `core/` modules and `gui/` still exist as separate migration/removal groups.
+
+## DV-1008 legacy core event bus module removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `core/event_bus.py`, a process-global weakref event bus with stringly typed event constants and singleton state.
+- Added `tests/test_packaging_artifacts.py::test_legacy_core_event_bus_module_is_removed`, which asserts the old module stays absent and retained target task dispatcher/state, command registry, diagnostics, and lifecycle tests remain present.
+- Target event/state ownership now stays explicit through command evaluation, task callback dispatch/progress, document callbacks, and diagnostics events instead of a shared global bus.
+- Updated migration inventory and changelog wording so `core/` remains a current legacy migration input while its event-bus module is recorded as removed.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy event-bus module removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_core_event_bus_module_is_removed -q` | failed as expected before implementation because `core/event_bus.py` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_core_event_bus_module_is_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_task_lifecycle.py tests\test_command_registry.py tests\test_document_controller.py tests\test_export_queue_diagnostics.py -q` | 21 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_task_lifecycle.py tests\test_command_registry.py tests\test_document_controller.py tests\test_export_queue_diagnostics.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 429 passed |
+
+Known gaps:
+
+- This removes only the legacy event-bus module from `core/`. Remaining legacy `core/` modules and `gui/` still exist as separate migration/removal groups.
