@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dataviewer.local/schemas/workspace-v1.schema.json",
+  "title": "Data Viewer Workspace v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "app",
+    "workspace_id",
+    "title",
+    "created_at",
+    "updated_at",
+    "path_base",
+    "sources",
+    "views",
+    "comparisons",
+    "plugin_results",
+    "layout",
+    "preferences",
+    "extensions"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": 1},
+    "app": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "workspace_id": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "minLength": 1},
+    "updated_at": {"type": "string", "minLength": 1},
+    "path_base": {"const": "workspace_directory"},
+    "sources": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/source"}
+    },
+    "views": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/view"}
+    },
+    "comparisons": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": true}
+    },
+    "plugin_results": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": true}
+    },
+    "layout": {"type": "object", "additionalProperties": true},
+    "preferences": {"type": "object", "additionalProperties": true},
+    "extensions": {"type": "object", "additionalProperties": true}
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": [
+        "source_id",
+        "display_name",
+        "path",
+        "path_kind",
+        "format_id",
+        "fingerprint"
+      ],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "display_name": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "path_kind": {"enum": ["relative", "absolute"]},
+        "format_id": {"type": "string", "minLength": 1},
+        "fingerprint": {"type": "object", "additionalProperties": true},
+        "open_options": {"type": "object", "additionalProperties": true},
+        "status_hint": {"type": "string"},
+        "extensions": {"type": "object", "additionalProperties": true}
+      },
+      "additionalProperties": true
+    },
+    "view": {
+      "type": "object",
+      "required": [
+        "view_id",
+        "source_id",
+        "resource_path",
+        "resource_domain",
+        "view_type",
+        "selection"
+      ],
+      "properties": {
+        "view_id": {"type": "string", "minLength": 1},
+        "source_id": {"type": "string", "minLength": 1},
+        "resource_path": {"type": "string", "minLength": 1},
+        "resource_domain": {"type": "string", "minLength": 1},
+        "view_type": {"type": "string", "minLength": 1},
+        "selection": {"type": "object", "additionalProperties": true},
+        "cursor": {"type": "array", "items": {"type": "integer"}},
+        "scroll": {"type": "object", "additionalProperties": true},
+        "display": {"type": "object", "additionalProperties": true},
+        "split_group": {"type": "string"},
+        "pinned": {"type": "boolean"},
+        "extensions": {"type": "object", "additionalProperties": true}
+      },
+      "additionalProperties": true
+    }
+  }
+}

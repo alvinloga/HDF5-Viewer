@@ -64,6 +64,7 @@ include = ["data_viewer*"]
 [tool.setuptools.package-data]
 "data_viewer.plugins.builtin" = ["box_plot/plugin.json", "correlation_covariance/plugin.json", "correlation_heatmap/plugin.json", "dataset_compare/plugin.json", "descriptive_statistics/plugin.json", "distribution_summary/plugin.json", "histogram_plot/plugin.json", "line_plot/plugin.json", "missing_data_map/plugin.json", "scatter_plot/plugin.json"]
 "data_viewer.plugins.builtin.dataset_profile" = ["plugin.json"]
+"data_viewer.workspace.schema" = ["workspace-v1.schema.json"]
 
 [tool.mypy]
 ignore_missing_imports = true
