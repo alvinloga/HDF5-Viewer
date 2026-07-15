@@ -158,6 +158,10 @@ Export scopes are explicit values:
 
 An export receipt records source fingerprint, resource path, normalized selection, display-vs-raw value mode, parameters, target format/path, warnings, timestamp, application version, and success/failure.
 
+Background exports use the same reviewed `ExportPlan` and terminal `ExportReceipt` values as direct exports. The application export queue adds task lifecycle state, progress, cancellation, retry, and receipt history without changing export semantics. A failed queued export is surfaced as a Problems entry linked to the task ID, target path, source URI, and resource path so the UI can route the user back to the affected source.
+
+Diagnostics bundles may include export task records and recent export errors, but they are generated through the diagnostics redaction service and are previewed by the user before any file is written or shared.
+
 ## 10. Backups and recovery
 
 - The default replacement protocol retains the original until the verified new file is ready.

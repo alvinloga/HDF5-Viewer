@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -148,6 +149,121 @@ class DiagnosticsSnapshot:
             "python_version": self.python_version,
             "events": [event.to_json() for event in self.events],
         }
+
+
+@dataclass(frozen=True, slots=True)
+class PluginInventoryItem:
+    """Safe plugin inventory entry for diagnostics bundles."""
+
+    plugin_id: str
+    name: str
+    version: str
+    api_version: int
+    enabled: bool
+
+    def __post_init__(self) -> None:
+        for label, value in (
+            ("plugin_id", self.plugin_id),
+            ("name", self.name),
+            ("version", self.version),
+        ):
+            if not value:
+                raise ValueError(f"plugin inventory {label} must not be empty")
+        if self.api_version < 1:
+            raise ValueError("plugin API version must be positive")
+
+    def to_json(self) -> dict[str, JsonValue]:
+        return {
+            "plugin_id": self.plugin_id,
+            "name": self.name,
+            "version": self.version,
+            "api_version": self.api_version,
+            "enabled": self.enabled,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class DiagnosticsBundle:
+    """Previewable diagnostics package that never uploads automatically."""
+
+    generated_at_utc: str
+    app_version: str
+    platform: str
+    python_version: str
+    plugins: tuple[PluginInventoryItem, ...] = ()
+    recent_events: tuple[DiagnosticEvent, ...] = ()
+    task_records: tuple[Mapping[str, JsonValue], ...] = ()
+
+    def to_json(self) -> dict[str, JsonValue]:
+        return {
+            "generated_at_utc": self.generated_at_utc,
+            "app_version": self.app_version,
+            "platform": self.platform,
+            "python_version": self.python_version,
+            "plugins": [plugin.to_json() for plugin in self.plugins],
+            "recent_events": [event.to_json() for event in self.recent_events],
+            "task_records": [dict(record) for record in self.task_records],
+        }
+
+    def preview_json(self) -> str:
+        """Return deterministic user-preview JSON before any diagnostics export."""
+
+        return json.dumps(self.to_json(), ensure_ascii=False, indent=2, sort_keys=True)
+
+
+class DiagnosticsBundleService:
+    """Build redacted diagnostics bundles from safe app-layer values."""
+
+    def __init__(
+        self,
+        *,
+        app_version: str,
+        platform: str,
+        python_version: str,
+        redactor: DiagnosticsRedactor | None = None,
+    ) -> None:
+        self._app_version = app_version
+        self._platform = platform
+        self._python_version = python_version
+        self._redactor = redactor or DiagnosticsRedactor()
+
+    def build_bundle(
+        self,
+        *,
+        plugins: Iterable[PluginInventoryItem] = (),
+        recent_events: Iterable[DiagnosticEvent] = (),
+        task_records: Iterable[Mapping[str, JsonValue]] = (),
+        generated_at_utc: str | None = None,
+    ) -> DiagnosticsBundle:
+        redacted_events = tuple(self._redact_event(event) for event in recent_events)
+        redacted_tasks = tuple(self._redact_mapping(record) for record in task_records)
+        return DiagnosticsBundle(
+            generated_at_utc=generated_at_utc or _utc_now(),
+            app_version=self._app_version,
+            platform=self._platform,
+            python_version=self._python_version,
+            plugins=tuple(plugins),
+            recent_events=redacted_events,
+            task_records=redacted_tasks,
+        )
+
+    def _redact_event(self, event: DiagnosticEvent) -> DiagnosticEvent:
+        error = self._redact_mapping(event.error)
+        context = self._redact_mapping(event.context)
+        return DiagnosticEvent(
+            timestamp_utc=event.timestamp_utc,
+            error=error,
+            context=context,
+        )
+
+    def _redact_mapping(
+        self,
+        value: Mapping[str, JsonValue],
+    ) -> Mapping[str, JsonValue]:
+        redacted = self._redactor.redact_json(dict(value))
+        if not isinstance(redacted, dict):
+            raise ValueError("redacted diagnostics value must remain an object")
+        return redacted
 
 
 def _utc_now() -> str:

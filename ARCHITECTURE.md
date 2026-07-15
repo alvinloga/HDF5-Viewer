@@ -276,6 +276,12 @@ QUEUED -> CANCELLED
 
 Terminal states are immutable.
 
+### 8.4 Background export queue and diagnostics
+
+Reviewed export plans enter an application export queue before bytes are written. Each queued export owns a `TaskRecord`, reports progress through the task state machine, and stores terminal `ExportReceipt` values in history. Cancellation is cooperative through the task cancellation token. Failed exports create Problems entries that link back to the export task, target path, source URI, and resource path; retry creates a new queued attempt instead of mutating the failed task.
+
+Diagnostics bundles are built from safe app-layer values only: application/runtime/platform versions, plugin inventory, recent diagnostic events, and task records. The bundle service applies configured redaction before preview/export. Data Viewer never uploads diagnostics automatically.
+
 ## 9. Safe editing architecture
 
 Editing uses a patch set, not a mutable presentation array.

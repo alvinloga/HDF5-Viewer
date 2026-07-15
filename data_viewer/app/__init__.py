@@ -14,13 +14,21 @@ from .compare import (
     ComparisonValidationError,
     ComparisonViewState,
 )
-from .diagnostics import DiagnosticEvent, DiagnosticsRedactor, DiagnosticsSnapshot
+from .diagnostics import (
+    DiagnosticEvent,
+    DiagnosticsBundle,
+    DiagnosticsBundleService,
+    DiagnosticsRedactor,
+    DiagnosticsSnapshot,
+    PluginInventoryItem,
+)
 from .documents import (
     DocumentController,
     DocumentRequest,
     DocumentSnapshot,
     DocumentStatus,
 )
+from .export_queue import ExportProblem, ExportQueueEntry, ExportQueueService
 from .navigation import (
     NavigationHistory,
     NavigationLocation,
@@ -58,15 +66,21 @@ __all__ = [
     "ComparisonValidationError",
     "ComparisonViewState",
     "DiagnosticEvent",
+    "DiagnosticsBundle",
+    "DiagnosticsBundleService",
     "DiagnosticsRedactor",
     "DiagnosticsSnapshot",
     "DocumentController",
     "DocumentRequest",
     "DocumentSnapshot",
     "DocumentStatus",
+    "ExportProblem",
+    "ExportQueueEntry",
+    "ExportQueueService",
     "NavigationHistory",
     "NavigationLocation",
     "NavigationService",
+    "PluginInventoryItem",
     "RecentFile",
     "ResourceFavorite",
     "SearchIndexEntry",
