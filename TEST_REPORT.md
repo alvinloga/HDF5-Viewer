@@ -3567,3 +3567,31 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the legacy event-bus module from `core/`. Remaining legacy `core/` modules and `gui/` still exist as separate migration/removal groups.
+
+## DV-1008 legacy core slicer module removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `core/slicer.py`, a string-based slice parser/default-preview helper with no current runtime/test/build imports.
+- Added `tests/test_packaging_artifacts.py::test_legacy_core_slicer_module_is_removed`, which asserts the old module stays absent and retained target selection, payload, shell, view, and GUI coverage remain present.
+- Target selection ownership remains under `data_viewer/domain/selection.py` and source `ReadRequest` flows; GUI slice controls build `SelectionSpec` values instead of parsing free-form legacy strings.
+- Updated migration inventory and changelog wording so `core/` remains a current legacy migration input while its string-slicer module is recorded as removed.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy slicer module removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_core_slicer_module_is_removed -q` | failed as expected before implementation because `core/slicer.py` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_core_slicer_module_is_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_selection_payload_types.py tests\test_gui_base_views.py -q` | 21 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_selection_payload_types.py tests\test_gui_base_views.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 430 passed |
+
+Known gaps:
+
+- This removes only the legacy string-slicer module from `core/`. Remaining legacy `core/` modules and `gui/` still exist as separate migration/removal groups.

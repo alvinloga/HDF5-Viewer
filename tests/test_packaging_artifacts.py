@@ -403,3 +403,19 @@ def test_legacy_core_event_bus_module_is_removed() -> None:
         "tests/test_command_registry.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_core_slicer_module_is_removed() -> None:
+    """DV-1008 removes the obsolete legacy string-based slicer module."""
+
+    assert not (PROJECT_ROOT / "core" / "slicer.py").exists()
+
+    for retained_target_path in (
+        "data_viewer/domain/selection.py",
+        "data_viewer/domain/payload.py",
+        "data_viewer/gui/shell.py",
+        "data_viewer/gui/views.py",
+        "tests/test_selection_payload_types.py",
+        "tests/test_gui_base_views.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()
