@@ -3160,3 +3160,30 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the legacy GUI dependency from first-release format-scope tests. Retained legacy GUI/core regression suites still exist and will be removed or ported in later DV-1008 slices.
+
+## DV-1008 legacy Phase 1 GUI smoke suite removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed obsolete `tests/test_phase1.py`, a legacy GUI smoke suite that imported `core.h5_source`, `core.registry`, and legacy `gui.*` widgets directly.
+- Updated `tests/test_test_environment.py` so the multi-module GUI collection guard no longer references the removed suite.
+- Replaced the previous manual-runner-only guard with `tests/test_packaging_artifacts.py::test_legacy_phase1_gui_smoke_suite_is_removed`, which asserts the file stays removed and target GUI suites remain present.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy Phase 1 suite removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_phase1_gui_smoke_suite_is_removed -q` | failed as expected before implementation because `tests/test_phase1.py` still existed |
+| Targeted removal and collection guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_phase1_gui_smoke_suite_is_removed tests\test_test_environment.py::test_gui_module_collection_exits_after_importing_multiple_modules -q` | 2 passed |
+| Removed-file check | `Test-Path tests\test_phase1.py` | False |
+| Affected GUI/environment subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_test_environment.py tests\test_gui_shell.py tests\test_gui_base_views.py tests\test_gui_state_components.py -q` | 55 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_test_environment.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q tests\test_packaging_artifacts.py tests\test_test_environment.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 532 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- This removes only the obsolete legacy Phase 1 GUI smoke suite. Other retained legacy regression suites still import `core/`, `gui/`, `plugins/`, and `services/` until each is removed or ported with parity evidence.

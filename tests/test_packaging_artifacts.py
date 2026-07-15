@@ -190,16 +190,22 @@ def test_legacy_edge_case_test_manual_runner_is_removed() -> None:
     assert '__name__ == "__main__"' not in edge_case_test
 
 
-def test_legacy_phase1_test_manual_runner_is_removed() -> None:
-    """DV-1008 keeps legacy Phase 1 GUI smoke coverage under pytest collection only."""
+def test_legacy_phase1_gui_smoke_suite_is_removed() -> None:
+    """DV-1008 removes the obsolete legacy Phase 1 GUI smoke suite."""
 
-    phase1_test = (PROJECT_ROOT / "tests" / "test_phase1.py").read_text(
-        encoding="utf-8"
-    )
+    assert not (PROJECT_ROOT / "tests" / "test_phase1.py").exists()
 
-    assert "Legacy HDF5 Viewer - Phase 1 Tests" not in phase1_test
-    assert "def main(" not in phase1_test
-    assert '__name__ == "__main__"' not in phase1_test
+    environment_test = (
+        PROJECT_ROOT / "tests" / "test_test_environment.py"
+    ).read_text(encoding="utf-8")
+    assert "test_phase1.py" not in environment_test
+
+    for retained_target_suite in (
+        "tests/test_gui_shell.py",
+        "tests/test_gui_base_views.py",
+        "tests/test_gui_state_components.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_suite).exists()
 
 
 def test_legacy_gui_interaction_test_manual_runner_is_removed() -> None:
