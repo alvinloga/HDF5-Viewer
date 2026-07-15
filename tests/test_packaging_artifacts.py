@@ -111,3 +111,22 @@ def test_legacy_packaged_build_smoke_suite_is_removed() -> None:
 
     for legacy_import in ("from core", "from gui", "from plugins", "from services"):
         assert legacy_import not in target_smoke
+
+
+def test_legacy_final_integration_smoke_script_is_removed() -> None:
+    """DV-1008 removes the obsolete source-import final integration script."""
+
+    legacy_final_suite = PROJECT_ROOT / "tests" / "test_final.py"
+    assert not legacy_final_suite.exists()
+
+    environment_test = (
+        PROJECT_ROOT / "tests" / "test_test_environment.py"
+    ).read_text(encoding="utf-8")
+    assert "test_final.py" not in environment_test
+
+    for target_test in (
+        "tests/test_data_viewer_package.py",
+        "tests/test_installed_artifact_smoke.py",
+        "tests/test_integration.py",
+    ):
+        assert (PROJECT_ROOT / target_test).exists()

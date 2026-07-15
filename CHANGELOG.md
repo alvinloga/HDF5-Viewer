@@ -90,6 +90,7 @@ All notable Data Viewer changes are recorded here.
 - Removed obsolete legacy PyInstaller/build entrypoints (DV-1008 slice): root `build.py` is now a Data Viewer release-build front end, and the old `HDF5Viewer.spec`, `build_windows.py`, and `build_windows.bat` launchers were deleted.
 - Fixed the root `build.py` wrapper so `python -m build` no longer falls into the Data Viewer PyInstaller front end; when PyPA `build` is installed it delegates to the standard wheel/sdist builder, and otherwise reports a clean missing-dev-dependency message.
 - Removed the obsolete legacy `tests/test_packaged.py` source-import smoke suite; packaged validation is now owned by the Data Viewer installed-artifact smoke workflow and guarded against legacy runtime imports.
+- Removed the obsolete legacy `tests/test_final.py` source-import final integration script; remaining legacy environment checks now collect still-existing focused GUI modules instead of the removed script.
 - Normalized lock-file evidence across Windows and Linux checkouts and verified release jobs stop when quality tests fail.
 
 ### Documentation

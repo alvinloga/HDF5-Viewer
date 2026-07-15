@@ -15,7 +15,7 @@ import pytest
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 MULTI_MODULE_GUI_COLLECTION = [
     "tests/test_all_features.py",
-    "tests/test_final.py",
+    "tests/test_gui_interaction.py",
     "tests/test_phase1.py",
 ]
 
