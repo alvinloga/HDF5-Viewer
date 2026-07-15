@@ -1,6 +1,19 @@
 """Application-layer values for Data Viewer."""
 
 from .active_context import ActiveContext, ActiveContextSnapshot
+from .compare import (
+    ColumnMatch,
+    ComparisonAlignment,
+    ComparisonAlignmentMode,
+    ComparisonCompatibility,
+    ComparisonController,
+    ComparisonDifferenceMode,
+    ComparisonRestoreError,
+    ComparisonSide,
+    ComparisonState,
+    ComparisonValidationError,
+    ComparisonViewState,
+)
 from .diagnostics import DiagnosticEvent, DiagnosticsRedactor, DiagnosticsSnapshot
 from .documents import (
     DocumentController,
@@ -12,6 +25,17 @@ from .documents import (
 __all__ = [
     "ActiveContext",
     "ActiveContextSnapshot",
+    "ColumnMatch",
+    "ComparisonAlignment",
+    "ComparisonAlignmentMode",
+    "ComparisonCompatibility",
+    "ComparisonController",
+    "ComparisonDifferenceMode",
+    "ComparisonRestoreError",
+    "ComparisonSide",
+    "ComparisonState",
+    "ComparisonValidationError",
+    "ComparisonViewState",
     "DiagnosticEvent",
     "DiagnosticsRedactor",
     "DiagnosticsSnapshot",

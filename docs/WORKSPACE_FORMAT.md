@@ -101,18 +101,60 @@ Rules:
 ```json
 {
   "comparison_id": "cmp-01J2R3Q7A9",
-  "left": {"view_id": "view-01J2R3P0C1"},
-  "right": {"view_id": "view-01J2R3P0C2"},
+  "left": {
+    "source_id": "src-left",
+    "resource_path": "/results/field",
+    "resource_domain": "array",
+    "display_name": "baseline",
+    "shape": [128, 128],
+    "dtype": "float64",
+    "columns": [],
+    "fingerprint": {"size": 8493210}
+  },
+  "right": {
+    "source_id": "src-right",
+    "resource_path": "/results/field",
+    "resource_domain": "array",
+    "display_name": "candidate",
+    "shape": [128, 128],
+    "dtype": "float64",
+    "columns": [],
+    "fingerprint": {"size": 8493288}
+  },
   "alignment": {
-    "mode": "by_index",
-    "axis_mapping": [0, 1, 2]
+    "mode": "by_index"
   },
   "difference_mode": "absolute",
-  "linked_navigation": true
+  "linked_navigation": true,
+  "compatibility": {
+    "shape_compatible": true,
+    "column_compatible": false,
+    "reason": "exact shape"
+  },
+  "result_id": "result-01J2R3S2M4",
+  "provenance": {
+    "left_source_id": "src-left",
+    "left_resource_path": "/results/field",
+    "left_fingerprint": {"size": 8493210},
+    "right_source_id": "src-right",
+    "right_resource_path": "/results/field",
+    "right_fingerprint": {"size": 8493288},
+    "alignment_mode": "by_index",
+    "difference_mode": "absolute"
+  }
 }
 ```
 
 Restoration validates compatibility again. A stored alignment never bypasses current safety checks.
+
+The DV-0903 implementation provides the non-GUI comparison state surface in `data_viewer.app.compare`:
+
+- `ComparisonSide` records left/right source identity, resource path/domain, display name, shape, dtype, table columns, and fingerprint provenance.
+- `ComparisonAlignment` requires an explicit mode: `by_index`, `by_axis`, or `by_column`.
+- `by_index` and `by_axis` require exact same shape; no implicit broadcasting is permitted. `by_axis` additionally requires a same-rank axis permutation.
+- `by_column` requires explicit non-duplicated `left↔right` column matches; unknown columns fail validation.
+- `ComparisonController.create_comparison(...)` validates compatibility before payload comparison and exposes a Qt-free `ComparisonViewState` containing visible left/right identity, alignment label, difference label, and linked-navigation state.
+- `ComparisonController.save_to_workspace(...)` stores one comparison entry and marks only the workspace dirty. `restore_from_workspace(...)` restores valid comparison entries and records invalid ones as structured restore errors instead of aborting workspace load.
 
 ## 7. Plugin result provenance
 
