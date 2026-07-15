@@ -69,6 +69,7 @@ All notable Data Viewer changes are recorded here.
 - Added the Workspace Format v1 foundation (DV-0901): `.dvw` manifests now have a packaged schema, typed model, deterministic UTF-8 serialization, bounded unsafe-input validation, unknown-field preservation, relative/absolute source path resolution, and atomic save/load service semantics independent from source dirty state.
 - Added the Workspace restore planner (DV-0902): `.dvw` sources are now classified as available, moved candidate, missing, changed, ambiguous, unsupported, or failed; view shells restore before bounded metadata/payload reads; persisted plugin results are marked current/stale from source fingerprints; relocation updates require explicit confirmation and mark only the workspace dirty.
 - Added comparison workspace state (DV-0903): comparison sides now persist left/right resource identity, fingerprints, explicit index/axis/column alignment, difference mode, linked-navigation state, compatibility labels, and provenance; invalid comparison workspace entries degrade independently instead of aborting workspace restore.
+- Added navigation/search application state (DV-0904): recent and pinned files, resource favorites, semantic back/forward history, missing-recent remediation, and grouped global search now have Qt-free service models that remain outside `.dvw` workspace manifests.
 
 ### Fixed
 

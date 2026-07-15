@@ -21,6 +21,16 @@ from .documents import (
     DocumentSnapshot,
     DocumentStatus,
 )
+from .navigation import (
+    NavigationHistory,
+    NavigationLocation,
+    NavigationService,
+    RecentFile,
+    ResourceFavorite,
+    SearchIndexEntry,
+    SearchQuery,
+    SearchQueryError,
+)
 
 __all__ = [
     "ActiveContext",
@@ -43,4 +53,12 @@ __all__ = [
     "DocumentRequest",
     "DocumentSnapshot",
     "DocumentStatus",
+    "NavigationHistory",
+    "NavigationLocation",
+    "NavigationService",
+    "RecentFile",
+    "ResourceFavorite",
+    "SearchIndexEntry",
+    "SearchQuery",
+    "SearchQueryError",
 ]

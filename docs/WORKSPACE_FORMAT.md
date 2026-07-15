@@ -196,7 +196,16 @@ Layout stores semantic positions, not raw Qt object serialization:
 }
 ```
 
-Workspace preferences may contain view-specific precision, theme override, and navigation options. Machine-global preferences, cache paths, recent files, and secrets stay in application configuration.
+Workspace preferences may contain view-specific precision, theme override, and navigation options. Machine-global preferences, cache paths, recent files, pinned files, resource favorites, semantic navigation history, global-search filters, and secrets stay in application configuration.
+
+The DV-0904 implementation provides the non-GUI navigation/search state surface in `data_viewer.app.navigation`:
+
+- `NavigationService` stores recent files, pinned recent files, and resource favorites in application configuration, not in `.dvw` workspaces.
+- Recent-file entries record resolved paths, pinned state, and missing-file state. Missing recent items expose remediation actions such as Locate and Remove.
+- `ResourceFavorite` uses `(source_id, resource_path)` identity and treats display labels as mutable presentation only.
+- `NavigationHistory` records semantic source/resource/view/split targets for Back and Forward rather than arbitrary widget focus.
+- `SearchQuery` supports path text, name text, domain, dtype substring, exact shape, and optional regular-expression matching.
+- Search is grouped by resource domain and honors cooperative cancellation; invalid regular expressions fail with a structured `SearchQueryError` before returning partial results.
 
 ## 9. Load algorithm
 
