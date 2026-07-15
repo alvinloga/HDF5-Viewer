@@ -18,7 +18,7 @@ Known baseline limitations:
 - the GUI suite does not currently collect in the active development environment;
 - the historical claim that 121 tests pass is not accepted as current evidence;
 - editing, export, split focus, async loading, and optional-source handling contain confirmed defects;
-- the old `HDF5 Viewer` name is retained only in historical or explicit legacy-fallback contexts; current target package, entrypoint, and UI surfaces use `Data Viewer`.
+- the old `HDF5 Viewer` name is retained only in historical or migration-reference contexts; current target package, entrypoint, and UI surfaces use `Data Viewer`.
 
 ## Product definition
 

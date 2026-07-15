@@ -21,7 +21,7 @@ All notable Data Viewer changes are recorded here.
   - `data_viewer/gui/app.py` introduces `run_data_viewer` bootstrap entry.
   - `data_viewer/gui/commands.py` implements asynchronous open + cancellation command handling.
   - `data_viewer/gui/shell.py` provides regioned shell scaffolding and lifecycle-safe open/close handling.
-  - `data_viewer/__main__.py` dispatches to target bootstrap by default with `--legacy` fallback and `--version` support.
+  - `data_viewer/__main__.py` dispatches to target bootstrap by default with `--version` support.
 - Added vertical shell behaviors for the target Data Viewer (DV-0205): lazy tree expansion/load-more behavior, dataset activation path/shape/dtype/slice status synchronization, and object-name wiring for status labels used by automation and tests.
 - Added DocumentController ownership and request-generation tracking (`data_viewer/app/documents.py` and `data_viewer/app/active_context.py`), including close/wait lifecycle cleanup and non-GUI dirty/active-task state hooks.
 - Added platform path resolution and bounded temporary cache primitives (`data_viewer/infrastructure/paths.py`, `cache.py`), with atomic read/write configuration handling and log redaction support for diagnostics in `data_viewer/infrastructure/config.py` and `data_viewer/infrastructure/logging.py`.
@@ -85,6 +85,7 @@ All notable Data Viewer changes are recorded here.
 - Stabilized the legacy GUI regression suite on Windows and Linux by isolating process state, scoping themes to each main window, and closing data-load panels cooperatively before their shared HDF5 sessions close.
 - Removed one structurally proven duplicate legacy event-bus test while retaining its canonical regression coverage.
 - Removed first-release NetCDF/Zarr product paths (DV-0411): legacy startup no longer imports/registers external NetCDF/Zarr sources, folder explorer defaults no longer advertise `.zarr`, optional dependency claims were removed, and the obsolete external source modules were deleted.
+- Removed the broken explicit legacy CLI fallback from the target `data_viewer` entrypoint (DV-1008 slice): `--legacy` now fails argument parsing and `DATA_VIEWER_LEGACY=1` no longer overrides the default Data Viewer bootstrap.
 - Normalized lock-file evidence across Windows and Linux checkouts and verified release jobs stop when quality tests fail.
 
 ### Documentation

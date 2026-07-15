@@ -2693,3 +2693,35 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - DV-1007 remains unchecked until the PyQt distribution-license decision is documented as satisfied and the generated evidence is verified from Windows and Linux CI package outputs for the committed revision.
+
+## DV-1008 target CLI legacy fallback removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- `data_viewer.__main__` no longer exposes the removed `--legacy` argument and no longer honors `DATA_VIEWER_LEGACY=1` as a target-bootstrap override.
+- The prior explicit legacy path was broken because it attempted to launch `data_viewer/main.py`, which does not exist in the target package.
+- `--version` and `--ci-smoke` remain available target CLI surfaces.
+- README and changelog wording now describe legacy names as historical or migration references, not as a supported target CLI fallback.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial target CLI regression tests | `venv\Scripts\python.exe -m pytest tests\test_data_viewer_package.py -q` | failed as expected before implementation: `--legacy` attempted to run missing `data_viewer\main.py`, and `DATA_VIEWER_LEGACY=1` bypassed the target bootstrap |
+| Target CLI package tests | `venv\Scripts\python.exe -m pytest tests\test_data_viewer_package.py -q` | 8 passed |
+| CLI plus installed-smoke scope | `venv\Scripts\python.exe -m pytest tests\test_data_viewer_package.py tests\test_installed_artifact_smoke.py -q` | 11 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\__main__.py tests\test_data_viewer_package.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 110 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools core gui plugins services utils main.py` | passed |
+| Manual target version CLI | `venv\Scripts\python.exe -m data_viewer --version` | printed `Data Viewer 1.0.0.dev0` |
+| Manual removed legacy CLI | `venv\Scripts\python.exe -m data_viewer --legacy` | failed argument parsing as expected with `unrecognized arguments: --legacy` |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 541 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Removed fallback scan | `rg -n -g "*.md" -g "*.py" -g "*.yml" -- "--legacy|DATA_VIEWER_LEGACY|legacy fallback|legacy-fallback" README.md README_EN.md docs tasks data_viewer tests .github tools packaging` | only the DV-1008 acceptance text and negative regression tests mention removed fallback surfaces |
+| Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
+
+Known gaps:
+
+- This is a safe DV-1008 slice, not full DV-1008 completion. Legacy `main.py`, `core/`, `gui/`, `plugins/`, `services/`, and legacy regression tests remain as migration references until each eligible capability/removal group is proven separately.
+- DV-1008 remains unchecked until no removed legacy path is imported by runtime, tests, or build outputs, and Windows/Linux CI evidence exists for the final committed revision.

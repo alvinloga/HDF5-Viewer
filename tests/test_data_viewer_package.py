@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from unittest.mock import Mock
 import sys
+from unittest.mock import Mock
 
 import data_viewer
 from data_viewer import __version__
@@ -31,7 +31,7 @@ def test_workspace_manifest_uses_canonical_runtime_version() -> None:
 
 
 def test_target_runtime_surfaces_do_not_use_old_product_name() -> None:
-    """The target package may mention the old name only for explicit legacy fallback text."""
+    """The target package may mention the old name only for explicit legacy/migration text."""
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1] / "data_viewer"
@@ -105,7 +105,6 @@ def _run_with_argv(
     argv: list[str],
     *,
     run_data_viewer,
-    run_legacy,
 ) -> int:
     """Run parser+dispatch with injectable handlers for testability."""
 
@@ -114,7 +113,6 @@ def _run_with_argv(
     try:
         return entrypoint.main_with_handlers(
             run_data_viewer=run_data_viewer,
-            run_legacy=run_legacy,
         )
     finally:
         sys.argv = old_argv
@@ -132,7 +130,6 @@ def test_package_cli_version() -> None:
     exit_code = _run_with_argv(
         ["data-viewer", "--version"],
         run_data_viewer=fake_bootstrap,
-        run_legacy=Mock(return_value=0),
     )
     assert exit_code == 0
     assert not called_bootstrap
@@ -144,19 +141,39 @@ def test_cli_defaults_to_target_bootstrap() -> None:
     exit_code = _run_with_argv(
         ["data-viewer", "file.h5"],
         run_data_viewer=fake_bootstrap,
-        run_legacy=Mock(return_value=0),
     )
     assert exit_code == 123
     fake_bootstrap.assert_called_once_with(path="file.h5")
 
 
-def test_cli_legacy_is_explicit() -> None:
-    """`--legacy` routes to legacy fallback without touching target bootstrap."""
-    fake_legacy = Mock(return_value=7)
+def test_cli_rejects_removed_legacy_fallback() -> None:
+    """DV-1008 removes the broken legacy CLI fallback from the target entrypoint."""
+
+    fake_bootstrap = Mock(return_value=0)
+    old_argv = list(sys.argv)
+    sys.argv = ["data-viewer", "--legacy", "legacy.h5"]
+    try:
+        try:
+            entrypoint.main_with_handlers(run_data_viewer=fake_bootstrap)
+        except SystemExit as exc:
+            assert exc.code != 0
+        else:  # pragma: no cover - documents the required failure path
+            raise AssertionError("--legacy unexpectedly launched a bootstrap")
+    finally:
+        sys.argv = old_argv
+    fake_bootstrap.assert_not_called()
+
+
+def test_legacy_environment_flag_does_not_override_target_bootstrap(monkeypatch) -> None:
+    """The old environment escape hatch is ignored after the target bootstrap becomes default."""
+
+    monkeypatch.setenv("DATA_VIEWER_LEGACY", "1")
+    fake_bootstrap = Mock(return_value=11)
+
     exit_code = _run_with_argv(
-        ["data-viewer", "--legacy", "legacy.h5"],
-        run_data_viewer=Mock(return_value=0),
-        run_legacy=fake_legacy,
+        ["data-viewer", "file.h5"],
+        run_data_viewer=fake_bootstrap,
     )
-    assert exit_code == 7
-    fake_legacy.assert_called_once_with(path="legacy.h5")
+
+    assert exit_code == 11
+    fake_bootstrap.assert_called_once_with(path="file.h5")
