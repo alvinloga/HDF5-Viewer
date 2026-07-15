@@ -149,3 +149,13 @@ def test_legacy_all_features_smoke_script_is_removed() -> None:
         "tests/test_comprehensive.py",
     ):
         assert (PROJECT_ROOT / retained_suite).exists()
+
+
+def test_legacy_core_test_manual_runner_is_removed() -> None:
+    """DV-1008 keeps legacy core tests as pytest tests, not standalone scripts."""
+
+    core_test = (PROJECT_ROOT / "tests" / "test_core.py").read_text(encoding="utf-8")
+
+    assert "Legacy HDF5 Viewer - Core Module Tests" not in core_test
+    assert "def main(" not in core_test
+    assert '__name__ == "__main__"' not in core_test

@@ -11,7 +11,6 @@ import h5py
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.event_bus import EventBus
-from core.datasource import DataSource, DataMeta, NodeType, TreeNode
 from core.h5_source import H5Source
 from core.slicer import SliceParser
 from core.cache import LRUCache
@@ -161,24 +160,3 @@ def test_registry():
     assert not DataSourceRegistry.is_supported("test.txt")
 
     print("  DataSourceRegistry: OK")
-
-
-def main():
-    """运行所有测试"""
-    print("=" * 50)
-    print("Legacy HDF5 Viewer - Core Module Tests")
-    print("=" * 50)
-
-    test_event_bus()
-    test_slicer()
-    test_cache()
-    test_h5_source()
-    test_registry()
-
-    print("=" * 50)
-    print("All tests passed!")
-    print("=" * 50)
-
-
-if __name__ == "__main__":
-    main()
