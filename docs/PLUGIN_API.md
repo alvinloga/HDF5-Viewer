@@ -15,7 +15,8 @@ Current implementation status:
 - DV-0705 implements the reusable test-side plugin conformance kit in `tests.conformance.plugin` and a packaged `org.dataviewer.dataset_profile` reference plugin that proves manifest discovery, compatibility, parameter validation, chunked execution, cancellation, progress, numerical goldens, edge inputs, result/provenance validation, and forbidden-import checks.
 - DV-0801 expands the Dataset Profile built-in with storage estimates and value semantics, and adds `org.dataviewer.descriptive_statistics` for axis-aware count/missingness/nonfinite/mean/std/quantile/extrema table results.
 - DV-0802 adds `org.dataviewer.distribution_summary` for histogram, robust spread, skewness/kurtosis, nonfinite accounting, and explicit deterministic sampling metadata.
-- The remaining P8 catalog still owns correlation/covariance, dataset comparison, visualization plugins, and concrete plot renderers.
+- DV-0803 adds `org.dataviewer.correlation_covariance` for labeled correlation/covariance matrices with explicit variable-axis selection, contiguous variable ranges, listwise/pairwise missing-data alignment, constant-variable warnings, and matrix-size budget refusal.
+- The remaining P8 catalog still owns dataset comparison, visualization plugins, and concrete plot renderers.
 
 ## 2. Package boundary
 
@@ -35,6 +36,8 @@ data_viewer/
       descriptive_statistics/
         plugin.json
       distribution_summary/
+        plugin.json
+      correlation_covariance/
         plugin.json
 ```
 
@@ -248,7 +251,7 @@ All results display plugin/version, exact inputs, selection/scope, parameters, s
 - Dataset Profile: shape, dtype, estimated bytes, element count, finite/missing/nonfinite counts, finite range, finite mean, and value semantics for array/volume inputs.
 - Descriptive Statistics: count, missing/nonfinite counts, mean, sample standard deviation, configurable quantiles, extrema, configurable axis, and explicit NaN policy.
 - Distribution Summary: histogram, IQR, MAD, skewness/kurtosis when valid, nonfinite counts, and explicit deterministic sampling metadata.
-- Correlation/Covariance: selected numeric columns/axes with missing policy.
+- Correlation/Covariance: selected numeric columns/axes with listwise or pairwise missing policy, symmetric labeled output, constant-variable warnings, and variable-count budget refusal.
 - Dataset Compare: compatibility, shape/dtype differences, absolute/relative errors, equality counts.
 
 ### Visualization

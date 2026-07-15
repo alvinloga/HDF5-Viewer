@@ -24,6 +24,8 @@ DESCRIPTIVE_STATS_PLUGIN_ID = "org.dataviewer.descriptive_statistics"
 DESCRIPTIVE_STATS_PLUGIN_VERSION = "1.0.0"
 DISTRIBUTION_SUMMARY_PLUGIN_ID = "org.dataviewer.distribution_summary"
 DISTRIBUTION_SUMMARY_PLUGIN_VERSION = "1.0.0"
+CORRELATION_COVARIANCE_PLUGIN_ID = "org.dataviewer.correlation_covariance"
+CORRELATION_COVARIANCE_PLUGIN_VERSION = "1.0.0"
 
 
 @dataclass(slots=True)
@@ -253,6 +255,71 @@ class DistributionSummaryPlugin:
                 "nan_policy": nan_policy,
             },
             warnings=(),
+        )
+
+
+class CorrelationCovariancePlugin:
+    """Correlation and covariance matrix plugin with explicit alignment policy."""
+
+    def run(self, context: PluginContext) -> PluginResult:
+        input_access = context.inputs[0]
+        descriptor = input_access.descriptor
+        variables_axis = _parameter_int(context.parameters, "variables_axis")
+        variable_start = _parameter_int(context.parameters, "variable_start")
+        variable_count = _parameter_int(context.parameters, "variable_count")
+        missing_policy = _parameter_str(context.parameters, "missing_policy")
+        max_variables = _parameter_int(context.parameters, "max_variables")
+        chunks: list[np.ndarray] = []
+
+        for chunk in input_access.iter_chunks(target_bytes=context.memory_budget_bytes):
+            if context.is_cancelled():
+                break
+            chunks.append(np.asarray(chunk.values))
+            context.report_progress(None, "computing correlation and covariance")
+
+        values = _concatenate_chunks(chunks, descriptor.shape, descriptor.dtype)
+        matrix, labels = _variable_observation_matrix(
+            values,
+            variables_axis=variables_axis,
+            variable_start=variable_start,
+            variable_count=variable_count,
+            max_variables=max_variables,
+        )
+        rows, warnings = _correlation_covariance_rows(
+            matrix,
+            labels=labels,
+            missing_policy=missing_policy,
+        )
+        return PluginResult(
+            kind=ResultKind.TABLE,
+            title="Correlation/Covariance",
+            payload=TableResultPayload(
+                columns=(
+                    ResultColumn("metric", "string"),
+                    ResultColumn("row_variable", "string"),
+                    ResultColumn("column_variable", "string"),
+                    ResultColumn("value", "number"),
+                    ResultColumn("aligned_count", "integer"),
+                ),
+                rows=tuple(rows),
+            ),
+            provenance=ResultProvenance(
+                plugin_id=CORRELATION_COVARIANCE_PLUGIN_ID,
+                plugin_version=CORRELATION_COVARIANCE_PLUGIN_VERSION,
+                api_version=PLUGIN_API_VERSION,
+                inputs=(descriptor,),
+                parameters=context.parameters,
+                computation_scope="full",
+                sampled=False,
+            ),
+            metadata={
+                "value_semantics": _value_semantics(descriptor.dtype),
+                "variables_axis": variables_axis,
+                "variable_start": variable_start,
+                "variable_count": len(labels),
+                "missing_policy": missing_policy,
+            },
+            warnings=tuple(warnings),
         )
 
 
@@ -517,3 +584,126 @@ def _rounded_or_none(value: JsonValue) -> JsonValue:
     if isinstance(value, float):
         return round(value, 12)
     return value
+
+
+def _variable_observation_matrix(
+    values: np.ndarray,
+    *,
+    variables_axis: int,
+    variable_start: int,
+    variable_count: int,
+    max_variables: int,
+) -> tuple[np.ndarray, tuple[str, ...]]:
+    numeric = _numeric_values(values)
+    if numeric.ndim < 2:
+        raise ValueError("correlation/covariance requires at least two dimensions")
+    if variables_axis < 0 or variables_axis >= numeric.ndim:
+        raise ValueError(f"variables_axis {variables_axis} is outside rank {numeric.ndim}")
+    if variable_start < 0:
+        raise ValueError("variable_start must be non-negative")
+    if variable_count < 0:
+        raise ValueError("variable_count must be non-negative")
+    if max_variables <= 0:
+        raise ValueError("max_variables must be positive")
+
+    moved = np.moveaxis(numeric, variables_axis, 0)
+    total_variables = moved.shape[0]
+    if variable_start >= total_variables:
+        raise ValueError(
+            f"variable_start {variable_start} is outside variable count {total_variables}"
+        )
+    stop = total_variables if variable_count == 0 else min(total_variables, variable_start + variable_count)
+    selected = moved[variable_start:stop]
+    selected_count = int(selected.shape[0])
+    if selected_count == 0:
+        raise ValueError("at least one variable must be selected")
+    if selected_count > max_variables:
+        raise ValueError(
+            f"selected variable count {selected_count} exceeds max_variables {max_variables}"
+        )
+
+    observations = selected.reshape(selected_count, -1)
+    labels = tuple(str(index) for index in range(variable_start, stop))
+    return observations, labels
+
+
+def _correlation_covariance_rows(
+    matrix: np.ndarray,
+    *,
+    labels: tuple[str, ...],
+    missing_policy: str,
+) -> tuple[list[dict[str, JsonValue]], list[str]]:
+    if missing_policy not in {"listwise", "pairwise"}:
+        raise ValueError("missing_policy must be listwise or pairwise")
+
+    working = np.asarray(matrix, dtype=np.float64)
+    listwise_mask = np.all(np.isfinite(working), axis=0) if missing_policy == "listwise" else None
+    rows: list[dict[str, JsonValue]] = []
+    warnings: list[str] = []
+    constant_warning_labels: set[str] = set()
+
+    for row_index, row_label in enumerate(labels):
+        for column_index, column_label in enumerate(labels):
+            row_values = working[row_index]
+            column_values = working[column_index]
+            if listwise_mask is None:
+                mask = np.isfinite(row_values) & np.isfinite(column_values)
+            else:
+                mask = listwise_mask
+            left = row_values[mask]
+            right = column_values[mask]
+            aligned_count = int(left.size)
+            covariance = _sample_covariance_or_none(left, right)
+            correlation = _sample_correlation_or_none(left, right)
+            if aligned_count >= 2 and (_is_constant(left) or _is_constant(right)):
+                if _is_constant(left):
+                    constant_warning_labels.add(row_label)
+                if _is_constant(right):
+                    constant_warning_labels.add(column_label)
+            rows.append(
+                {
+                    "metric": "correlation",
+                    "row_variable": row_label,
+                    "column_variable": column_label,
+                    "value": _rounded_or_none(correlation),
+                    "aligned_count": aligned_count,
+                }
+            )
+            rows.append(
+                {
+                    "metric": "covariance",
+                    "row_variable": row_label,
+                    "column_variable": column_label,
+                    "value": _rounded_or_none(covariance),
+                    "aligned_count": aligned_count,
+                }
+            )
+
+    for label in sorted(constant_warning_labels, key=lambda item: int(item) if item.isdecimal() else item):
+        warnings.append(f"CONSTANT_VARIABLE: variable {label} has zero variance; correlation is undefined.")
+    return rows, warnings
+
+
+def _sample_covariance_or_none(left: np.ndarray, right: np.ndarray) -> JsonValue:
+    if left.size < 2:
+        return None
+    left_centered = left - float(np.mean(left))
+    right_centered = right - float(np.mean(right))
+    return float(np.dot(left_centered, right_centered) / (left.size - 1))
+
+
+def _sample_correlation_or_none(left: np.ndarray, right: np.ndarray) -> JsonValue:
+    if left.size < 2:
+        return None
+    left_std = float(np.std(left, ddof=1))
+    right_std = float(np.std(right, ddof=1))
+    if left_std == 0.0 or right_std == 0.0:
+        return None
+    covariance = _sample_covariance_or_none(left, right)
+    if not isinstance(covariance, float):
+        return None
+    return float(covariance / (left_std * right_std))
+
+
+def _is_constant(values: np.ndarray) -> bool:
+    return values.size >= 2 and float(np.std(values, ddof=1)) == 0.0

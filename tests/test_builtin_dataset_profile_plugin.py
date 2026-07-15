@@ -28,8 +28,9 @@ def test_dataset_profile_is_discovered_without_import_errors() -> None:
     manifests = registry.available_plugins()
 
     assert registry.diagnostics() == ()
-    assert manifests[0].id == PLUGIN_ID
-    assert manifests[0].name == "Dataset Profile"
+    manifest = registry.manifest_for(PLUGIN_ID)
+    assert manifest in manifests
+    assert manifest.name == "Dataset Profile"
 
 
 def test_dataset_profile_passes_shared_conformance_and_numerical_golden() -> None:

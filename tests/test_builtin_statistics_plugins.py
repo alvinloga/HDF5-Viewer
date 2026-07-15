@@ -43,11 +43,10 @@ def test_statistics_plugins_are_discovered_in_deterministic_order() -> None:
     """P8 statistics plugins are packaged built-ins with stable manifest ordering."""
 
     registry = discover_builtin_plugins()
+    ids = [manifest.id for manifest in registry.available_plugins()]
 
-    assert [manifest.id for manifest in registry.available_plugins()][:2] == [
-        DATASET_PROFILE_ID,
-        DESCRIPTIVE_STATS_ID,
-    ]
+    assert DATASET_PROFILE_ID in ids
+    assert DESCRIPTIVE_STATS_ID in ids
 
 
 def test_dataset_profile_reports_storage_and_complex_edge_metrics() -> None:

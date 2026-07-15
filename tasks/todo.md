@@ -485,7 +485,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: histogram/robust spread/skew/kurtosis only when valid; explicit bins/missing policy; full or recorded deterministic sample.
 - Verify: known distributions, constants, empty/nonfinite, deterministic sampling goldens.
 
-### [ ] DV-0803 Implement Correlation/Covariance
+### [x] DV-0803 Implement Correlation/Covariance
 
 - Depends: DV-0801.
 - Acceptance: selected numeric columns/axis, exact alignment/missing policy, symmetric labeled output, constant-column warning, size budget.

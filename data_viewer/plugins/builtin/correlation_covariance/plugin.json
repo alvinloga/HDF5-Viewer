@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "api_version": 1,
+  "id": "org.dataviewer.correlation_covariance",
+  "name": "Correlation/Covariance",
+  "version": "1.0.0",
+  "description": "Computes labeled correlation and covariance matrices with explicit missing-data alignment.",
+  "entry_point": "data_viewer.plugins.builtin.dataset_profile.plugin:CorrelationCovariancePlugin",
+  "kind": "analysis",
+  "required_dependencies": [],
+  "input": {
+    "domains": ["array", "volume"],
+    "min_ndim": 2,
+    "max_ndim": null,
+    "dtype_families": ["boolean", "integer", "floating", "complex"],
+    "requires_random_access": false,
+    "supports_chunked_input": true,
+    "supports_selection": true
+  },
+  "parameters_schema": {
+    "type": "object",
+    "properties": {
+      "variables_axis": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 1,
+        "title": "Variables axis",
+        "description": "Axis whose positions are treated as variables; all remaining axes are flattened into aligned observations."
+      },
+      "variable_start": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "First variable",
+        "description": "First variable index to include on the selected variables axis."
+      },
+      "variable_count": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "Variable count",
+        "description": "0 selects all variables from variable_start; positive values select a contiguous range."
+      },
+      "missing_policy": {
+        "type": "string",
+        "enum": ["listwise", "pairwise"],
+        "default": "listwise",
+        "title": "Missing policy",
+        "description": "listwise drops observations missing in any selected variable; pairwise drops missing observations per pair."
+      },
+      "max_variables": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 2048,
+        "default": 256,
+        "title": "Maximum variables",
+        "description": "Safety budget for the square output matrix."
+      }
+    },
+    "additionalProperties": false
+  },
+  "result_kinds": ["table"]
+}

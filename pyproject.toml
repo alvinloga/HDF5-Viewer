@@ -62,7 +62,7 @@ version = { attr = "data_viewer._version.__version__" }
 include = ["data_viewer*"]
 
 [tool.setuptools.package-data]
-"data_viewer.plugins.builtin" = ["descriptive_statistics/plugin.json", "distribution_summary/plugin.json"]
+"data_viewer.plugins.builtin" = ["correlation_covariance/plugin.json", "descriptive_statistics/plugin.json", "distribution_summary/plugin.json"]
 "data_viewer.plugins.builtin.dataset_profile" = ["plugin.json"]
 
 [tool.mypy]
