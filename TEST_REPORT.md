@@ -3428,3 +3428,30 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the legacy `services/` package. Legacy product packages `core/`, `gui/`, and `plugins/` still exist as migration reference inputs until their individual parity/removal groups are proven.
+
+## DV-1008 legacy plugins external subpackage removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `plugins/external/__init__.py`, the last tracked file in the obsolete external-source subpackage left after NetCDF/Zarr source removal.
+- Cleaned generated local `plugins/external/__pycache__` files so `plugins.external` cannot remain visible as an accidental namespace package.
+- Strengthened `tests/test_format_scope.py::test_legacy_external_netcdf_and_zarr_source_files_are_removed` so the whole `plugins/external/` subpackage stays absent, not only the deleted `netcdf_source.py` and `zarr_source.py` modules.
+- Updated the changelog to record this as a DV-1008 cleanup of the DV-0411 NetCDF/Zarr removal residue.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial external subpackage removal regression test | `venv\Scripts\python.exe -m pytest tests\test_format_scope.py::test_legacy_external_netcdf_and_zarr_source_files_are_removed -q` | failed as expected before implementation because `plugins/external/` still existed |
+| Targeted format-scope guard | `venv\Scripts\python.exe -m pytest tests\test_format_scope.py::test_legacy_external_netcdf_and_zarr_source_files_are_removed -q` | 1 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_format_scope.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy --ignore-missing-imports --follow-imports=skip tests\test_format_scope.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_format_scope.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 425 passed |
+
+Known gaps:
+
+- This removes only the obsolete legacy `plugins/external/` subpackage. The legacy plugin API/base and built-in plugin modules remain as a separate migration/removal group.

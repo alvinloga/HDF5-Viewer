@@ -85,6 +85,7 @@ All notable Data Viewer changes are recorded here.
 - Stabilized the legacy GUI regression suite on Windows and Linux by isolating process state, scoping themes to each main window, and closing data-load panels cooperatively before their shared HDF5 sessions close.
 - Removed one structurally proven duplicate legacy event-bus test while retaining its canonical regression coverage.
 - Removed first-release NetCDF/Zarr product paths (DV-0411): legacy startup no longer imports/registers external NetCDF/Zarr sources, folder explorer defaults no longer advertise `.zarr`, optional dependency claims were removed, and the obsolete external source modules were deleted.
+- Removed the empty legacy `plugins/external/` stub left after NetCDF/Zarr removal; first-release format scope now guards the whole external-source subpackage against returning.
 - Removed the broken explicit legacy CLI fallback from the target `data_viewer` entrypoint (DV-1008 slice): `--legacy` now fails argument parsing and `DATA_VIEWER_LEGACY=1` no longer overrides the default Data Viewer bootstrap.
 - Removed legacy runtime paths from the release compile gate (DV-1008 slice): CI now compiles the target Data Viewer package, CI scripts, and packaging tools as the release-facing compile scope while legacy tests remain as migration-reference regressions.
 - Removed obsolete legacy PyInstaller/build entrypoints (DV-1008 slice): root `build.py` is now a Data Viewer release-build front end, and the old `HDF5Viewer.spec`, `build_windows.py`, and `build_windows.bat` launchers were deleted.

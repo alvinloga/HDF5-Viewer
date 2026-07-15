@@ -58,5 +58,6 @@ def test_requirements_do_not_ship_netcdf_or_zarr_dependency_claims() -> None:
 
 
 def test_legacy_external_netcdf_and_zarr_source_files_are_removed() -> None:
+    assert not Path("plugins/external").exists()
     assert not Path("plugins/external/netcdf_source.py").exists()
     assert not Path("plugins/external/zarr_source.py").exists()
