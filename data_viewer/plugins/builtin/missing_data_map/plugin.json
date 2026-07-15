@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "api_version": 1,
+  "id": "org.dataviewer.missing_data_map",
+  "name": "Missing Data Map",
+  "version": "1.0.0",
+  "description": "Creates a labeled missing-data heatmap with deterministic observation sampling.",
+  "entry_point": "data_viewer.plugins.builtin.plots.plugin:MissingDataMapPlugin",
+  "kind": "visualization",
+  "required_dependencies": [],
+  "input": {
+    "domains": ["array", "volume"],
+    "min_ndim": 2,
+    "max_ndim": null,
+    "dtype_families": ["boolean", "integer", "floating", "complex"],
+    "requires_random_access": false,
+    "supports_chunked_input": true,
+    "supports_selection": true
+  },
+  "parameters_schema": {
+    "type": "object",
+    "properties": {
+      "variables_axis": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 1,
+        "title": "Variables axis",
+        "description": "Axis whose positions are treated as variables; all remaining axes are flattened into observations."
+      },
+      "variable_start": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "First variable"
+      },
+      "variable_count": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "Variable count",
+        "description": "0 selects all variables from variable_start; positive values select a contiguous range."
+      },
+      "max_variables": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 2048,
+        "default": 256,
+        "title": "Maximum variables",
+        "description": "Safety budget for the variable axis."
+      },
+      "max_observations": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100000,
+        "default": 10000,
+        "title": "Maximum observations",
+        "description": "0 renders every observation; positive values request deterministic observation sampling."
+      },
+      "seed": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0,
+        "title": "Random seed"
+      }
+    },
+    "additionalProperties": false
+  },
+  "result_kinds": ["plot"]
+}

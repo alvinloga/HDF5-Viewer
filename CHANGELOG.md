@@ -64,6 +64,7 @@ All notable Data Viewer changes are recorded here.
 - Added the Dataset Compare built-in plugin (DV-0804): exact-shape compatibility checks, no-broadcast refusal, equality counts, finite/nonfinite accounting, absolute and left-relative error metrics, and explicit zero-denominator handling.
 - Added the first declarative visualization plugins (DV-0805): line, scatter, histogram, and box plot built-ins now emit renderer-owned `PlotSpec` results with finite-value filtering, deterministic sampling metadata, accessible summaries, export provenance, and JSON-safe data-table metadata.
 - Added the multidimensional slice navigator workspace view (DV-0806): image projections now have explicit high-dimensional axis/index navigation state, raw/display mode labeling, linked-slice status, bounded-read provenance, preserved aspect/zoom/interpolation metadata, and cursor-to-source coordinate reporting.
+- Added heatmap visualization plugins (DV-0807): Correlation Heatmap and Missing Data Map built-ins now emit renderer-owned heatmap `PlotSpec` results with labeled axes, explicit value ranges/legends, data-table alternatives, missing-data semantics, and deterministic observation sampling for large missing maps.
 
 ### Fixed
 

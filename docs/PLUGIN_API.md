@@ -18,6 +18,7 @@ Current implementation status:
 - DV-0803 adds `org.dataviewer.correlation_covariance` for labeled correlation/covariance matrices with explicit variable-axis selection, contiguous variable ranges, listwise/pairwise missing-data alignment, constant-variable warnings, and matrix-size budget refusal.
 - DV-0804 adds `org.dataviewer.dataset_compare` for exact-shape numeric dataset comparisons with metadata compatibility rows, equality counts, finite/nonfinite accounting, absolute/relative error metrics, and explicit no-broadcast refusal.
 - DV-0805 adds `org.dataviewer.line_plot`, `org.dataviewer.scatter_plot`, `org.dataviewer.histogram_plot`, and `org.dataviewer.box_plot` for renderer-owned declarative `PlotSpec` results with explicit point sampling, finite-value filtering, accessible summaries, export provenance, and JSON-safe data-table metadata.
+- DV-0807 adds `org.dataviewer.correlation_heatmap` and `org.dataviewer.missing_data_map` for renderer-owned heatmap `PlotSpec` results with labeled axes, value ranges/legends, budgeted variable selection, deterministic missing-map observation sampling, and data-table alternatives.
 - The remaining P8 catalog still owns image/slice/navigation visualization plugins, correlation heatmap, missing-data map, NIfTI viewer, and concrete Qt plot renderer widgets.
 
 ## 2. Package boundary
@@ -248,7 +249,7 @@ DV-0704 provides `ArrayResultPayload`; object arrays are rejected and oversized 
 
 ### Plot
 
-A declarative `PlotSpec`, not a Matplotlib `Figure`. Required v1 marks: line, scatter, histogram, box, heatmap, image. The renderer owns theme, accessibility, export, and lifecycle.
+A declarative `PlotSpec`, not a Matplotlib `Figure`. Required v1 marks: line, scatter, histogram, box, heatmap, image. The renderer owns theme, accessibility, export, and lifecycle. `PlotMark.x` and `PlotMark.y` are finite coordinates; heatmap-like marks may also provide optional finite `PlotMark.values` with the same length as `x`/`y` for cell intensity.
 
 DV-0704 provides declarative `PlotSpec`/`PlotMark` validation and accessible summaries, but concrete renderer widgets remain future UI integration work.
 
@@ -276,8 +277,8 @@ All results display plugin/version, exact inputs, selection/scope, parameters, s
 - Box Plot: declarative box `PlotSpec` from finite numeric values, with five-number summary and optional deterministic sampling before summary.
 - Image Viewer
 - 3D+ Slice Navigator
-- Correlation Heatmap
-- Missing Data Map
+- Correlation Heatmap: labeled square correlation heatmap with listwise/pairwise missing policy, constant-variable warnings, fixed `[-1, 1]` range/legend, and complete data-table metadata.
+- Missing Data Map: labeled 0/1 heatmap for present/missing observations, variable-count budget refusal, deterministic observation sampling, and complete data-table metadata.
 - NIfTI Orthogonal Viewer and header/coordinate inspector
 
 Each catalog entry is its own manifest/package and may ship incrementally without changing the runner.
@@ -286,7 +287,7 @@ Each catalog entry is its own manifest/package and may ship incrementally withou
 
 - Default computation scope is explicit: full resource, current slice, selection, filtered rows, or sample.
 - Sampling never occurs silently. Results state method, seed, requested size, actual size, and population estimate.
-- Plot plugins omit nonfinite points before creating `PlotSpec` marks because renderer-owned plot marks require finite coordinates; omissions are reported as result warnings and data-table metadata remains exportable.
+- Plot plugins omit nonfinite coordinates/intensities before creating `PlotSpec` marks because renderer-owned plot marks require finite coordinates and optional finite values; omissions or undefined cells are reported through warnings and data-table metadata remains exportable.
 - Stable algorithms are required for large sums/variance; expected tolerance is dtype-aware.
 - `NaN`, infinity, complex numbers, masked/missing values, strings, booleans, and empty inputs have documented behavior.
 - Dataset Compare refuses ambiguous broadcasting or alignment; v1 computes pairwise finite error metrics and treats nonfinite equality separately from finite error statistics.

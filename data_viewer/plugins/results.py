@@ -121,24 +121,32 @@ class PlotMark:
     x: tuple[float, ...]
     y: tuple[float, ...]
     label: str = ""
+    values: tuple[float, ...] = ()
 
     def __post_init__(self) -> None:
         if self.kind not in SUPPORTED_PLOT_MARKS:
             raise ResultValidationError(f"plot mark kind is unsupported: {self.kind}")
         x = tuple(float(value) for value in self.x)
         y = tuple(float(value) for value in self.y)
+        values = tuple(float(value) for value in self.values)
         if not x or len(x) != len(y):
             raise ResultValidationError("plot mark x/y values must be non-empty and equal length")
         if any(not isfinite(value) for value in (*x, *y)):
             raise ResultValidationError("plot mark values must be finite")
+        if values and len(values) != len(x):
+            raise ResultValidationError("plot mark values must match x/y length")
+        if any(not isfinite(value) for value in values):
+            raise ResultValidationError("plot mark values must be finite")
         object.__setattr__(self, "x", x)
         object.__setattr__(self, "y", y)
+        object.__setattr__(self, "values", values)
 
     def to_json(self) -> dict[str, JsonValue]:
         return {
             "kind": self.kind,
             "x": list(self.x),
             "y": list(self.y),
+            "values": list(self.values),
             "label": self.label,
         }
 
