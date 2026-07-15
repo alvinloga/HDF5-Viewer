@@ -566,7 +566,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: startup asks/restores safely; dirty patches never auto-overwrite; change notification leads reload/Save As/cancel; self-save events do not cause false conflict.
 - Verify: changed/deleted/replaced/self-save/restart/crash-recovery simulations.
 
-### [ ] DV-0906 Implement background export queue and Diagnostics
+### [x] DV-0906 Implement background export queue and Diagnostics
 
 - Depends: DV-0305, DV-0107, DV-0603.
 - Scope: export tasks/history, diagnostics bundle/redaction UI/service, tests.

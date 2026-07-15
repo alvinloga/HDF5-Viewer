@@ -2364,3 +2364,39 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Full Qt startup prompt, native file watcher wiring, and user-visible reload/Save As/cancel dialogs remain later UI integration work. DV-0905 supplies the validated restore and external-change decision contracts those surfaces will consume.
+
+## DV-0906 Background export queue and Diagnostics - 2026-07-15
+
+Revision: implementation commit `305b3139cf19022ee59c55fdaee8479a35ff797c`.
+
+Implementation evidence:
+
+- `data_viewer/app/export_queue.py` adds an application export queue that wraps reviewed `ExportPlan` values in `TaskRecord` lifecycle state, tracks progress, supports queued cancellation, stores export receipt history, and retries failed/cancelled jobs as new attempts.
+- Failed queued exports create `ExportProblem` links with task ID, target path, source URI, resource path, structured error code, and safe message for Problems-panel routing.
+- `data_viewer/app/diagnostics.py` now includes `PluginInventoryItem`, `DiagnosticsBundle`, and `DiagnosticsBundleService` for user-previewable diagnostics bundles.
+- Diagnostics bundles include application/runtime/platform version fields, plugin inventory, recent diagnostic events, optional task records, and configured path redaction before preview/export.
+- `ARCHITECTURE.md`, `docs/SAFE_EDITING.md`, and `CHANGELOG.md` document the implemented queue, receipt, retry, Problems, and diagnostics-preview behavior.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing export queue/diagnostics tests | `venv\Scripts\python.exe -m pytest tests\test_export_queue_diagnostics.py -q` | failed as expected before implementation: `DiagnosticsBundleService` and `ExportQueueService` were missing |
+| Focused export queue/diagnostics tests | `venv\Scripts\python.exe -m pytest tests\test_export_queue_diagnostics.py -q` | 4 passed |
+| Export/diagnostics/task subset | `venv\Scripts\python.exe -m pytest tests\test_export_queue_diagnostics.py tests\test_exporting.py tests\test_error_diagnostics.py tests\test_task_lifecycle.py -q` | 27 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\app\export_queue.py data_viewer\app\diagnostics.py data_viewer\app\__init__.py tests\test_export_queue_diagnostics.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests\test_export_queue_diagnostics.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 108 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 511 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29393299377 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `305b3139cf19022ee59c55fdaee8479a35ff797c`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29393299377 |
+| Ubuntu quality | GitHub Actions job `87281186180` | success; started `2026-07-15T06:07:27Z`, completed `2026-07-15T06:09:14Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87281186161` | success; started `2026-07-15T06:07:28Z`, completed `2026-07-15T06:09:46Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- Full Qt Tasks/Problems/Diagnostics panels and native background executor wiring remain later UI integration work. DV-0906 supplies the validated app-layer queue, receipt history, Problems link, retry, and diagnostics bundle contracts those surfaces will consume.
