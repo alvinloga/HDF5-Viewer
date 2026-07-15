@@ -582,7 +582,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 
 ## P10 — Hardening and packaging
 
-### [ ] DV-1001 Establish and enforce performance/memory/cache budgets
+### [x] DV-1001 Establish and enforce performance/memory/cache budgets
 
 - Depends: DV-0907.
 - Read: Testing §11, Architecture cache/performance.

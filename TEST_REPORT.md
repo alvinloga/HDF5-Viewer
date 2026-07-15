@@ -2434,3 +2434,40 @@ Checkpoint status:
 - `tasks/todo.md` marks DV-0901 through DV-0907 complete.
 - Checkpoint 9 exits with no known Critical or Required review issue recorded in this report.
 - Remaining work moves to P10 hardening, packaging, smoke validation, and release tasks.
+
+## DV-1001 Performance, memory, and cache budget harness - 2026-07-15
+
+Revision: implementation commit `3331aba4fba1f9fe3b24776850fec75fcc6f90d9` plus CI-stability fix `12929edac5f140674341a2f4db42e25d7531f12d`.
+
+Implementation evidence:
+
+- `data_viewer/performance/__init__.py` adds release-budget metric names, benchmark reports with median/p95/peak traced memory, path-free platform profiles, synthetic dataset generators, optional budget thresholds, and structured budget evaluations.
+- `tools/run_performance_baseline.py` emits reproducible JSON Phase 0 baseline reports for all Testing §11 metric categories: cold launch, metadata open, many-child expansion, first table page, table scroll, 2D slice, NIfTI plane proxy, cancellation latency, repeated open/close allocation delta, gzip extraction, and plugin chunk throughput.
+- `docs/PERFORMANCE_BUDGETS.md` documents the two-step budget policy: collect Windows/Linux baselines first, then encode numeric thresholds with cited evidence.
+- `docs/INDEX.md` routes future performance/hardening work to the budget document.
+- Ubuntu CI initially exposed a platform-specific test assumption: empty callbacks may record zero traced peak memory on Linux. Commit `12929edac5f140674341a2f4db42e25d7531f12d` fixed the test to allocate deterministically before asserting peak-memory threshold violations.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing performance-budget tests | `venv\Scripts\python.exe -m pytest tests\test_performance_budgets.py -q` | failed as expected before implementation: `data_viewer.performance` module was missing |
+| Focused performance-budget tests | `venv\Scripts\python.exe -m pytest tests\test_performance_budgets.py -q` | 6 passed |
+| Baseline script smoke | `venv\Scripts\python.exe tools\run_performance_baseline.py --iterations 2 --warmups 0 --rows 8 --columns 4 --hierarchy-depth 2 --fanout 3` | emitted JSON reports for all 11 release-budget metrics with median/p95/peak memory and Windows platform profile |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\performance tests\test_performance_budgets.py tools\run_performance_baseline.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests\test_performance_budgets.py tools\run_performance_baseline.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 109 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 517 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after fix:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Failed implementation GitHub Actions run | `gh run view 29394576463 --json status,conclusion,headSha,jobs,url` | failed on Ubuntu for head SHA `3331aba4fba1f9fe3b24776850fec75fcc6f90d9`; root cause was a platform-specific zero-peak-memory assumption in `tests/test_performance_budgets.py` |
+| Successful GitHub Actions run | `gh run view 29394863661 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `12929edac5f140674341a2f4db42e25d7531f12d`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29394863661 |
+| Ubuntu quality | GitHub Actions job `87285952690` | success; started `2026-07-15T06:39:48Z`, completed `2026-07-15T06:41:35Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87285952707` | success; started `2026-07-15T06:39:49Z`, completed `2026-07-15T06:41:45Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- DV-1001 establishes Phase 0 synthetic/runtime probes and threshold plumbing. Later P10/P11 package-smoke and stress tasks must add artifact-level probes against real HDF5, CSV, NIfTI, gzip, workspace, and plugin fixtures before release thresholds are finalized.
