@@ -93,6 +93,7 @@ All notable Data Viewer changes are recorded here.
 - Removed legacy `core/slicer.py`; target reads and views now rely on normalized `SelectionSpec`/`NormalizedSelection` values and explicit slice controls instead of a string-based compatibility parser.
 - Removed legacy `core/async_loader.py`; target background work now relies on cooperative task records, cancellation tokens, and explicit document/request lifecycle handling instead of a synchronous compatibility loader.
 - Removed the legacy `gui/sidebar/` package; target navigation, search, shell, and Plugin API registries now own those workbench surfaces.
+- Removed legacy `gui/secondary_panel.py`; target shell, navigation/search services, and Plugin API v1 own the former Search/Plugins side-panel behavior.
 - Removed the broken explicit legacy CLI fallback from the target `data_viewer` entrypoint (DV-1008 slice): `--legacy` now fails argument parsing and `DATA_VIEWER_LEGACY=1` no longer overrides the default Data Viewer bootstrap.
 - Removed legacy runtime paths from the release compile gate (DV-1008 slice): CI now compiles the target Data Viewer package, CI scripts, and packaging tools as the release-facing compile scope while legacy tests remain as migration-reference regressions.
 - Removed obsolete legacy PyInstaller/build entrypoints (DV-1008 slice): root `build.py` is now a Data Viewer release-build front end, and the old `HDF5Viewer.spec`, `build_windows.py`, and `build_windows.bat` launchers were deleted.
