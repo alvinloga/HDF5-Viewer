@@ -2798,6 +2798,15 @@ Local Windows verification in the repository `venv`:
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 543 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 | Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29411328385 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `c3bee374825f0c2da4167311be005fa7ac30c2eb`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29411328385 |
+| Ubuntu quality | GitHub Actions job `87338855742` | success; started `2026-07-15T11:21:16Z`, completed `2026-07-15T11:25:47Z`; lint/type/compile, full offscreen regression suite, wheel/sdist build, PyInstaller artifact build, packaged `--version` smoke, installed functional smoke, `Generate release evidence`, and artifact uploads passed |
+| Windows quality | GitHub Actions job `87338855730` | success; started `2026-07-15T11:21:18Z`, completed `2026-07-15T11:26:29Z`; lint/type/compile, full offscreen regression suite, wheel/sdist build, PyInstaller artifact build, packaged `--version` smoke, installed functional smoke, `Generate release evidence`, and artifact uploads passed |
+| GitHub Actions artifacts | `gh api repos/alvinloga/HDF5-Viewer/actions/runs/29411328385/artifacts --jq '.artifacts[] | [.name,.size_in_bytes,.expired] | @tsv'` | uploaded non-expired artifacts `data-viewer-package-Windows-29411328385-1` (178387969 bytes), `data-viewer-quality-Windows-29411328385-1` (179072405 bytes), `data-viewer-package-Ubuntu-29411328385-1` (218898730 bytes), and `data-viewer-quality-Ubuntu-29411328385-1` (219629886 bytes) |
+
 Known gaps:
 
 - This removes obsolete legacy release entrypoints only. Legacy application runtime modules and historical regression tests remain until their individual migration/removal groups satisfy the full removal criteria.
