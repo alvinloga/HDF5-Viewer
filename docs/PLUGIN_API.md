@@ -12,7 +12,8 @@ Current implementation status:
 - DV-0702 implements the first compatibility evaluator in `data_viewer.plugins.compatibility`, the supported parameter-schema/default/value validator in `data_viewer.plugins.parameters`, and a standard keyboard-accessible Qt parameter form in `data_viewer.gui.plugin_forms`.
 - DV-0703 implements synchronous runner-core task integration and budgeted document-backed `InputAccess` in `data_viewer.plugins.runner`, including bounded reads/chunks, cooperative cancellation, stale-result rejection, and safe plugin exception mapping.
 - DV-0704 implements typed result payload validators, declarative `PlotSpec`, provenance/export records, and bounded in-memory array result materialization in `data_viewer.plugins.results`.
-- Reference plugin conformance remains later P7 work and must not be claimed as implemented by the presence of the API skeleton.
+- DV-0705 implements the reusable test-side plugin conformance kit in `tests.conformance.plugin` and a packaged `org.dataviewer.dataset_profile` reference plugin that proves manifest discovery, compatibility, parameter validation, chunked execution, cancellation, progress, numerical goldens, edge inputs, result/provenance validation, and forbidden-import checks.
+- The DV-0705 Dataset Profile is the P7 reference implementation. The fuller P8 statistics catalog still owns production-grade descriptive statistics, distribution, correlation, comparison, and visualization plugins.
 
 ## 2. Package boundary
 
@@ -29,7 +30,6 @@ data_viewer/
       dataset_profile/
         plugin.json
         plugin.py
-        tests/
 ```
 
 A plugin may import `data_viewer.plugins.api` and documented domain value types. It must not import `data_viewer.gui`, adapters, controllers, private modules, or another plugin's internals.
@@ -172,7 +172,7 @@ Compatibility is computed before enabling Run:
 
 Disabled plugins show the exact reasons. They are not hidden, because discoverability and remediation matter.
 
-DV-0702 implements the single-input v1 foundation for domain, dimension, dtype-family, selection support, random-access capability, memory-budget, input-count, and required-dependency reasons. Multi-input shape/alignment semantics are still owned by later plugin-runner/reference-plugin work.
+DV-0702 implements the single-input v1 foundation for domain, dimension, dtype-family, selection support, random-access capability, memory-budget, input-count, and required-dependency reasons. DV-0705 proves those checks against the packaged Dataset Profile reference plugin. Multi-input shape/alignment semantics remain later catalog-specific work.
 
 ## 6. Parameter schema
 
@@ -200,6 +200,8 @@ Array parameters, `minItems`/`maxItems`, and `ui:widget` hints remain planned bu
 V1 trusted built-ins may use the shared process. The API deliberately avoids GUI/session handles so a later process-isolated runner can preserve the same plugin contract.
 
 DV-0703's runner core is intentionally synchronous and UI-free so it can be tested deterministically and later scheduled by the task/threading layer without changing Plugin API v1. It returns terminal `TaskSnapshot` values and routes source reads through `DocumentController`, so source-session leases and stale generation checks remain document-owned.
+
+DV-0705's reference plugin uses only `PluginContext.inputs[0].iter_chunks(...)`, task progress callbacks, and public result/provenance types. It does not import GUI modules, adapter modules, `DocumentController`, or raw format libraries.
 
 ## 8. Results
 
@@ -237,7 +239,8 @@ All results display plugin/version, exact inputs, selection/scope, parameters, s
 
 ### Statistics and analysis
 
-- Dataset Profile: shape, dtype, storage, finite/missing counts, ranges.
+- Dataset Profile reference plugin (P7): shape, dtype, element count, finite/missing/nonfinite counts, finite range, and finite mean for array/volume inputs.
+- Dataset Profile production plugin (P8): expands the reference implementation with storage details and the full catalog acceptance matrix.
 - Descriptive Statistics: count, mean, standard deviation, quantiles, extrema, configurable axes.
 - Distribution Summary: histogram, robust spread, skewness/kurtosis when valid, sampled labeling.
 - Correlation/Covariance: selected numeric columns/axes with missing policy.

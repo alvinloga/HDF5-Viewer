@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "api_version": 1,
+  "id": "org.dataviewer.dataset_profile",
+  "name": "Dataset Profile",
+  "version": "1.0.0",
+  "description": "Summarizes shape, dtype, finite values, missingness, and numeric range.",
+  "entry_point": "data_viewer.plugins.builtin.dataset_profile.plugin:DatasetProfilePlugin",
+  "kind": "analysis",
+  "required_dependencies": [],
+  "input": {
+    "domains": ["array", "volume"],
+    "min_ndim": 1,
+    "max_ndim": null,
+    "dtype_families": ["boolean", "integer", "floating", "complex"],
+    "requires_random_access": false,
+    "supports_chunked_input": true,
+    "supports_selection": true
+  },
+  "parameters_schema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "result_kinds": ["summary"]
+}

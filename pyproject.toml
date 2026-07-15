@@ -61,5 +61,8 @@ version = { attr = "data_viewer._version.__version__" }
 [tool.setuptools.packages.find]
 include = ["data_viewer*"]
 
+[tool.setuptools.package-data]
+"data_viewer.plugins.builtin.dataset_profile" = ["plugin.json"]
+
 [tool.mypy]
 ignore_missing_imports = true

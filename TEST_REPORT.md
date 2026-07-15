@@ -1777,3 +1777,39 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Reference plugin conformance, concrete plugin implementations, and GUI renderer integration remain later P7/P8 tasks.
+
+## DV-0705 plugin conformance kit and reference plugin - 2026-07-15
+
+Revision: working tree based on `f4e346e` before committing the DV-0705 implementation.
+
+Implementation evidence:
+
+- `tests/conformance/plugin.py` adds reusable Plugin API v1 conformance helpers for packaged built-ins: manifest compatibility, disabled input-count reason, parameter defaults/validation, runner execution, result/provenance validation, cancellation without partial results, expected numerical payloads, and forbidden import scanning through Python AST.
+- `data_viewer/plugins/builtin/dataset_profile/plugin.json` adds the packaged `org.dataviewer.dataset_profile` reference manifest discovered by the built-in registry without importing plugin code at startup.
+- `data_viewer/plugins/builtin/dataset_profile/plugin.py` implements a chunked Dataset Profile reference plugin that uses only `PluginContext`/`InputAccess`, emits progress, checks cooperative cancellation, computes finite/missing/nonfinite/range/mean summary fields, returns a JSON-safe summary result, and records Plugin API v1 provenance.
+- `pyproject.toml` includes the Dataset Profile `plugin.json` as package data so wheel/sdist discovery can find the packaged built-in manifest.
+- `tests/test_builtin_dataset_profile_plugin.py` demonstrates discovery, lazy loading, compatibility, immutable empty parameter schema, bounded chunking, progress, cancellation, numerical golden behavior, empty/all-missing edge inputs, nonnumeric incompatibility reasons, result/provenance validation, and forbidden-import checks.
+- This is the P7 reference/conformance slice. The fuller P8 statistics and visualization catalog remains future work.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing conformance/reference test | `venv\Scripts\python.exe -m pytest tests\test_builtin_dataset_profile_plugin.py -q` | failed as expected before implementation: registry returned no `org.dataviewer.dataset_profile` manifest |
+| Focused reference plugin tests | `venv\Scripts\python.exe -m pytest tests\test_builtin_dataset_profile_plugin.py -q` | 6 passed |
+| Plugin P7 regression subset | `venv\Scripts\python.exe -m pytest tests\test_builtin_dataset_profile_plugin.py tests\test_plugin_results.py tests\test_plugin_runner.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py -q` | 37 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py tests\test_plugin_runner.py tests\test_plugin_results.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 97 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 446 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Wheel package-data smoke | `venv\Scripts\python.exe -m pip wheel . -w .tmp-wheel --no-deps --no-build-isolation --no-cache-dir`; then inspect wheel with `zipfile` for `data_viewer/plugins/builtin/dataset_profile/plugin.json` | wheel built successfully; `plugin.json` present; temporary `.tmp-wheel` removed |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | pending after DV-0705 commit/push | pending |
+
+Known gaps:
+
+- DV-0705 provides the reusable conformance kit and one reference plugin only. P8 still owns the complete statistics/visualization plugin catalog and GUI renderer integration.

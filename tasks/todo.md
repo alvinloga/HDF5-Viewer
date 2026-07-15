@@ -456,7 +456,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: summary/table/array/image/plot/collection validation; large result store bounded; plot marks supported; scope/sample/version/input/parameters/warnings always visible/exported.
 - Verify: result schema/property tests, invalid/oversized rejection, theme/accessibility renderer contract.
 
-### [ ] DV-0705 Add plugin conformance kit and complete reference plugin
+### [x] DV-0705 Add plugin conformance kit and complete reference plugin
 
 - Depends: DV-0704.
 - Scope: reusable conformance tests and packaged Range/Dataset Profile reference implementation/manifest/tests.
