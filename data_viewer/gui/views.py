@@ -472,6 +472,8 @@ class MultidimensionalSliceNavigatorWidget(ImageViewWidget):
     def _rebuild_axis_controls(self) -> None:
         while self._axis_controls_layout.count():
             item = self._axis_controls_layout.takeAt(0)
+            if item is None:
+                continue
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
