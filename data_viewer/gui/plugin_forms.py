@@ -75,14 +75,14 @@ class ParameterFormWidget(QWidget):
             spin.setValue(default)
             return spin
         if definition.type == "number":
-            spin = QDoubleSpinBox(self)
-            spin.setMinimum(float(definition.minimum if definition.minimum is not None else -1.0e12))
-            spin.setMaximum(float(definition.maximum if definition.maximum is not None else 1.0e12))
+            double_spin = QDoubleSpinBox(self)
+            double_spin.setMinimum(float(definition.minimum if definition.minimum is not None else -1.0e12))
+            double_spin.setMaximum(float(definition.maximum if definition.maximum is not None else 1.0e12))
             default = definition.default
             if not isinstance(default, (int, float)) or isinstance(default, bool):
                 raise TypeError(f"{definition.name} number default was not validated")
-            spin.setValue(float(default))
-            return spin
+            double_spin.setValue(float(default))
+            return double_spin
         if definition.type == "boolean":
             checkbox = QCheckBox(self)
             checkbox.setChecked(bool(definition.default))
