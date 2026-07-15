@@ -180,6 +180,15 @@ Relocation searches are explicit and bounded:
 
 Degraded mode retains source references, view definitions, and plugin provenance so a later relink can fully restore them.
 
+The DV-0902 implementation provides the non-GUI restore planning surface in `data_viewer.workspace.restore`:
+
+- `WorkspaceRestoreCoordinator.plan_restore(...)` resolves each persisted source path without mutating the manifest, classifies source state, prepares view shells, and marks plugin results current or stale.
+- Source states are explicit: `available`, `moved_candidate`, `missing`, `changed`, `ambiguous`, `unsupported`, and `failed`.
+- Relocation matching is bounded to user-provided replacement roots and uses basename plus persisted fingerprint hints such as `size`, `mtime_ns`, and `prefix_sha256`. A single match is reported as a candidate; multiple matches are ambiguous.
+- `apply_confirmed_relocations(...)` changes only user-confirmed source IDs, stores deterministic relative paths from the workspace directory where possible, and marks the workspace dirty for a later Save Workspace operation.
+- View shells are restored before metadata and payload reads. Available sources produce pending payload shells; unavailable or changed sources produce blocked shells that keep the original source/resource identity visible.
+- `plan_restore_async(...)` runs the same planning contract asynchronously and honors cooperative cancellation before and during relocation scanning.
+
 ## 11. Persistence
 
 Workspace saving uses the atomic replacement protocol from `docs/SAFE_EDITING.md`:

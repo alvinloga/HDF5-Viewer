@@ -67,6 +67,7 @@ All notable Data Viewer changes are recorded here.
 - Added heatmap visualization plugins (DV-0807): Correlation Heatmap and Missing Data Map built-ins now emit renderer-owned heatmap `PlotSpec` results with labeled axes, explicit value ranges/legends, data-table alternatives, missing-data semantics, and deterministic observation sampling for large missing maps.
 - Added the NIfTI orthogonal viewer foundation (DV-0808): bounded `VolumePayload` results can now render axial/coronal/sagittal orientation labels, linked crosshair voxel/world/value metadata, 4D volume index state, window/level labels, affine/header inspection, and explicit no-resampling status.
 - Added the Workspace Format v1 foundation (DV-0901): `.dvw` manifests now have a packaged schema, typed model, deterministic UTF-8 serialization, bounded unsafe-input validation, unknown-field preservation, relative/absolute source path resolution, and atomic save/load service semantics independent from source dirty state.
+- Added the Workspace restore planner (DV-0902): `.dvw` sources are now classified as available, moved candidate, missing, changed, ambiguous, unsupported, or failed; view shells restore before bounded metadata/payload reads; persisted plugin results are marked current/stale from source fingerprints; relocation updates require explicit confirmation and mark only the workspace dirty.
 
 ### Fixed
 

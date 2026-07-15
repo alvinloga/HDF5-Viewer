@@ -9,13 +9,31 @@ from .manifest import (
     WorkspaceVersionError,
     WorkspaceView,
 )
+from .restore import (
+    PluginResultRestore,
+    PluginResultRestoreStatus,
+    WorkspaceRestoreCoordinator,
+    WorkspaceRestorePlan,
+    WorkspaceSourceRestore,
+    WorkspaceSourceRestoreStatus,
+    WorkspaceViewPayloadStatus,
+    WorkspaceViewShell,
+)
 
 __all__ = [
+    "PluginResultRestore",
+    "PluginResultRestoreStatus",
     "WORKSPACE_SCHEMA_VERSION",
     "WorkspaceManifest",
+    "WorkspaceRestoreCoordinator",
+    "WorkspaceRestorePlan",
     "WorkspaceService",
     "WorkspaceSource",
+    "WorkspaceSourceRestore",
+    "WorkspaceSourceRestoreStatus",
     "WorkspaceValidationError",
     "WorkspaceVersionError",
+    "WorkspaceViewPayloadStatus",
+    "WorkspaceViewShell",
     "WorkspaceView",
 ]
