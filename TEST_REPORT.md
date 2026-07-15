@@ -2772,3 +2772,32 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - This is a release-gate cleanup slice, not full DV-1008 completion. Legacy runtime packages and historical regression tests remain until their capability groups satisfy the migration removal criteria.
+
+## DV-1008 legacy PyInstaller/build entrypoint removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed obsolete root legacy release entrypoints: `HDF5Viewer.spec`, `build_windows.py`, and `build_windows.bat`.
+- Replaced the root `build.py` legacy HDF5 Viewer packager with a small Data Viewer release-build front end that delegates packaging to `tools/build_pyinstaller_artifact.py`.
+- `build.py --help` now advertises Data Viewer release artifact behavior and supports `--clean`, `--test`, `--windows`, `--linux`, and `--output-dir`.
+- `tests/test_packaging_artifacts.py` asserts the removed legacy entrypoints stay absent and the root build script no longer references the old HDF5Viewer artifact name, old spec, legacy application entrypoint, or old conda build environment.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy-build-entrypoint regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_pyinstaller_build_entrypoints_are_removed -q` | failed as expected before implementation because `HDF5Viewer.spec`, `build_windows.py`, and `build_windows.bat` still existed |
+| Packaging contract tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py -q` | 5 passed |
+| Build front-end help smoke | `venv\Scripts\python.exe build.py --help` | printed Data Viewer release artifact usage |
+| Release/package related tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_data_viewer_package.py tests\test_release_evidence.py tests\test_installed_artifact_smoke.py -q` | 19 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check build.py tools tests\test_packaging_artifacts.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy build.py tools\build_pyinstaller_artifact.py` | passed; no issues in 2 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q build.py tools data_viewer .github\scripts` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 543 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
+
+Known gaps:
+
+- This removes obsolete legacy release entrypoints only. Legacy application runtime modules and historical regression tests remain until their individual migration/removal groups satisfy the full removal criteria.

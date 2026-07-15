@@ -1,215 +1,81 @@
 #!/usr/bin/env python3
-"""Legacy build script — packages the historical HDF5 Viewer application."""
+"""Data Viewer release-build front end.
 
-import sys
+This wrapper keeps the repository root command small and delegates packaging to
+`tools/build_pyinstaller_artifact.py`, which is the authoritative PyInstaller
+builder used by CI.
+"""
+
+from __future__ import annotations
+
+import argparse
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parent
-DIST_DIR = PROJECT_ROOT / "dist"
-BUILD_DIR = PROJECT_ROOT / "build"
 
-# 版本信息
-VERSION = "0.2.1"
-APP_NAME = "HDF5Viewer"  # legacy artifact name
+PROJECT_ROOT = Path(__file__).resolve().parent
+TARGET_BUILDER = PROJECT_ROOT / "tools" / "build_pyinstaller_artifact.py"
 
 
-def clean():
-    """清理构建目录"""
-    print("Cleaning build directories...")
-    for d in [DIST_DIR, BUILD_DIR]:
-        if d.exists():
-            shutil.rmtree(d)
-    # 清理 .spec 文件
-    for spec in PROJECT_ROOT.glob("*.spec"):
-        spec.unlink()
+def _platform_name() -> str:
+    if sys.platform.startswith("win"):
+        return "windows"
+    if sys.platform.startswith("linux"):
+        return "linux"
+    return sys.platform
 
 
-def build_linux():
-    """构建 Linux 版本"""
-    print("=" * 60)
-    print("Building Linux version...")
-    print("=" * 60)
-
-    # 使用 PyInstaller 打包为目录模式（便于调试）
-    cmd = [
-        sys.executable, "-m", "PyInstaller",
-        "--name", APP_NAME,
-        "--onedir",
-        "--windowed",
-        "--noconfirm",
-        "--clean",
-        # PyQt6 隐式导入
-        "--hidden-import", "PyQt6.QtWidgets",
-        "--hidden-import", "PyQt6.QtCore",
-        "--hidden-import", "PyQt6.QtGui",
-        "--hidden-import", "PyQt6.sip",
-        # 收集 PyQt6 所有子模块和数据（含 platform plugins）
-        "--collect-submodules", "PyQt6",
-        "--collect-data", "PyQt6",
-        # h5py
-        "--hidden-import", "h5py",
-        "--collect-data", "h5py",
-        # numpy
-        "--hidden-import", "numpy",
-        "--hidden-import", "numpy.core",
-        "--hidden-import", "numpy.lib",
-        # matplotlib
-        "--hidden-import", "matplotlib",
-        "--hidden-import", "matplotlib.backends.backend_qtagg",
-        "--collect-data", "matplotlib",
-        # 打包配置文件
-        "--add-data", f"{PROJECT_ROOT / 'config.json'}:.",
-        # 入口文件
-        str(PROJECT_ROOT / "main.py"),
-    ]
-
-    result = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"Build failed:\n{result.stderr}")
-        return False
-
-    print("Linux build completed successfully!")
-
-    # 创建启动脚本
-    launcher = DIST_DIR / APP_NAME / "run.sh"
-    launcher.write_text(f"""#!/bin/bash
-cd "$(dirname "$0")"
-./{APP_NAME} "$@"
-""")
-    launcher.chmod(0o755)
-
-    print(f"Output: {DIST_DIR / APP_NAME}/")
-    return True
+def _run(command: list[str]) -> None:
+    subprocess.run(command, cwd=PROJECT_ROOT, check=True)
 
 
-def build_windows_spec():
-    """Windows 构建说明"""
-    print("=" * 60)
-    print("Legacy Windows build uses HDF5Viewer.spec")
-    print("=" * 60)
-    print("\nTo build on Windows, run:")
-    print("  build_windows.bat")
-    print("  or: pyinstaller HDF5Viewer.spec --noconfirm  # legacy")
-    return True
+def _clean() -> None:
+    for relative in (
+        Path("artifacts") / "package",
+        Path("dist") / "pyinstaller",
+        Path("build") / "pyinstaller",
+    ):
+        shutil.rmtree(PROJECT_ROOT / relative, ignore_errors=True)
 
 
-def create_portable_package():
-    """创建便携版打包"""
-    print("=" * 60)
-    print("Creating portable package...")
-    print("=" * 60)
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Build Data Viewer release artifacts.")
+    parser.add_argument("--clean", action="store_true", help="Remove Data Viewer package outputs first.")
+    parser.add_argument("--test", action="store_true", help="Run the full local pytest suite before packaging.")
+    parser.add_argument("--windows", action="store_true", help="Assert this build is running on Windows.")
+    parser.add_argument("--linux", action="store_true", help="Assert this build is running on Linux.")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("artifacts") / "package",
+        help="Directory where the Data Viewer archive and manifest are written.",
+    )
+    args = parser.parse_args(argv)
 
-    portable_dir = DIST_DIR / f"{APP_NAME}-{VERSION}-linux-portable"
-    portable_dir.mkdir(parents=True, exist_ok=True)
+    platform_name = _platform_name()
+    if args.windows and platform_name != "windows":
+        parser.error(f"--windows requested on {platform_name}")
+    if args.linux and platform_name != "linux":
+        parser.error(f"--linux requested on {platform_name}")
 
-    # 复制构建产物
-    src_dir = DIST_DIR / APP_NAME
-    if src_dir.exists():
-        shutil.copytree(src_dir, portable_dir / "app", dirs_exist_ok=True)
+    if args.clean:
+        _clean()
 
-    # 创建启动脚本
-    run_script = portable_dir / "run.sh"
-    run_script.write_text(f"""#!/bin/bash
-# Legacy HDF5 Viewer Portable
-cd "$(dirname "$0")/app"
-./{APP_NAME} "$@"
-""")
-    run_script.chmod(0o755)
+    if args.test:
+        _run([sys.executable, "-m", "pytest", "-q"])
 
-    # 创建 README
-    readme = portable_dir / "README.txt"
-    readme.write_text(f"""Legacy HDF5 Viewer v{VERSION} - Portable Edition
-========================================
-
-Usage:
-  ./run.sh [file.h5]
-
-Requirements:
-  - Linux x86_64
-  - glibc 2.17+
-  - X11 or Wayland
-
-Features:
-  - VSCode-style interface
-  - Multi-tab with Split
-  - Large file lazy loading
-  - Plugin system
-
-For more info, visit: https://github.com/your-repo/hdf5-viewer
-""")
-
-    print(f"Portable package created: {portable_dir}")
-    return True
-
-
-def run_tests():
-    """运行测试"""
-    print("=" * 60)
-    print("Running tests...")
-    print("=" * 60)
-
-    tests = [
-        "tests/test_core.py",
-        "tests/test_phase1.py",
-        "tests/test_final.py",
-    ]
-
-    for test in tests:
-        print(f"\nRunning {test}...")
-        result = subprocess.run(
-            [sys.executable, test],
-            cwd=PROJECT_ROOT,
-            capture_output=True,
-            text=True
-        )
-        if result.returncode != 0:
-            print(f"FAILED: {test}")
-            print(result.stdout)
-            print(result.stderr)
-            return False
-        else:
-            print("  PASSED")
-
-    print("\nAll tests passed!")
-    return True
-
-
-def main():
-    """主函数"""
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Build legacy HDF5 Viewer")
-    parser.add_argument("--clean", action="store_true", help="Clean build dirs")
-    parser.add_argument("--linux", action="store_true", help="Build Linux version")
-    parser.add_argument("--windows", action="store_true", help="Create Windows spec")
-    parser.add_argument("--portable", action="store_true", help="Create portable package")
-    parser.add_argument("--test", action="store_true", help="Run tests")
-    parser.add_argument("--all", action="store_true", help="Do everything")
-
-    args = parser.parse_args()
-
-    if args.clean or args.all:
-        clean()
-
-    if args.test or args.all:
-        if not run_tests():
-            sys.exit(1)
-
-    if args.linux or args.all:
-        if not build_linux():
-            sys.exit(1)
-
-    if args.windows or args.all:
-        build_windows_spec()
-
-    if args.portable or args.all:
-        create_portable_package()
-
-    if not any([args.clean, args.linux, args.windows, args.portable, args.test, args.all]):
-        parser.print_help()
+    _run(
+        [
+            sys.executable,
+            str(TARGET_BUILDER),
+            "--output-dir",
+            str(args.output_dir),
+        ]
+    )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

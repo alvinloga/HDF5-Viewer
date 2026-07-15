@@ -60,3 +60,17 @@ def test_ci_compile_gate_excludes_legacy_runtime_paths() -> None:
     assert "tools" in compile_command
     for legacy_path in ("core", "gui", "plugins", "services", "utils", "main.py"):
         assert legacy_path not in compile_command
+
+
+def test_legacy_pyinstaller_build_entrypoints_are_removed() -> None:
+    """DV-1008 removes obsolete legacy release launchers from the root packaging surface."""
+
+    for legacy_entrypoint in ("HDF5Viewer.spec", "build_windows.py", "build_windows.bat"):
+        assert not (PROJECT_ROOT / legacy_entrypoint).exists()
+
+    build_script = PROJECT_ROOT / "build.py"
+    text = build_script.read_text(encoding="utf-8")
+    assert "Data Viewer" in text
+    assert "tools/build_pyinstaller_artifact.py" in text
+    for legacy_token in ("HDF5Viewer", "HDF5Viewer.spec", "main.py", "hdf5viewer_build"):
+        assert legacy_token not in text
