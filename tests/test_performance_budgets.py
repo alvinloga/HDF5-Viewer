@@ -44,7 +44,7 @@ def test_benchmark_report_records_distribution_and_peak_memory() -> None:
 def test_budget_gate_reports_structured_violations() -> None:
     report = run_benchmark(
         BenchmarkMetric.CANCELLATION_LATENCY,
-        lambda: {},
+        lambda: {"allocated": len([0] * 128)},
         iterations=3,
         warmups=0,
     )
