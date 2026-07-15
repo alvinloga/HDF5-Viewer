@@ -442,7 +442,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Acceptance: domain/dim/dtype/access/size/multi-input/dependency reasons exact; disabled visible; defaults/validation immutable and round-trip; plugins create no dialogs.
 - Verify: compatibility reason matrix and schema/widget/property tests.
 
-### [ ] DV-0703 Implement budgeted InputAccess and plugin runner
+### [x] DV-0703 Implement budgeted InputAccess and plugin runner
 
 - Depends: DV-0104, DV-0702.
 - Scope: input access, runner/task integration, PluginError mapping, tests.
