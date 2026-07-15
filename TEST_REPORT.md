@@ -2253,3 +2253,40 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Interactive Locate/Locate Folder dialogs and session auto-restore policy remain later P9 tasks. DV-0902 provides the restore/degraded state model those UI surfaces will consume.
+
+## DV-0903 Comparison domain and workspace - 2026-07-15
+
+Revision: implementation commit `b1975e99b74b89b370123bb9cef2f6af63e84a39`.
+
+Implementation evidence:
+
+- `data_viewer/app/compare.py` adds comparison-side identity, explicit alignment policies, difference modes, compatibility decisions, Qt-free view state, workspace serialization, and restore-error reporting.
+- Array comparison state validates metadata before payload work and refuses implicit broadcasting for mismatched shapes.
+- Table comparison state requires explicit non-duplicated left/right column matches and rejects unknown columns.
+- Comparison workspace entries persist left/right source/resource identity, shape, dtype, fingerprint provenance, alignment mode, difference mode, linked-navigation state, compatibility status, and optional result ID.
+- Invalid comparison entries degrade independently during workspace restore through `ComparisonRestoreError` and do not abort valid workspace content.
+- The existing Dataset Compare plugin remains the numerical metric engine; DV-0903 owns comparison state, alignment contracts, and workspace persistence.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing comparison tests | `venv\Scripts\python.exe -m pytest tests\test_comparison_workspace.py -q` | failed as expected before implementation: `data_viewer.app.compare` module was missing |
+| Focused comparison tests | `venv\Scripts\python.exe -m pytest tests\test_comparison_workspace.py -q` | 5 passed |
+| Comparison/plugin/workspace subset | `venv\Scripts\python.exe -m pytest tests\test_comparison_workspace.py tests\test_builtin_dataset_compare_plugin.py tests\test_workspace_manifest.py tests\test_workspace_restore.py -q` | 19 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\app\compare.py data_viewer\app\__init__.py tests\test_comparison_workspace.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests\test_comparison_workspace.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 105 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 496 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29391043119 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `b1975e99b74b89b370123bb9cef2f6af63e84a39`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29391043119 |
+| Ubuntu quality | GitHub Actions job `87274420418` | success; started `2026-07-15T05:16:49Z`, completed `2026-07-15T05:18:33Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87274420387` | success; started `2026-07-15T05:16:50Z`, completed `2026-07-15T05:18:54Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- Full interactive comparison widgets and deeper visual diff rendering remain future UI slices. DV-0903 supplies the validated domain/controller/view-state contract and workspace persistence.

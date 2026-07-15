@@ -545,7 +545,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: available sources restore independently; missing/moved/changed/ambiguous explicit; no silent relink; view shells then metadata/payload; stale results; confirmed updates only.
 - Verify: full restoration matrix, cancel/partial failure, non-ASCII relative paths on both platforms.
 
-### [ ] DV-0903 Implement comparison domain and workspace
+### [x] DV-0903 Implement comparison domain and workspace
 
 - Depends: DV-0804, DV-0901.
 - Scope: comparison alignment/state/controller/view and tests.
