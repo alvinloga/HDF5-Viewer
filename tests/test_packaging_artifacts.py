@@ -293,3 +293,24 @@ def test_format_scope_tests_do_not_import_legacy_gui() -> None:
 
     assert "from gui." not in format_scope_test
     assert "import gui." not in format_scope_test
+
+
+def test_test_environment_files_do_not_import_legacy_runtime() -> None:
+    """DV-1008 removes legacy runtime cleanup hooks from target pytest configuration."""
+
+    for relative_path in (
+        "tests/conftest.py",
+        "tests/test_test_environment.py",
+    ):
+        text = (PROJECT_ROOT / relative_path).read_text(encoding="utf-8")
+        for legacy_import in (
+            "from core",
+            "import core",
+            "from gui",
+            "import gui",
+            "from plugins",
+            "import plugins",
+            "from services",
+            "import services",
+        ):
+            assert legacy_import not in text

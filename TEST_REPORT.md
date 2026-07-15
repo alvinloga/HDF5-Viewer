@@ -3345,3 +3345,30 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete legacy comprehensive suite. The retained environment lifecycle suite and root test fixtures still import `core/` and `gui/` until they are removed or ported with parity evidence.
+
+## DV-1008 target pytest environment legacy import removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed the legacy `MainWindow._save_config` monkeypatch fixture from `tests/conftest.py`; target config isolation is covered by platform config/path tests.
+- Removed the legacy `DataSourceRegistry`/`EventBus` cleanup fixture from `tests/conftest.py`; target tests now rely on target service lifecycle isolation instead of legacy process-state reset hooks.
+- Removed the remaining legacy `MainWindow`, `TabManager`, `FilePanel`, `H5Source`, and `DataSourceRegistry` environment lifecycle tests from `tests/test_test_environment.py`; equivalent target ownership and close semantics are covered by `tests/test_document_controller.py`, `tests/test_gui_shell.py`, `tests/test_infrastructure_config.py`, and `tests/test_source_registry.py`.
+- Added `tests/test_packaging_artifacts.py::test_test_environment_files_do_not_import_legacy_runtime`, which asserts pytest environment files stay free of `core/`, `gui/`, `plugins/`, and `services/` imports.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial test-environment legacy import regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_test_environment_files_do_not_import_legacy_runtime -q` | failed as expected before implementation because `tests/conftest.py` imported `core.event_bus` and `core.registry` |
+| Targeted environment tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_test_environment_files_do_not_import_legacy_runtime tests\test_test_environment.py -q` | 4 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\conftest.py tests\test_test_environment.py tests\test_packaging_artifacts.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\conftest.py tests\test_test_environment.py tests\test_packaging_artifacts.py` | passed; no issues in 3 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q tests\conftest.py tests\test_test_environment.py tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 423 passed |
+
+Known gaps:
+
+- This removes the test-layer legacy runtime imports. Legacy product packages still exist in the repository until the final product-code removal/import-smoke slice proves there are no active runtime/build references.
