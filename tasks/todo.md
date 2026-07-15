@@ -597,7 +597,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: no persistent session/task/temp leak; cancellation latency within budget; adversarial inputs structured-fail without UI crash/unbounded resource use.
 - Verify: soak/stress/security suite on both platforms with retained logs.
 
-### [ ] DV-1003 Complete Data Viewer name and canonical version migration
+### [x] DV-1003 Complete Data Viewer name and canonical version migration
 
 - Depends: DV-0907.
 - Read: Migration §5.

@@ -2508,3 +2508,39 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - DV-1002 retained logs are currently the GitHub Actions logs/artifacts plus `TEST_REPORT.md` evidence. Later package-smoke and release-candidate tasks should retain artifact-level stress logs for real packaged open/close loops and representative fixture workflows.
+
+## DV-1003 Data Viewer name and canonical version migration - 2026-07-15
+
+Revision: implementation commit `e9e6d2779782574b4efe3f6ddc7ee676f3b4593b`.
+
+Implementation evidence:
+
+- `WorkspaceManifest.app["version"]` now reads the canonical package `data_viewer.__version__` value instead of a hard-coded release string.
+- `tests/test_data_viewer_package.py` verifies workspace app metadata, target package runtime surfaces, and repository-wide old-name references.
+- Current target package/bootstrap/workspace surfaces use `Data Viewer`; remaining `HDF5 Viewer`, `HDF5Viewer`, and `hdf5viewer` occurrences are constrained to explicit legacy, historical, migration, or rejected-decision contexts.
+- Legacy root scripts, old PyInstaller spec, old GUI entrypoint, and legacy tests retain their historical names only with explicit legacy labeling.
+- Git tags were not modified.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Focused package/name/version tests | `venv\Scripts\python.exe -m pytest tests\test_data_viewer_package.py -q` | 7 passed |
+| Workspace/UI related subset | `venv\Scripts\python.exe -m pytest tests\test_data_viewer_package.py tests\test_workspace_manifest.py tests\test_gui_i18n_accessibility.py -q` | 20 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\workspace\manifest.py tests\test_data_viewer_package.py build.py build_windows.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 109 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests build.py build_windows.py main.py gui` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 524 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Case-sensitive old-name scan | `rg -n "HDF5 Viewer|HDF5Viewer|hdf5viewer" . -g "!venv/**" -g "!.git/**" -g "!.hypothesis/**" -g "!.pytest_cache/**" -g "!.mypy_cache/**" -g "!.ruff_cache/**" -g "!htmlcov/**" -g "!build/**" -g "!dist/**" -g "!*.pyc" -g "!*.zip" -g "!*.png" -g "!*.svg"` | remaining matches were legacy, historical, migration, or rejected-decision contexts |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29397644108 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `e9e6d2779782574b4efe3f6ddc7ee676f3b4593b`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29397644108 |
+| Ubuntu quality | GitHub Actions job `87294666727` | success; started `2026-07-15T07:31:42Z`, completed `2026-07-15T07:33:34Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87294666711` | success; started `2026-07-15T07:31:42Z`, completed `2026-07-15T07:33:51Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- DV-1003 intentionally labels rather than deletes legacy GUI/build entrypoints. DV-1004 through DV-1008 own platform config migration, Data Viewer artifact builds, installed smoke validation, release assembly, and final legacy removal.
