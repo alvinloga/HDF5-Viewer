@@ -3737,3 +3737,31 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the legacy activity-rail modules from `gui/`. Remaining legacy `gui/` component groups and coupled `core/` modules still exist as separate migration/removal groups.
+
+## DV-1008 legacy GUI status/bottom/command chrome removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `gui/status_bar.py`, `gui/bottom_panel.py`, and `gui/command_palette.py`, obsolete workbench chrome modules that were no longer referenced by current runtime, tests, build, or packaging paths.
+- Added `tests/test_packaging_artifacts.py::test_legacy_gui_status_bottom_command_modules_are_removed`, which asserts the old modules stay absent and retained target command registry, shell, state, and accessibility coverage remains present.
+- Target ownership remains under `data_viewer/app/commands.py`, `data_viewer/gui/shell.py`, `data_viewer/gui/state_components.py`, and target accessibility/localization tests instead of the removed legacy event bus and theme widgets.
+- Updated migration inventory and changelog wording so `gui/` remains a current legacy migration input while these status/bottom/command chrome modules are recorded as removed.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy status/bottom/command module removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_status_bottom_command_modules_are_removed -q` | failed as expected before implementation because `gui/status_bar.py` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_status_bottom_command_modules_are_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_command_registry.py tests\test_gui_shell.py tests\test_gui_state_components.py tests\test_gui_i18n_accessibility.py -q` | 32 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_command_registry.py tests\test_gui_shell.py tests\test_gui_state_components.py tests\test_gui_i18n_accessibility.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 436 passed |
+
+Known gaps:
+
+- This removes only the legacy status, bottom-panel, and command-palette modules from `gui/`. Remaining legacy `gui/` editor component groups and coupled `core/` modules still exist as separate migration/removal groups.

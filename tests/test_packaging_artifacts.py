@@ -503,3 +503,25 @@ def test_legacy_gui_activity_rail_modules_are_removed() -> None:
         "tests/test_gui_state_components.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_gui_status_bottom_command_modules_are_removed() -> None:
+    """DV-1008 removes obsolete legacy status, bottom panel, and command chrome."""
+
+    for legacy_module in (
+        "gui/status_bar.py",
+        "gui/bottom_panel.py",
+        "gui/command_palette.py",
+    ):
+        assert not (PROJECT_ROOT / legacy_module).exists()
+
+    for retained_target_path in (
+        "data_viewer/app/commands.py",
+        "data_viewer/gui/shell.py",
+        "data_viewer/gui/state_components.py",
+        "tests/test_command_registry.py",
+        "tests/test_gui_shell.py",
+        "tests/test_gui_state_components.py",
+        "tests/test_gui_i18n_accessibility.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()
