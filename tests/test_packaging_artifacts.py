@@ -150,14 +150,39 @@ def test_legacy_all_features_smoke_script_is_removed() -> None:
     assert "test_all_features.py" not in environment_test
 
     for retained_suite in (
-        "tests/test_comprehensive.py",
         "tests/test_gui_shell.py",
         "tests/test_gui_base_views.py",
         "tests/test_gui_state_components.py",
         "tests/test_source_registry.py",
         "tests/test_hdf5_adapter.py",
+        "tests/test_plugin_registry.py",
+        "tests/test_navigation_search.py",
     ):
         assert (PROJECT_ROOT / retained_suite).exists()
+
+
+def test_legacy_comprehensive_suite_is_removed() -> None:
+    """DV-1008 removes the obsolete legacy comprehensive source-import suite."""
+
+    assert not (PROJECT_ROOT / "tests" / "test_comprehensive.py").exists()
+
+    for retained_target_suite in (
+        "tests/test_gui_shell.py",
+        "tests/test_gui_base_views.py",
+        "tests/test_gui_dialogs.py",
+        "tests/test_gui_i18n_accessibility.py",
+        "tests/test_gui_state_components.py",
+        "tests/test_gui_theme.py",
+        "tests/test_source_registry.py",
+        "tests/test_hdf5_adapter.py",
+        "tests/test_plugin_registry.py",
+        "tests/test_plugin_runner.py",
+        "tests/test_navigation_search.py",
+        "tests/test_command_registry.py",
+        "tests/test_editing_session.py",
+        "tests/test_exporting.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_suite).exists()
 
 
 def test_legacy_core_unit_suite_is_removed() -> None:

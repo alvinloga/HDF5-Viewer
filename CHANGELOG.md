@@ -92,6 +92,7 @@ All notable Data Viewer changes are recorded here.
 - Removed the obsolete legacy `tests/test_packaged.py` source-import smoke suite; packaged validation is now owned by the Data Viewer installed-artifact smoke workflow and guarded against legacy runtime imports.
 - Removed the obsolete legacy `tests/test_final.py` source-import final integration script; remaining legacy environment checks now collect still-existing focused GUI modules instead of the removed script.
 - Removed the obsolete legacy `tests/test_all_features.py` comprehensive source-import smoke script; HDF5, slicing, plugin, export, event-bus, and GUI/model coverage remains in focused retained suites.
+- Removed the obsolete legacy `tests/test_comprehensive.py` source-import suite; broad GUI/core/plugin/search coverage is now guarded by target shell, view, source, plugin, navigation, editing, and export contract tests.
 - Removed the obsolete manual script runner from `tests/test_core.py`; the retained core coverage now runs only through pytest collection.
 - Removed the obsolete legacy `tests/test_integration.py` source-import suite; source, HDF5, plugin, registry, and export coverage is now guarded by target Data Viewer suites.
 - Removed the obsolete legacy `tests/test_edge_cases.py` source-import suite; edge-case coverage is now guarded by target HDF5, selection, statistics, export, cache, diagnostics, and base-view tests.

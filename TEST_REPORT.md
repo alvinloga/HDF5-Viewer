@@ -3319,3 +3319,29 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete legacy GUI interaction suite. The retained comprehensive and environment lifecycle suites still import `core/`, `gui/`, `plugins/`, and `services/` until each is removed or ported with parity evidence.
+
+## DV-1008 legacy comprehensive suite removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed obsolete `tests/test_comprehensive.py`, the remaining broad legacy source-import suite for old theme switching, editing widgets, secondary panels, tab operations, command palette, file operations, data navigation, plugin panel, search, and GUI/core edge cases.
+- Added `tests/test_packaging_artifacts.py::test_legacy_comprehensive_suite_is_removed`, which asserts the file stays removed and target shell, base-view, dialog, i18n/accessibility, state, theme, source, HDF5, plugin, navigation, command, editing, and export suites remain present.
+- Updated the retained GUI collection lifecycle test to collect target GUI shell/base-view modules instead of the removed comprehensive suite.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy comprehensive suite removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_comprehensive_suite_is_removed -q` | failed as expected before implementation because `tests/test_comprehensive.py` still existed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_comprehensive_suite_is_removed tests\test_test_environment.py::test_gui_module_collection_exits_after_importing_multiple_modules tests\test_gui_shell.py tests\test_gui_base_views.py tests\test_gui_dialogs.py tests\test_gui_i18n_accessibility.py tests\test_gui_state_components.py tests\test_gui_theme.py tests\test_source_registry.py tests\test_hdf5_adapter.py tests\test_plugin_registry.py tests\test_plugin_runner.py tests\test_navigation_search.py tests\test_command_registry.py tests\test_editing_session.py tests\test_exporting.py -q` | 124 passed |
+| Active reference audit | `rg "test_comprehensive\.py|test_legacy_comprehensive" tests docs tasks CHANGELOG.md README.md ARCHITECTURE.md` | only the current absence guard remained outside historical `TEST_REPORT.md` evidence |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_test_environment.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q tests\test_packaging_artifacts.py tests\test_test_environment.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 428 passed |
+
+Known gaps:
+
+- This removes only the obsolete legacy comprehensive suite. The retained environment lifecycle suite and root test fixtures still import `core/` and `gui/` until they are removed or ported with parity evidence.
