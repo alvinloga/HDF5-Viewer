@@ -1701,3 +1701,31 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Plugin runner/input access, result validation/materialization, multi-input shape/alignment semantics, and reference plugin conformance remain later P7 tasks.
+
+## DV-0703 plugin runner and budgeted input access - 2026-07-15
+
+Revision: working tree based on `4107f6a` before committing the DV-0703 implementation.
+
+Implementation evidence:
+
+- `data_viewer/plugins/runner.py` adds `PluginRunRequest`, `PluginInputBinding`, `BudgetedInputAccess`, and `PluginRunner` as a deterministic synchronous runner core that can later be scheduled by the task/threading layer without changing Plugin API v1.
+- Plugin input access routes all metadata and payload reads through `DocumentController`, so plugins do not receive source sessions, adapters, or format-library handles and document-owned I/O leases remain authoritative.
+- Bounded `read()` and first-axis `iter_chunks()` create explicit `ReadRequest` values with per-read `max_bytes`; chunk iteration checks cancellation before scheduling the next source read and does not flatten high-dimensional arrays.
+- Runner execution creates/uses a `TaskRecord`, reports progress through task snapshots, maps cooperative cancellation to `CANCELLED`, preserves source/budget `DataViewerError` failures without partial results, maps unexpected plugin exceptions to safe `PLUGIN_FAILED` errors with raw cause only in diagnostics, and rejects stale generation results.
+- Result schema validation/materialization and GUI/thread-pool scheduling remain later P7 tasks.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing runner test | `venv\Scripts\python.exe -m pytest tests\test_plugin_runner.py -q` | failed as expected before implementation: `ModuleNotFoundError: No module named 'data_viewer.plugins.runner'` |
+| Focused runner tests | `venv\Scripts\python.exe -m pytest tests\test_plugin_runner.py -q` | 4 passed |
+| Plugin P7 regression subset | `venv\Scripts\python.exe -m pytest tests\test_plugin_runner.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py -q` | 27 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\plugins tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py tests\test_plugin_runner.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\plugins tests\test_plugin_runner.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 93 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 436 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- DV-0703 is not checked complete until the implementation commit has green Windows and Ubuntu CI evidence.

@@ -10,7 +10,8 @@ Current implementation status:
 
 - DV-0701 implements the public type skeleton in `data_viewer.plugins.api`, strict manifest validation in `data_viewer.plugins.manifests`, and built-in registry discovery/lazy loading in `data_viewer.plugins.registry`.
 - DV-0702 implements the first compatibility evaluator in `data_viewer.plugins.compatibility`, the supported parameter-schema/default/value validator in `data_viewer.plugins.parameters`, and a standard keyboard-accessible Qt parameter form in `data_viewer.gui.plugin_forms`.
-- Runner/input access, result validation/materialization, and reference plugin conformance remain later P7 tasks and must not be claimed as implemented by the presence of the API skeleton.
+- DV-0703 implements synchronous runner-core task integration and budgeted document-backed `InputAccess` in `data_viewer.plugins.runner`, including bounded reads/chunks, cooperative cancellation, stale-result rejection, and safe plugin exception mapping.
+- Result validation/materialization and reference plugin conformance remain later P7 tasks and must not be claimed as implemented by the presence of the API skeleton.
 
 ## 2. Package boundary
 
@@ -196,6 +197,8 @@ Array parameters, `minItems`/`maxItems`, and `ui:widget` hints remain planned bu
 - A cancelled or failed run publishes no partial final result. Optional preview events are ephemeral and clearly marked.
 
 V1 trusted built-ins may use the shared process. The API deliberately avoids GUI/session handles so a later process-isolated runner can preserve the same plugin contract.
+
+DV-0703's runner core is intentionally synchronous and UI-free so it can be tested deterministically and later scheduled by the task/threading layer without changing Plugin API v1. It returns terminal `TaskSnapshot` values and routes source reads through `DocumentController`, so source-session leases and stale generation checks remain document-owned.
 
 ## 8. Results
 

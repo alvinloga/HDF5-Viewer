@@ -55,6 +55,7 @@ All notable Data Viewer changes are recorded here.
 - Completed the DV-0607 automated baseline with a simulated 200% offscreen shell screenshot/layout check.
 - Added the Plugin API v1 manifest and built-in registry foundation (DV-0701): public plugin result/context types, strict manifest validation, deterministic built-in registry ordering, structured diagnostics, duplicate-ID handling, and lazy entry-point imports.
 - Added the Plugin API v1 compatibility and parameter-form foundation (DV-0702): single-input domain/shape/dtype/access/budget/dependency decisions with exact disabled reasons, immutable parameter defaults/validation, and keyboard-accessible standard Qt controls without plugin-created dialogs.
+- Added the Plugin API v1 runner/input-access foundation (DV-0703): document-backed bounded reads and first-axis chunks, task snapshots, cooperative cancellation without partial results, stale-result rejection, and safe plugin exception mapping.
 
 ### Fixed
 
