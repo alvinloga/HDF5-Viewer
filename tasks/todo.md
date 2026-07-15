@@ -590,7 +590,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: launch/open/tree/table/slice/NIfTI/cancel/repeated close/gzip/plugin metrics on named hardware; numeric thresholds encoded after both-platform baseline; bounded behavior enforced.
 - Verify: reproducible benchmark report with median/high percentile/peak memory.
 
-### [ ] DV-1002 Run stress, leak, and adversarial hardening pass
+### [x] DV-1002 Run stress, leak, and adversarial hardening pass
 
 - Depends: DV-1001.
 - Scope: repeated open/close, rapid navigation, many tasks, corrupt formats, archives/decompression, workspace depth, plugin budgets; fixes remain small tasks if found.

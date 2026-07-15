@@ -2471,3 +2471,40 @@ Dual-platform CI verification after fix:
 Known gaps:
 
 - DV-1001 establishes Phase 0 synthetic/runtime probes and threshold plumbing. Later P10/P11 package-smoke and stress tasks must add artifact-level probes against real HDF5, CSV, NIfTI, gzip, workspace, and plugin fixtures before release thresholds are finalized.
+
+## DV-1002 Stress, leak, and adversarial hardening suite - 2026-07-15
+
+Revision: implementation commit `ce91a891bfb0e62043e3d4e8298b11939f5ae655`.
+
+Implementation evidence:
+
+- `tests/test_hardening_stress.py` adds retained stress/security coverage for many queued exports, rapid navigation cancellation, adversarial workspace nesting, and gzip extraction budget cleanup.
+- `ExportQueueService` now exposes retained task count for diagnostics/tests and releases successful task records and payload references after terminal receipts are stored, preventing many successful exports from accumulating retained task payloads.
+- Rapid navigation search is verified to honor cooperative cancellation without returning partial grouped results.
+- Deep malicious workspace manifests fail through structured `WorkspaceValidationError` nesting-budget checks rather than unbounded recursion.
+- Gzip decompression budget failures are verified to remove abandoned `.incomplete` cache files.
+- `docs/PERFORMANCE_BUDGETS.md` records the current DV-1002 stress coverage and remaining packaged/runtime stress extensions.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing hardening stress tests | `venv\Scripts\python.exe -m pytest tests\test_hardening_stress.py -q` | failed as expected before implementation: `ExportQueueService.retained_task_count` was missing and successful jobs were retained |
+| Focused hardening/export regression tests | `venv\Scripts\python.exe -m pytest tests\test_hardening_stress.py tests\test_export_queue_diagnostics.py -q` | 8 passed |
+| Hardening/navigation/gzip/workspace subset | `venv\Scripts\python.exe -m pytest tests\test_hardening_stress.py tests\test_export_queue_diagnostics.py tests\test_navigation_search.py tests\test_gzip_adapter.py tests\test_workspace_manifest.py -q` | 25 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\app\export_queue.py tests\test_hardening_stress.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests\test_hardening_stress.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 109 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 521 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29395715609 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `ce91a891bfb0e62043e3d4e8298b11939f5ae655`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29395715609 |
+| Ubuntu quality | GitHub Actions job `87288637836` | success; started `2026-07-15T06:56:31Z`, completed `2026-07-15T06:58:05Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87288637859` | success; started `2026-07-15T06:56:31Z`, completed `2026-07-15T06:59:19Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- DV-1002 retained logs are currently the GitHub Actions logs/artifacts plus `TEST_REPORT.md` evidence. Later package-smoke and release-candidate tasks should retain artifact-level stress logs for real packaged open/close loops and representative fixture workflows.
