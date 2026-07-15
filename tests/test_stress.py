@@ -6,7 +6,6 @@ import tempfile
 import numpy as np
 import h5py
 import gc
-import time
 import pytest
 
 # 添加项目根目录到 path
@@ -38,6 +37,7 @@ def test_memory_leak(tmp_h5):
         source = H5Source()
         source.open(tmp_h5)
         data = source.read_slice('/data', (slice(0, 100), slice(0, 10)))
+        assert data.shape == (100, 10)
         source.close()
         del source
 
@@ -107,23 +107,18 @@ def test_rapid_open_close(tmp_h5):
         f.create_dataset('data', data=np.random.randn(100, 100))
 
     # 快速打开关闭
-    start = time.time()
     for i in range(50):
         source = H5Source()
         source.open(tmp_h5)
         source.close()
-    elapsed = time.time() - start
-    assert elapsed >= 0  # 只要不崩溃就行
 
     # 快速读取
     source = H5Source()
     source.open(tmp_h5)
 
-    start = time.time()
     for i in range(100):
         data = source.read_slice('/data', (slice(0, 10), slice(0, 10)))
-    elapsed = time.time() - start
-    assert elapsed >= 0
+        assert data.shape == (10, 10)
 
     source.close()
 
@@ -301,43 +296,3 @@ def test_chunked_datasets(tmp_h5):
     assert meta.chunks == (100, 100)
 
     source.close()
-
-
-def main():
-    """运行所有测试"""
-    print("=" * 60)
-    print("Legacy HDF5 Viewer - Stress Tests")
-    print("=" * 60)
-
-    tests = [
-        test_memory_leak,
-        test_concurrent_access,
-        test_rapid_open_close,
-        test_large_file_operations,
-        test_error_recovery,
-        test_special_characters_in_path,
-        test_compressed_datasets,
-        test_chunked_datasets,
-    ]
-
-    passed = 0
-    failed = 0
-
-    for test in tests:
-        try:
-            test()
-            passed += 1
-        except Exception as e:
-            print(f"  [FAIL] {test.__name__}: {e}")
-            failed += 1
-
-    print("\n" + "=" * 60)
-    print(f"Results: {passed} passed, {failed} failed")
-    print("=" * 60)
-
-    return failed == 0
-
-
-if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)

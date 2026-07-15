@@ -3075,3 +3075,31 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete manual runner from the retained GUI-interaction pytest module. `tests/test_stress.py` still has a manual script runner until it is cleaned with parity evidence.
+
+## DV-1008 legacy stress manual runner removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed the obsolete `main()` / `if __name__ == "__main__"` manual runner from `tests/test_stress.py`, including the historical "Legacy HDF5 Viewer - Stress Tests" banner.
+- Kept the pytest tests for memory/cache behavior, concurrent source access, rapid open/close, large files, error recovery, special paths, compressed datasets, and chunked datasets intact.
+- Replaced two legacy always-true `elapsed >= 0` checks in `tests/test_stress.py` with concrete slice shape assertions.
+- `tests/test_packaging_artifacts.py` now asserts the stress manual runner stays absent while preserving the stress pytest module.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy stress runner regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_stress_test_manual_runner_is_removed -q` | failed as expected before implementation because `tests/test_stress.py` still contained the legacy banner and manual runner |
+| Targeted regression and retained stress tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_stress_test_manual_runner_is_removed tests\test_stress.py -q` | 9 passed |
+| Removed-runner and assertion audit | `rg -n "Legacy HDF5 Viewer - Stress Tests|def main\\(|__main__|elapsed >= 0" tests\test_stress.py tests\test_packaging_artifacts.py` | only intentional guard strings remained in `tests/test_packaging_artifacts.py`; no `elapsed >= 0` remained in `tests/test_stress.py` |
+| Affected stress subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_stress.py tests\test_test_environment.py -q` | 32 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_stress.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q tests\test_packaging_artifacts.py tests\test_stress.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 537 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- This removes only the obsolete manual runner from the retained stress pytest module. Broader DV-1008 legacy runtime and compatibility-bridge removal continues in later slices.

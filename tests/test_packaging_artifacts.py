@@ -207,3 +207,15 @@ def test_legacy_gui_interaction_test_manual_runner_is_removed() -> None:
     assert "Legacy HDF5 Viewer - GUI Interaction Tests" not in gui_interaction_test
     assert "def main(" not in gui_interaction_test
     assert '__name__ == "__main__"' not in gui_interaction_test
+
+
+def test_legacy_stress_test_manual_runner_is_removed() -> None:
+    """DV-1008 keeps legacy stress coverage under pytest collection only."""
+
+    stress_test = (PROJECT_ROOT / "tests" / "test_stress.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Legacy HDF5 Viewer - Stress Tests" not in stress_test
+    assert "def main(" not in stress_test
+    assert '__name__ == "__main__"' not in stress_test
