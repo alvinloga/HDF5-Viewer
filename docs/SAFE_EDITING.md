@@ -89,6 +89,14 @@ The open-source fingerprint contains canonical path, size, modification time, fo
 
 Network shares and coarse timestamp filesystems require a stronger content fingerprint before overwrite.
 
+The DV-0905 implementation provides the non-GUI external-change decision surface in `data_viewer.app.session_restore`:
+
+- `ExternalChangeDetector` classifies watcher/fingerprint refresh outcomes as unchanged, changed, replaced, deleted, or self-save.
+- Dirty local patches never auto-overwrite changed source files. Dirty external changes default to Cancel and offer Reload and discard local patches, Save As, or Cancel.
+- Deleted sources offer Save As, Close Reference, or Cancel.
+- Replaced or changed clean sources offer Reload, Save As, or Cancel.
+- Fingerprints recorded through `record_self_save(...)` suppress watcher echo false conflicts and update the clean baseline instead.
+
 ## 7. Transaction protocol
 
 ### 7.1 Atomic replacement strategy

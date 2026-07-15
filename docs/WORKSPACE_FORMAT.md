@@ -219,6 +219,13 @@ The DV-0904 implementation provides the non-GUI navigation/search state surface 
 8. Mark results stale when fingerprints or plugin versions differ.
 9. Enter degraded mode if any source/view cannot restore; keep usable content available.
 
+Startup session restore is application state, not embedded workspace state:
+
+- `SessionRestoreService` records only the last workspace pointer and clean-shutdown flag in application configuration/recovery state.
+- Startup decisions are safe values: ask, restore, skip, or missing. They do not open a workspace by themselves.
+- Ask mode offers Restore, Skip, and Forget. Missing pointers offer Locate and Forget.
+- Clean shutdown suppresses automatic restore; crash/restart recovery keeps the pointer until the user or policy decides.
+
 ## 10. Missing and moved files
 
 Relocation searches are explicit and bounded:

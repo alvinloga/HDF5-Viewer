@@ -31,6 +31,17 @@ from .navigation import (
     SearchQuery,
     SearchQueryError,
 )
+from .session_restore import (
+    ChangeDecision,
+    ChangeDecisionKind,
+    ExternalChangeDetector,
+    ExternalChangeEvent,
+    ExternalChangeKind,
+    RestoreDecision,
+    RestoreDecisionKind,
+    SessionRestorePolicy,
+    SessionRestoreService,
+)
 
 __all__ = [
     "ActiveContext",
@@ -61,4 +72,13 @@ __all__ = [
     "SearchIndexEntry",
     "SearchQuery",
     "SearchQueryError",
+    "ChangeDecision",
+    "ChangeDecisionKind",
+    "ExternalChangeDetector",
+    "ExternalChangeEvent",
+    "ExternalChangeKind",
+    "RestoreDecision",
+    "RestoreDecisionKind",
+    "SessionRestorePolicy",
+    "SessionRestoreService",
 ]

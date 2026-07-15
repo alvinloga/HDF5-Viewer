@@ -70,6 +70,7 @@ All notable Data Viewer changes are recorded here.
 - Added the Workspace restore planner (DV-0902): `.dvw` sources are now classified as available, moved candidate, missing, changed, ambiguous, unsupported, or failed; view shells restore before bounded metadata/payload reads; persisted plugin results are marked current/stale from source fingerprints; relocation updates require explicit confirmation and mark only the workspace dirty.
 - Added comparison workspace state (DV-0903): comparison sides now persist left/right resource identity, fingerprints, explicit index/axis/column alignment, difference mode, linked-navigation state, compatibility labels, and provenance; invalid comparison workspace entries degrade independently instead of aborting workspace restore.
 - Added navigation/search application state (DV-0904): recent and pinned files, resource favorites, semantic back/forward history, missing-recent remediation, and grouped global search now have Qt-free service models that remain outside `.dvw` workspace manifests.
+- Added session restore and external-change decision models (DV-0905): startup restore now records only a safe last-workspace pointer and clean-shutdown flag, while external file changes classify changed/replaced/deleted/self-save outcomes and prevent dirty patches from auto-overwriting source files.
 
 ### Fixed
 
