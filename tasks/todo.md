@@ -559,7 +559,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: platform config not workspace leakage; path/name/domain/dtype/shape/regex filters; cancellable grouped results; back/forward semantic history; missing recent item remediation.
 - Verify: search correctness/cancel/regex error, history/active split, config migration tests.
 
-### [ ] DV-0905 Implement session restore and external file change detection
+### [x] DV-0905 Implement session restore and external file change detection
 
 - Depends: DV-0902, DV-0302.
 - Scope: session manifest pointer/restore policy/file watcher integration/tests.

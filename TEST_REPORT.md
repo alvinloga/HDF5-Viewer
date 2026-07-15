@@ -2327,3 +2327,40 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Full Qt navigation rail/search/favorites panels remain later UI integration work. DV-0904 supplies the validated application state and search contract.
+
+## DV-0905 Session restore and external file change detection - 2026-07-15
+
+Revision: implementation commit `0a96af5c22a749be26217c640f7d686a7a5be891`.
+
+Implementation evidence:
+
+- `data_viewer/app/session_restore.py` adds Qt-free session restore policy and startup decision models for last-workspace pointers, clean shutdowns, missing manifests, restart, and crash-recovery handling.
+- Session restore records only application-level recovery state and returns safe decisions before any previous workspace is opened.
+- `ExternalChangeDetector` classifies unchanged, changed, replaced, deleted, and self-save watcher events against source fingerprints.
+- Dirty patch state is fail-closed: external changes never trigger a normal reload, and only explicit discard, Save As, or cancel decisions are allowed.
+- Self-save events update the trusted baseline fingerprint and suppress false external-conflict reports.
+- `docs/WORKSPACE_FORMAT.md` and `docs/SAFE_EDITING.md` document the restore pointer, startup behavior, watcher event decisions, and v1 non-goals.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing session-restore tests | `venv\Scripts\python.exe -m pytest tests\test_session_restore.py -q` | failed as expected before implementation: `data_viewer.app.session_restore` module was missing |
+| Focused session-restore tests | `venv\Scripts\python.exe -m pytest tests\test_session_restore.py -q` | 6 passed |
+| Session/document/workspace subset | `venv\Scripts\python.exe -m pytest tests\test_session_restore.py tests\test_document_controller.py tests\test_workspace_restore.py tests\test_workspace_manifest.py -q` | 23 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\app\session_restore.py data_viewer\app\__init__.py tests\test_session_restore.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests\test_session_restore.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 107 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 507 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29392521329 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `0a96af5c22a749be26217c640f7d686a7a5be891`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29392521329 |
+| Ubuntu quality | GitHub Actions job `87278903267` | success; started `2026-07-15T05:50:52Z`, completed `2026-07-15T05:52:29Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87278903301` | success; started `2026-07-15T05:50:57Z`, completed `2026-07-15T05:53:12Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- Full Qt startup prompt, native file watcher wiring, and user-visible reload/Save As/cancel dialogs remain later UI integration work. DV-0905 supplies the validated restore and external-change decision contracts those surfaces will consume.
