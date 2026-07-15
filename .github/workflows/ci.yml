@@ -84,9 +84,11 @@ jobs:
 
       - name: Lint Data Viewer target and isolation harness
         run: >-
-          uv run --locked ruff check data_viewer .github/scripts tests/conftest.py
+          uv run --locked ruff check data_viewer .github/scripts tools
+          tests/conftest.py
           tests/conformance tests/fixtures tests/test_ci_reporting.py
           tests/test_data_viewer_package.py
+          tests/test_packaging_artifacts.py
           tests/test_document_controller.py
           tests/test_domain_types.py tests/test_error_diagnostics.py
           tests/test_fixture_factories.py tests/test_selection_payload_types.py
@@ -94,11 +96,15 @@ jobs:
           tests/test_test_environment.py
 
       - name: Type-check Data Viewer target
-        run: uv run --locked mypy data_viewer .github/scripts/write_quality_manifest.py
+        run: >-
+          uv run --locked mypy data_viewer
+          .github/scripts/write_quality_manifest.py
+          .github/scripts/smoke_pyinstaller_artifact.py
+          tools/build_pyinstaller_artifact.py
 
       - name: Compile target and legacy compatibility paths
         run: >-
-          uv run --locked python -m compileall -q data_viewer .github/scripts
+          uv run --locked python -m compileall -q data_viewer .github/scripts tools
           core gui plugins services utils main.py
 
       - name: Collect tests
@@ -112,6 +118,16 @@ jobs:
       - name: Build source distribution and wheel
         run: uv build --no-sources --out-dir artifacts/${{ matrix.name }}
 
+      - name: Build Data Viewer PyInstaller artifact
+        run: >-
+          uv run --locked python tools/build_pyinstaller_artifact.py
+          --output-dir artifacts/${{ matrix.name }}/package
+
+      - name: Smoke-test Data Viewer executable
+        run: >-
+          uv run --locked python .github/scripts/smoke_pyinstaller_artifact.py
+          --manifest artifacts/${{ matrix.name }}/package/pyinstaller-manifest.json
+
       - name: Upload quality evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -120,6 +136,17 @@ jobs:
           path: |
             ci-reports/${{ matrix.name }}/**
             artifacts/${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Data Viewer package artifact
+        if: ${{ success() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: data-viewer-package-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/${{ matrix.name }}/package/DataViewer-*
+            artifacts/${{ matrix.name }}/package/pyinstaller-manifest.json
           if-no-files-found: error
           retention-days: 14
 

@@ -76,6 +76,7 @@ All notable Data Viewer changes are recorded here.
 - Added the first hardening stress suite (DV-1002): export queues now release successful task payload records, and tests cover many-task retention, rapid-search cancellation, adversarial workspace depth, and gzip incomplete-cache cleanup.
 - Completed the current Data Viewer name/version migration slice (DV-1003): workspace app metadata now reads the canonical package version and target runtime scans guard against non-historical HDF5 Viewer naming.
 - Added the platform configuration migration slice (DV-1004): target config now has versioned UI preferences, legacy repository config preview/migration is explicit and non-destructive, and bootstrap prepares platform config/cache/log paths.
+- Added the initial Data Viewer PyInstaller packaging slice (DV-1005): Windows and Linux CI now build `DataViewer-<version>-<platform>` archives from a locked environment, run a packaged `--version` smoke test, upload package artifacts, and lint/type-check the packaging scripts.
 
 ### Fixed
 

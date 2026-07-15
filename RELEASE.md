@@ -31,6 +31,15 @@ Data Viewer v1 is specified but not implemented. The active implementation seque
 
 The supported Linux distribution baseline and Windows minimum version are finalized from clean packaging evidence, not assumed from build-runner success.
 
+## CI package artifact layout
+
+The quality workflow builds the current PyInstaller package from `packaging/DataViewer.spec` after the locked test, lint, type-check, compile, and wheel/sdist gates. The package upload names are:
+
+- `data-viewer-package-windows-<run_id>-<run_attempt>`
+- `data-viewer-package-ubuntu-<run_id>-<run_attempt>`
+
+Each package upload contains the platform archive and `pyinstaller-manifest.json`. The manifest records the Data Viewer version, platform tag, archive path, bundle directory, and packaged executable path used by the CI smoke step. The smoke step extracts from the built bundle and runs the packaged executable with `--version`; richer installed-artifact workflows belong to DV-1006.
+
 ## Release sequence
 
 1. Freeze scope and dependency locks.
