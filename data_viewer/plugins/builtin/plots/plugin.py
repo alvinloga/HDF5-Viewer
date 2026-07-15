@@ -35,16 +35,16 @@ class LinePlotPlugin:
         finite_mask = np.isfinite(series)
         x_values = np.arange(series.size, dtype=np.float64)[finite_mask]
         y_values = series[finite_mask]
-        y_values, x_values, sampling, sampled = _sample_points(
+        sampled_y_values, sampled_x_values, sampling, sampled = _sample_points(
             y_values,
             companion=x_values,
             sample_size=sample_size,
             seed=seed,
         )
-        assert x_values is not None
-        _require_points(y_values)
+        assert sampled_x_values is not None
+        _require_points(sampled_y_values)
         warnings = _nonfinite_warnings(int(series.size - int(finite_mask.sum())))
-        data_table = _data_table(x_values, y_values, "series 0")
+        data_table = _data_table(sampled_x_values, sampled_y_values, "series 0")
         return _plot_result(
             plugin_id=LINE_PLOT_PLUGIN_ID,
             title="Line Plot",
@@ -54,7 +54,14 @@ class LinePlotPlugin:
                 title="Line Plot",
                 x_label="index",
                 y_label="value",
-                marks=(PlotMark(kind="line", x=tuple(x_values), y=tuple(y_values), label="series 0"),),
+                marks=(
+                    PlotMark(
+                        kind="line",
+                        x=tuple(sampled_x_values),
+                        y=tuple(sampled_y_values),
+                        label="series 0",
+                    ),
+                ),
                 warnings=warnings,
             ),
             sampled=sampled,
@@ -62,7 +69,7 @@ class LinePlotPlugin:
                 "plot_family": "line",
                 "data_table": data_table,
                 "sampling": sampling,
-                "point_count": int(y_values.size),
+                "point_count": int(sampled_y_values.size),
                 "omitted_nonfinite_count": int(series.size - int(finite_mask.sum())),
             },
             warnings=warnings,
@@ -88,16 +95,16 @@ class ScatterPlotPlugin:
         finite_mask = np.isfinite(x_source) & np.isfinite(y_source)
         x_values = x_source[finite_mask]
         y_values = y_source[finite_mask]
-        y_values, x_values, sampling, sampled = _sample_points(
+        sampled_y_values, sampled_x_values, sampling, sampled = _sample_points(
             y_values,
             companion=x_values,
             sample_size=sample_size,
             seed=seed,
         )
-        assert x_values is not None
-        _require_points(y_values)
+        assert sampled_x_values is not None
+        _require_points(sampled_y_values)
         warnings = _nonfinite_warnings(int(matrix.shape[0] - int(finite_mask.sum())))
-        data_table = _data_table(x_values, y_values, f"columns {x_column}/{y_column}")
+        data_table = _data_table(sampled_x_values, sampled_y_values, f"columns {x_column}/{y_column}")
         return _plot_result(
             plugin_id=SCATTER_PLOT_PLUGIN_ID,
             title="Scatter Plot",
@@ -110,8 +117,8 @@ class ScatterPlotPlugin:
                 marks=(
                     PlotMark(
                         kind="scatter",
-                        x=tuple(x_values),
-                        y=tuple(y_values),
+                        x=tuple(sampled_x_values),
+                        y=tuple(sampled_y_values),
                         label=f"columns {x_column}/{y_column}",
                     ),
                 ),
@@ -122,7 +129,7 @@ class ScatterPlotPlugin:
                 "plot_family": "scatter",
                 "data_table": data_table,
                 "sampling": sampling,
-                "point_count": int(y_values.size),
+                "point_count": int(sampled_y_values.size),
                 "omitted_nonfinite_count": int(matrix.shape[0] - int(finite_mask.sum())),
             },
             warnings=warnings,
