@@ -2658,7 +2658,7 @@ Known gaps:
 
 ## DV-1007 release evidence automation pre-license slice - 2026-07-15
 
-Revision: working tree before commit.
+Revision: implementation commit `bc5a4d105b40d4878790892dc3d53f567567f073`.
 
 Implementation evidence:
 
@@ -2680,6 +2680,15 @@ Local Windows verification in the repository `venv`:
 | Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools core gui plugins services utils main.py` | passed |
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 540 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 | Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29405323517 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `bc5a4d105b40d4878790892dc3d53f567567f073`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29405323517 |
+| Ubuntu quality | GitHub Actions job `87319262931` | success; started `2026-07-15T09:39:50Z`, completed `2026-07-15T09:44:27Z`; full offscreen regression suite, wheel/sdist build, PyInstaller artifact build, packaged `--version` smoke, installed functional smoke, `Generate release evidence`, and artifact uploads passed |
+| Windows quality | GitHub Actions job `87319262875` | success; started `2026-07-15T09:39:52Z`, completed `2026-07-15T09:46:06Z`; full offscreen regression suite, wheel/sdist build, PyInstaller artifact build, packaged `--version` smoke, installed functional smoke, `Generate release evidence`, and artifact uploads passed |
+| GitHub Actions artifacts | `gh api repos/alvinloga/HDF5-Viewer/actions/runs/29405323517/artifacts --jq '.artifacts[] | [.name,.size_in_bytes,.expired] | @tsv'` | uploaded non-expired artifacts `data-viewer-package-Windows-29405323517-1` (178389099 bytes), `data-viewer-package-Ubuntu-29405323517-1` (218894312 bytes), plus matching quality evidence artifacts containing release-evidence files |
 
 Known gaps:
 
