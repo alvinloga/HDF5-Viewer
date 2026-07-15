@@ -164,6 +164,7 @@ def expected_profile_payload(values: np.ndarray) -> dict[str, object]:
         "shape": list(values.shape),
         "dtype": str(values.dtype),
         "element_count": int(values.size),
+        "estimated_bytes": int(values.nbytes),
         "finite_count": int(finite.size),
         "missing_count": int(np.isnan(values).sum()) if np.issubdtype(values.dtype, np.floating) else 0,
         "positive_infinity_count": int(np.isposinf(values).sum())
@@ -175,6 +176,7 @@ def expected_profile_payload(values: np.ndarray) -> dict[str, object]:
         "minimum": float(finite.min()) if finite.size else None,
         "maximum": float(finite.max()) if finite.size else None,
         "mean": float(finite.mean()) if finite.size else None,
+        "value_semantics": "numeric",
         "computation_scope": "full",
         "sampled": False,
     }

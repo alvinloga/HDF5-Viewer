@@ -1850,3 +1850,38 @@ Known gaps moving into P8:
 
 - P7 provides the plugin platform foundation and one reference plugin. The production statistics/visualization catalog, concrete plot renderers, and full plugin UI routing remain P8 work.
 - Third-party plugin installation, signing, process isolation, marketplace distribution, and permission systems remain explicitly out of v1 scope.
+
+## DV-0801 Dataset Profile and Descriptive Statistics plugins - 2026-07-15
+
+Revision: working tree based on `ee78aa5` before committing the DV-0801 implementation.
+
+Implementation evidence:
+
+- `data_viewer/plugins/builtin/dataset_profile/plugin.py` extends Dataset Profile with `estimated_bytes` and `value_semantics`, preserving chunked `InputAccess` execution and provenance-complete summary output.
+- The same module adds `DescriptiveStatisticsPlugin`, a second built-in analysis plugin that produces `TableResultPayload` rows for count, missing/nonfinite counts, mean, sample standard deviation, configurable quantiles, median, and extrema.
+- `data_viewer/plugins/builtin/descriptive_statistics/plugin.json` adds the packaged `org.dataviewer.descriptive_statistics` manifest with immutable parameters: `axis`, `nan_policy`, `quantile_low`, and `quantile_high`.
+- `pyproject.toml` includes the Descriptive Statistics manifest as package data so wheel/sdist discovery can find both built-in statistics plugins.
+- `tests/test_builtin_statistics_plugins.py` adds numerical golden coverage for Dataset Profile complex-magnitude semantics, flattened descriptive statistics, axis-0 descriptive statistics, manifest discovery ordering, provenance parameters, and forbidden-import boundaries.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing statistics plugin tests | `venv\Scripts\python.exe -m pytest tests\test_builtin_statistics_plugins.py tests\test_builtin_dataset_profile_plugin.py -q` | failed as expected before implementation: `org.dataviewer.descriptive_statistics` not discovered and Dataset Profile missing `estimated_bytes`/`value_semantics` |
+| Focused statistics plugin tests | `venv\Scripts\python.exe -m pytest tests\test_builtin_statistics_plugins.py tests\test_builtin_dataset_profile_plugin.py -q` | 11 passed |
+| Plugin P7/P8 regression subset | `venv\Scripts\python.exe -m pytest tests\test_builtin_statistics_plugins.py tests\test_builtin_dataset_profile_plugin.py tests\test_plugin_results.py tests\test_plugin_runner.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py -q` | 42 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py tests\test_builtin_statistics_plugins.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py tests\test_plugin_runner.py tests\test_plugin_results.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py tests\test_builtin_statistics_plugins.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 97 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 451 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Wheel package-data smoke | `venv\Scripts\python.exe -m pip wheel . -w .tmp-wheel --no-deps --no-build-isolation --no-cache-dir`; then inspect wheel with `zipfile` for `data_viewer/plugins/builtin/dataset_profile/plugin.json` and `data_viewer/plugins/builtin/descriptive_statistics/plugin.json` | wheel built successfully; both `plugin.json` files present; temporary `.tmp-wheel` removed |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | pending after DV-0801 commit/push | pending |
+
+Known gaps:
+
+- Distribution/outlier summaries, correlation/covariance, dataset comparison, plot plugins, and GUI renderer integration remain later P8 tasks.

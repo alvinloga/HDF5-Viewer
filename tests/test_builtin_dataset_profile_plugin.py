@@ -28,7 +28,7 @@ def test_dataset_profile_is_discovered_without_import_errors() -> None:
     manifests = registry.available_plugins()
 
     assert registry.diagnostics() == ()
-    assert [manifest.id for manifest in manifests] == [PLUGIN_ID]
+    assert manifests[0].id == PLUGIN_ID
     assert manifests[0].name == "Dataset Profile"
 
 

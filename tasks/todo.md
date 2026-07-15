@@ -474,7 +474,7 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 
 Each plugin task depends on DV-0706, includes its manifest/package/numerical or rendering tests, and must pass the shared conformance kit.
 
-### [ ] DV-0801 Implement Dataset Profile and Descriptive Statistics
+### [x] DV-0801 Implement Dataset Profile and Descriptive Statistics
 
 - Acceptance: shape/dtype/storage/count/missing/finite/range plus axis-aware mean/std/quantiles/extrema; stable algorithms; empty/complex/masked/nonfinite rules; chunked operation and scope label.
 - Verify: independent NumPy/SciPy reference goldens across dtypes/axes/chunks.
