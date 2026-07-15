@@ -530,7 +530,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 
 ## P9 — Workspace, comparison, usability
 
-### [ ] DV-0901 Implement `.dvw` schema, model, deterministic atomic save/load
+### [x] DV-0901 Implement `.dvw` schema, model, deterministic atomic save/load
 
 - Depends: DV-0303, DV-0608.
 - Read: Workspace Format, ADR-006.

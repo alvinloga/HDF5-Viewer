@@ -2178,3 +2178,41 @@ Checkpoint status:
 - `tasks/todo.md` marks DV-0801 through DV-0809 complete.
 - Checkpoint 8 exits with no known Critical or Required review issue recorded in this report.
 - Remaining work moves to P9 workspace, comparison, and usability tasks.
+
+## DV-0901 Workspace schema/model/deterministic atomic save-load - 2026-07-15
+
+Revision: implementation commit `2528087adcedc895aec3c7fbe57e7ff7a9ff4cd8`.
+
+Implementation evidence:
+
+- `data_viewer/workspace/manifest.py` adds `WorkspaceManifest`, `WorkspaceSource`, `WorkspaceView`, `WorkspaceService`, and explicit validation/version exceptions for Workspace Format v1.
+- `data_viewer/workspace/schema/workspace-v1.schema.json` adds the packaged public JSON Schema resource; `pyproject.toml` includes it as package data.
+- Workspace serialization is deterministic UTF-8 JSON with two-space indentation, sorted keys, and a trailing newline.
+- Workspace loading enforces byte/depth budgets, rejects forbidden executable/credential/bulk-data keys before restore, preserves unknown JSON-safe fields, and protects newer unsupported schema versions from overwrite.
+- Workspace saving uses `AtomicReplacementService`; failed saves leave the previous `.dvw` file unchanged. Runtime source dirty and workspace dirty flags are independent and are not serialized as scientific source state.
+- `tests/test_workspace_manifest.py` covers minimal schema load, deterministic unknown-preserving round trip, relative/absolute path resolution, newer-version/security/budget rejection, and atomic save failure behavior.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing workspace tests | `venv\Scripts\python.exe -m pytest tests\test_workspace_manifest.py -q` | failed as expected before implementation: `data_viewer.workspace` module was missing |
+| Focused workspace tests | `venv\Scripts\python.exe -m pytest tests\test_workspace_manifest.py -q` | 5 passed |
+| Workspace/persistence/config subset | `venv\Scripts\python.exe -m pytest tests\test_workspace_manifest.py tests\test_persistence_transaction.py tests\test_infrastructure_config.py -q` | 26 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\workspace tests\test_workspace_manifest.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests\test_workspace_manifest.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 103 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 487 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Wheel package-data smoke | `venv\Scripts\python.exe -m pip wheel . -w .tmp-wheel --no-deps --no-build-isolation --no-cache-dir`; then inspect wheel with `zipfile` for `data_viewer/workspace/manifest.py` and `data_viewer/workspace/schema/workspace-v1.schema.json` | wheel built successfully; required workspace files present; temporary `.tmp-wheel` removed |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29389566562 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `2528087adcedc895aec3c7fbe57e7ff7a9ff4cd8`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29389566562 |
+| Windows quality | GitHub Actions job `87269791873` | success; started `2026-07-15T04:41:19Z`, completed `2026-07-15T04:43:34Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Ubuntu quality | GitHub Actions job `87269791876` | success; started `2026-07-15T04:41:18Z`, completed `2026-07-15T04:43:17Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- DV-0902 still owns asynchronous restore, relocation, degraded mode, and current-file status classification.
