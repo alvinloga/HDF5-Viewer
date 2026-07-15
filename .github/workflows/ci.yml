@@ -105,10 +105,9 @@ jobs:
           .github/scripts/smoke_pyinstaller_artifact.py
           tools/build_pyinstaller_artifact.py
 
-      - name: Compile target and legacy compatibility paths
+      - name: Compile Data Viewer target paths
         run: >-
           uv run --locked python -m compileall -q data_viewer .github/scripts tools
-          core gui plugins services utils main.py
 
       - name: Collect tests
         run: uv run --locked python -m pytest --collect-only -q

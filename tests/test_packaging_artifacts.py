@@ -45,3 +45,18 @@ def test_ci_builds_and_uploads_data_viewer_pyinstaller_artifacts() -> None:
     assert "Build Data Viewer PyInstaller artifact" in step_names
     assert "Smoke-test Data Viewer executable" in step_names
     assert "Upload Data Viewer package artifact" in step_names
+
+
+def test_ci_compile_gate_excludes_legacy_runtime_paths() -> None:
+    """DV-1008 keeps release compile gates focused on target Data Viewer paths."""
+
+    workflow = yaml.safe_load((PROJECT_ROOT / ".github" / "workflows" / "ci.yml").read_text())
+    steps = workflow["jobs"]["quality"]["steps"]
+    compile_step = next(step for step in steps if step["name"] == "Compile Data Viewer target paths")
+    compile_command = compile_step["run"]
+
+    assert "data_viewer" in compile_command
+    assert ".github/scripts" in compile_command
+    assert "tools" in compile_command
+    for legacy_path in ("core", "gui", "plugins", "services", "utils", "main.py"):
+        assert legacy_path not in compile_command

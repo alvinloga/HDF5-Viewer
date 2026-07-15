@@ -2734,3 +2734,32 @@ Known gaps:
 
 - This is a safe DV-1008 slice, not full DV-1008 completion. Legacy `main.py`, `core/`, `gui/`, `plugins/`, `services/`, and legacy regression tests remain as migration references until each eligible capability/removal group is proven separately.
 - DV-1008 remains unchecked until the remaining legacy capability/removal groups prove no obsolete runtime, test, or build imports and Windows/Linux CI evidence exists for that full removal revision.
+
+## DV-1008 release compile gate legacy-runtime removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- `.github/workflows/ci.yml` renames the compile step to `Compile Data Viewer target paths`.
+- The release-facing compile gate now compiles only `data_viewer`, `.github/scripts`, and `tools`.
+- Legacy `main.py`, `core/`, `gui/`, `plugins/`, `services/`, and `utils` are no longer part of the release compile gate. They remain covered by the full regression suite until their individual migration/removal groups are proven.
+- `tests/test_packaging_artifacts.py` asserts the CI compile gate excludes legacy runtime paths so the release artifact pipeline cannot silently regain a legacy compile dependency.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial compile-gate regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_ci_compile_gate_excludes_legacy_runtime_paths -q` | failed as expected before implementation because the workflow still used `Compile target and legacy compatibility paths` |
+| Packaging contract tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py -q` | 4 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py` | passed |
+| Target compile scope | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools` | passed |
+| Release/package related tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_release_evidence.py tests\test_installed_artifact_smoke.py tests\test_data_viewer_package.py -q` | 18 passed |
+| Release/package scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer .github\scripts tools tests\test_packaging_artifacts.py tests\test_release_evidence.py tests\test_installed_artifact_smoke.py tests\test_data_viewer_package.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py .github\scripts\generate_release_evidence.py .github\scripts\smoke_pyinstaller_artifact.py tools\build_pyinstaller_artifact.py` | passed; no issues in 114 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 542 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
+
+Known gaps:
+
+- This is a release-gate cleanup slice, not full DV-1008 completion. Legacy runtime packages and historical regression tests remain until their capability groups satisfy the migration removal criteria.
