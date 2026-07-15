@@ -2760,6 +2760,15 @@ Local Windows verification in the repository `venv`:
 | Full local suite | `venv\Scripts\python.exe -m pytest -q` | 542 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
 | Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
 
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29409740527 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `431d50ff1b80eb7846d4dca9c834c62d4e7e88d2`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29409740527 |
+| Ubuntu quality | GitHub Actions job `87333725394` | success; started `2026-07-15T10:54:15Z`, completed `2026-07-15T10:58:45Z`; the renamed `Compile Data Viewer target paths` step passed, followed by full offscreen regression suite, wheel/sdist build, PyInstaller artifact build, packaged `--version` smoke, installed functional smoke, `Generate release evidence`, and artifact uploads |
+| Windows quality | GitHub Actions job `87333725400` | success; started `2026-07-15T10:54:14Z`, completed `2026-07-15T10:59:19Z`; the renamed `Compile Data Viewer target paths` step passed, followed by full offscreen regression suite, wheel/sdist build, PyInstaller artifact build, packaged `--version` smoke, installed functional smoke, `Generate release evidence`, and artifact uploads |
+| GitHub Actions artifacts | `gh api repos/alvinloga/HDF5-Viewer/actions/runs/29409740527/artifacts --jq '.artifacts[] | [.name,.size_in_bytes,.expired] | @tsv'` | uploaded non-expired artifacts `data-viewer-package-Windows-29409740527-1` (178388543 bytes), `data-viewer-quality-Windows-29409740527-1` (179072849 bytes), `data-viewer-package-Ubuntu-29409740527-1` (218889936 bytes), and `data-viewer-quality-Ubuntu-29409740527-1` (219620899 bytes) |
+
 Known gaps:
 
 - This is a release-gate cleanup slice, not full DV-1008 completion. Legacy runtime packages and historical regression tests remain until their capability groups satisfy the migration removal criteria.
