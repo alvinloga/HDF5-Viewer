@@ -344,3 +344,18 @@ def test_legacy_services_package_is_removed() -> None:
         "tests/test_export_queue_diagnostics.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_builtin_plugins_package_is_removed() -> None:
+    """DV-1008 removes obsolete GUI-coupled legacy built-in plugins."""
+
+    assert not (PROJECT_ROOT / "plugins" / "builtin").exists()
+
+    for retained_target_path in (
+        "data_viewer/plugins/builtin/dataset_profile/plugin.py",
+        "data_viewer/plugins/builtin/plots/plugin.py",
+        "tests/test_builtin_statistics_plugins.py",
+        "tests/test_builtin_plot_plugins.py",
+        "tests/test_builtin_heatmap_plugins.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()

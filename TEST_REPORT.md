@@ -3455,3 +3455,31 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete legacy `plugins/external/` subpackage. The legacy plugin API/base and built-in plugin modules remain as a separate migration/removal group.
+
+## DV-1008 legacy built-in plugins package removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `plugins/builtin/__init__.py`, `heatmap.py`, `histogram.py`, `line_chart.py`, and `statistics.py`.
+- The removed legacy plugins depended on `core.datasource` and `plugins.base`, and visualization plugins created Qt/Matplotlib widgets directly instead of returning renderer-owned Plugin API v1 results.
+- Added `tests/test_packaging_artifacts.py::test_legacy_builtin_plugins_package_is_removed`, which asserts `plugins/builtin/` stays absent and retained target Dataset Profile, statistics, plot, and heatmap plugin suites remain present.
+- Updated migration inventory and changelog wording so only the remaining legacy plugin base/API is left for a separate removal group.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy built-in plugin removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_builtin_plugins_package_is_removed -q` | failed as expected before implementation because `plugins/builtin/` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_builtin_plugins_package_is_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_builtin_statistics_plugins.py tests\test_builtin_plot_plugins.py tests\test_builtin_heatmap_plugins.py tests\test_plugin_registry.py tests\test_plugin_runner.py -q` | 36 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_builtin_statistics_plugins.py tests\test_builtin_plot_plugins.py tests\test_builtin_heatmap_plugins.py tests\test_plugin_registry.py tests\test_plugin_runner.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 426 passed |
+
+Known gaps:
+
+- This removes only the GUI-coupled legacy built-in plugin implementations. The legacy `plugins/base.py` API and package initializer remain for a separate removal slice after their import/reference audit is recorded.
