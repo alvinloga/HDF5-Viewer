@@ -1,4 +1,4 @@
-"""Comprehensive test suite for HDF5 Viewer v0.2.0
+"""Comprehensive test suite for legacy HDF5 Viewer v0.2.0
 Tests every feature, button, event, and interaction.
 """
 

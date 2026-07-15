@@ -166,7 +166,7 @@ def test_registry():
 def main():
     """运行所有测试"""
     print("=" * 50)
-    print("HDF5 Viewer - Core Module Tests")
+    print("Legacy HDF5 Viewer - Core Module Tests")
     print("=" * 50)
 
     test_event_bus()

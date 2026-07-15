@@ -175,7 +175,7 @@ def test_export(tmp_csv):
 def main():
     """运行所有测试"""
     print("=" * 60)
-    print("HDF5 Viewer - Packaged Build Tests")
+    print("Legacy HDF5 Viewer - Packaged Build Tests")
     print("=" * 60)
 
     tests = [

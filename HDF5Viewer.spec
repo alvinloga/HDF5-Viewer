@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+# Legacy HDF5 Viewer PyInstaller spec. Data Viewer packaging is owned by DV-1005.
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 import os
 import sys
@@ -43,7 +44,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='HDF5Viewer',
+    name='HDF5Viewer',  # legacy artifact name
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -62,5 +63,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='HDF5Viewer',
+    name='HDF5Viewer',  # legacy artifact name
 )

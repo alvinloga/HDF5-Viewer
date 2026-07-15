@@ -1,12 +1,12 @@
 @echo off
-REM HDF5 Viewer - Windows Build Launcher
+REM Legacy HDF5 Viewer - Windows Build Launcher
 REM Delegates to build_windows.py for full logging and error handling
 
 set SCRIPT_DIR=%~dp0
 cd /d "%SCRIPT_DIR%"
 
 echo ========================================
-echo HDF5 Viewer - Windows Build
+echo Legacy HDF5 Viewer - Windows Build
 echo ========================================
 echo.
 echo All output is logged to build_log.txt

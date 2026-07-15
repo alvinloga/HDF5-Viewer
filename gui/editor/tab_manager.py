@@ -101,7 +101,7 @@ class DetachedWindow(QMainWindow):
         super().__init__()
         self._panel_key = panel_key
         self._theme = theme
-        self.setWindowTitle(title or "HDF5 Viewer - Detached")
+        self.setWindowTitle(title or "HDF5 Viewer - Detached")  # legacy detached title
         self.resize(800, 600)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""HDF5 Viewer - Windows Build Script (Python)
+"""Legacy HDF5 Viewer - Windows Build Script (Python)
 
 This script is called by build_windows.bat.
 All build logic lives here for better error handling and logging.
@@ -7,14 +7,13 @@ All build logic lives here for better error handling and logging.
 
 import subprocess
 import sys
-import os
 import shutil
 import time
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent
 LOG_FILE = PROJECT_ROOT / "build_log.txt"
-ENV_NAME = "hdf5viewer_build"
+ENV_NAME = "hdf5viewer_build"  # legacy environment name
 TEMP_ENV = False
 
 # Keep track of start time
@@ -60,12 +59,12 @@ def main():
     # Initialize log
     with open(LOG_FILE, "w", encoding="utf-8") as f:
         f.write("=" * 60 + "\n")
-        f.write("HDF5 Viewer - Windows Build Log\n")
+        f.write("Legacy HDF5 Viewer - Windows Build Log\n")
         f.write(f"Start time: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write("=" * 60 + "\n\n")
 
     log("=" * 60)
-    log("HDF5 Viewer - Windows Build")
+    log("Legacy HDF5 Viewer - Windows Build")
     log("=" * 60)
 
     # ========================================
@@ -89,7 +88,7 @@ def main():
         )
 
         if health_check.returncode != 0:
-            log(f"[Step 1] Environment is broken. Recreating...")
+            log("[Step 1] Environment is broken. Recreating...")
             run_cmd(["conda", "env", "remove", "-n", ENV_NAME, "-y"], "Step 1 - Remove broken env")
             run_cmd(["conda", "create", "-n", ENV_NAME, "python=3.12", "-y"], "Step 1 - Create new env")
             TEMP_ENV = True
@@ -152,11 +151,11 @@ def main():
     # ========================================
     # Step 5: Build with PyInstaller
     # ========================================
-    log("\n[Step 5] Building HDF5Viewer.exe...")
+    log("\n[Step 5] Building legacy HDF5Viewer.exe...")
 
     run_cmd(
         ["conda", "run", "-n", ENV_NAME, "--cwd", str(PROJECT_ROOT),
-         "pyinstaller", str(PROJECT_ROOT / "HDF5Viewer.spec"), "--noconfirm"],
+         "pyinstaller", str(PROJECT_ROOT / "HDF5Viewer.spec"), "--noconfirm"],  # legacy spec
         "Step 5 - PyInstaller build",
     )
 
@@ -167,9 +166,9 @@ def main():
     # ========================================
     log("\n[Step 6] Creating launcher...")
 
-    launcher_dir = PROJECT_ROOT / "dist" / "HDF5Viewer"
-    launcher = launcher_dir / "HDF5Viewer.bat"
-    launcher.write_text('@echo off\ncd /d "%~dp0"\nstart HDF5Viewer.exe %*\n')
+    launcher_dir = PROJECT_ROOT / "dist" / "HDF5Viewer"  # legacy artifact directory
+    launcher = launcher_dir / "HDF5Viewer.bat"  # legacy launcher
+    launcher.write_text('@echo off\ncd /d "%~dp0"\nstart HDF5Viewer.exe %*\n')  # legacy executable
 
     log("[Step 6] Done.")
 
@@ -189,7 +188,7 @@ def main():
     elapsed = time.time() - START_TIME
     log("\n" + "=" * 60)
     log("Build completed successfully!")
-    log(f"Output: dist/HDF5Viewer/HDF5Viewer.exe")
+    log("Output: dist/HDF5Viewer/HDF5Viewer.exe  # legacy")
     log(f"Log: {LOG_FILE}")
     log(f"Time: {elapsed:.1f}s")
     log("=" * 60)
@@ -201,7 +200,7 @@ if __name__ == "__main__":
     except Exception as e:
         elapsed = time.time() - START_TIME
         log("\n" + "=" * 60)
-        log(f"BUILD FAILED!")
+        log("BUILD FAILED!")
         log(f"Error: {e}")
         log(f"Log: {LOG_FILE}")
         log(f"Time: {elapsed:.1f}s")

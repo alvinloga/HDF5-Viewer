@@ -163,7 +163,7 @@ def test_data_export():
 def main():
     """运行所有测试"""
     print("=" * 60)
-    print("HDF5 Viewer - Final Integration Tests")
+    print("Legacy HDF5 Viewer - Final Integration Tests")
     print("=" * 60)
 
     test_core_functionality()

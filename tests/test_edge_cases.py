@@ -357,7 +357,7 @@ def test_datatable_model_edge_cases():
 def main():
     """运行所有测试"""
     print("=" * 60)
-    print("HDF5 Viewer - Edge Case Tests")
+    print("Legacy HDF5 Viewer - Edge Case Tests")
     print("=" * 60)
 
     tests = [

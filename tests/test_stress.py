@@ -306,7 +306,7 @@ def test_chunked_datasets(tmp_h5):
 def main():
     """运行所有测试"""
     print("=" * 60)
-    print("HDF5 Viewer - Stress Tests")
+    print("Legacy HDF5 Viewer - Stress Tests")
     print("=" * 60)
 
     tests = [

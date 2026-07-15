@@ -8,7 +8,7 @@ Data Viewer 是面向科研人员、数据工程师和算法开发者的跨平�
 
 仓库目前处于架构重构准备阶段。
 
-- `main.py`、`core/`、`gui/`、`plugins/`、`services/` 是旧版 HDF5 Viewer v0.3.1 之前的实现。
+- `main.py`、`core/`、`gui/`、`plugins/`、`services/` 是 legacy/旧版 HDF5 Viewer v0.3.1 之前的实现。
 - 旧版只应视为迁移输入，不代表本文档描述的目标能力已经完成。
 - Data Viewer 的目标规范、公共接口和执行顺序已经写入 `docs/`、`ARCHITECTURE.md` 和 `tasks/`。
 - 后续实现必须按任务清单逐步迁移，不允许通过一次性重写跳过行为测试。
@@ -18,7 +18,7 @@ Data Viewer 是面向科研人员、数据工程师和算法开发者的跨平�
 - GUI 测试在当前开发环境中无法完整收集；
 - 旧测试报告中的“121 项全部通过”不能作为当前证据；
 - 旧编辑、导出、Split、异步加载和可选数据源存在已确认的正确性问题；
-- 当前构建产物和应用内部仍使用 `HDF5Viewer` 名称，名称迁移属于实施任务。
+- 旧版 `HDF5 Viewer` 名称仅作为历史/显式 legacy fallback 语境保留；当前目标包、入口和 UI 表面使用 `Data Viewer`。
 
 ## 产品定位
 

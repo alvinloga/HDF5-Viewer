@@ -62,7 +62,7 @@ class MainWindow(QMainWindow):
         DataSourceRegistry.register(H5Source)
 
         # 窗口配置
-        self.setWindowTitle("HDF5 Viewer")
+        self.setWindowTitle("HDF5 Viewer")  # legacy window title
         self.setMinimumSize(1024, 768)
         self.resize(1400, 900)
 
@@ -807,8 +807,8 @@ class MainWindow(QMainWindow):
     def _on_about(self):
         """关于"""
         QMessageBox.about(
-            self, "About HDF5 Viewer",
-            "HDF5 Viewer v0.2.1\n\n"
+            self, "About HDF5 Viewer",  # legacy About title
+            "HDF5 Viewer v0.2.1\n\n"  # legacy About version
             "A lightweight HDF5 file viewer\n"
             "with VSCode-style interface.\n\n"
             "Features:\n"

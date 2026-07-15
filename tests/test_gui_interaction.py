@@ -37,7 +37,7 @@ def test_main_window_creation(qapp):
     config = {'ui': {'sidebarWidth': 280}}
     window = MainWindow(config)
     assert window is not None
-    assert window.windowTitle() == "HDF5 Viewer"
+    assert window.windowTitle() == "HDF5 Viewer"  # legacy window title
 
 
 def test_tab_manager(qapp, tmp_h5):
@@ -249,7 +249,7 @@ def test_search_panel(qapp):
 def main():
     """运行所有测试"""
     print("=" * 60)
-    print("HDF5 Viewer - GUI Interaction Tests")
+    print("Legacy HDF5 Viewer - GUI Interaction Tests")
     print("=" * 60)
 
     tests = [

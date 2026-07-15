@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import cast
 
+from data_viewer import __version__
 from data_viewer.domain import FrozenJsonMapping, JsonValue, SourceFingerprint
 from data_viewer.persistence.transaction import (
     AtomicReplacementService,
@@ -210,7 +211,7 @@ class WorkspaceManifest:
     updated_at: str
     schema_version: int = WORKSPACE_SCHEMA_VERSION
     app: Mapping[str, JsonValue] = field(
-        default_factory=lambda: {"name": "Data Viewer", "version": "1.0.0"}
+        default_factory=lambda: {"name": "Data Viewer", "version": __version__}
     )
     path_base: str = "workspace_directory"
     sources: tuple[WorkspaceSource, ...] = ()

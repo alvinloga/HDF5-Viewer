@@ -19,7 +19,7 @@ Known evidence problems:
 
 - legacy documentation claimed 121 passing tests and 100% pass rate without reproducible current evidence;
 - `.github/workflows/build.yml` builds artifacts but does not run the full test suite before release;
-- runtime/build naming and version sources disagree (`HDF5Viewer`, About version, and git tags);
+- legacy/historical runtime/build naming and version sources disagree (`HDF5Viewer`, About version, and git tags);
 - unconstrained `requirements.txt` lacks target format dependencies;
 - test isolation from repository/user configuration is unproven.
 
@@ -74,7 +74,7 @@ Revision: `35d0a73` (`test: stabilize Qt collection and config isolation`).
 
 The full-execution errors are Windows `PermissionError` failures while deleting temporary HDF5 files that remain open after GUI/tab operations. They are assigned to DV-0004 (close/ownership regression coverage), not suppressed. Test order randomization is not configured in the repository, so the required order/seed rerun is not applicable yet.
 
-The successful local environment is a project virtual environment derived from the existing `hdf5viewer_build` Conda environment. It is sufficient for collection diagnosis but is not the clean lock-validation environment required by DV-0002. DV-0003 remains unchecked until the same collection gate passes from the locked environment.
+The successful local environment is a project virtual environment derived from the existing legacy `hdf5viewer_build` Conda environment. It is sufficient for collection diagnosis but is not the clean lock-validation environment required by DV-0002. DV-0003 remains unchecked until the same collection gate passes from the locked environment.
 
 ## Legacy resource-cleanup follow-up 閳?2026-07-11
 

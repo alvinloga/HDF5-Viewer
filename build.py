@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""构建脚本 — 打包 HDF5 Viewer"""
+"""Legacy build script — packages the historical HDF5 Viewer application."""
 
-import os
 import sys
 import shutil
 import subprocess
@@ -13,7 +12,7 @@ BUILD_DIR = PROJECT_ROOT / "build"
 
 # 版本信息
 VERSION = "0.2.1"
-APP_NAME = "HDF5Viewer"
+APP_NAME = "HDF5Viewer"  # legacy artifact name
 
 
 def clean():
@@ -88,11 +87,11 @@ cd "$(dirname "$0")"
 def build_windows_spec():
     """Windows 构建说明"""
     print("=" * 60)
-    print("Windows build uses HDF5Viewer.spec")
+    print("Legacy Windows build uses HDF5Viewer.spec")
     print("=" * 60)
     print("\nTo build on Windows, run:")
     print("  build_windows.bat")
-    print("  or: pyinstaller HDF5Viewer.spec --noconfirm")
+    print("  or: pyinstaller HDF5Viewer.spec --noconfirm  # legacy")
     return True
 
 
@@ -113,7 +112,7 @@ def create_portable_package():
     # 创建启动脚本
     run_script = portable_dir / "run.sh"
     run_script.write_text(f"""#!/bin/bash
-# HDF5 Viewer Portable
+# Legacy HDF5 Viewer Portable
 cd "$(dirname "$0")/app"
 ./{APP_NAME} "$@"
 """)
@@ -121,7 +120,7 @@ cd "$(dirname "$0")/app"
 
     # 创建 README
     readme = portable_dir / "README.txt"
-    readme.write_text(f"""HDF5 Viewer v{VERSION} - Portable Edition
+    readme.write_text(f"""Legacy HDF5 Viewer v{VERSION} - Portable Edition
 ========================================
 
 Usage:
@@ -171,7 +170,7 @@ def run_tests():
             print(result.stderr)
             return False
         else:
-            print(f"  PASSED")
+            print("  PASSED")
 
     print("\nAll tests passed!")
     return True
@@ -181,7 +180,7 @@ def main():
     """主函数"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Build HDF5 Viewer")
+    parser = argparse.ArgumentParser(description="Build legacy HDF5 Viewer")
     parser.add_argument("--clean", action="store_true", help="Clean build dirs")
     parser.add_argument("--linux", action="store_true", help="Build Linux version")
     parser.add_argument("--windows", action="store_true", help="Create Windows spec")

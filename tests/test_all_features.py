@@ -300,7 +300,7 @@ def test_event_bus():
 def main():
     """运行所有测试"""
     print("=" * 60)
-    print("HDF5 Viewer - Comprehensive Feature Tests")
+    print("Legacy HDF5 Viewer - Comprehensive Feature Tests")
     print("=" * 60)
 
     tests = [

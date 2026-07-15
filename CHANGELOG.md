@@ -74,6 +74,7 @@ All notable Data Viewer changes are recorded here.
 - Added background export queue and diagnostics bundle contracts (DV-0906): reviewed exports now have queued task state, progress, cancellation, retry, receipt history, Problems links to task/source/resource, and user-previewable diagnostics bundles with configured path redaction and plugin inventory.
 - Added the Phase 0 performance budget harness (DV-1001): reproducible benchmark reports now record median, p95, peak traced memory, path-free platform profiles, synthetic release-budget probes, and structured threshold evaluations.
 - Added the first hardening stress suite (DV-1002): export queues now release successful task payload records, and tests cover many-task retention, rapid-search cancellation, adversarial workspace depth, and gzip incomplete-cache cleanup.
+- Completed the current Data Viewer name/version migration slice (DV-1003): workspace app metadata now reads the canonical package version and target runtime scans guard against non-historical HDF5 Viewer naming.
 
 ### Fixed
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""HDF5 Viewer — 主入口"""
+"""Legacy HDF5 Viewer — historical main entry point."""
 
 import sys
 import json
@@ -40,7 +40,7 @@ def main():
     os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '1'
 
     app = QApplication(sys.argv)
-    app.setApplicationName("HDF5 Viewer")
+    app.setApplicationName("HDF5 Viewer")  # legacy application name
     app.setApplicationVersion("0.2.1")
 
     # 加载配置

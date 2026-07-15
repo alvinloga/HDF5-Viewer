@@ -271,7 +271,7 @@ def test_event_bus_integration():
 def main():
     """运行所有测试"""
     print("=" * 60)
-    print("HDF5 Viewer - Integration Tests")
+    print("Legacy HDF5 Viewer - Integration Tests")
     print("=" * 60)
 
     tests = [

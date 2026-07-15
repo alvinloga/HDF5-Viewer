@@ -138,7 +138,7 @@ def test_status_bar():
 def main():
     """运行所有测试"""
     print("=" * 50)
-    print("HDF5 Viewer - Phase 1 Tests")
+    print("Legacy HDF5 Viewer - Phase 1 Tests")
     print("=" * 50)
 
     test_tab_manager()
