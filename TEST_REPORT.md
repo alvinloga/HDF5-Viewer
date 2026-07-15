@@ -3709,3 +3709,31 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the legacy main-window module from `gui/`. Remaining legacy `gui/` component groups and coupled `core/` modules still exist as separate migration/removal groups.
+
+## DV-1008 legacy GUI activity-rail module removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `gui/activity_bar.py` and `gui/secondary_bar.py`, old activity/navigation rail widgets that were no longer referenced by current runtime, tests, build, or packaging paths.
+- Added `tests/test_packaging_artifacts.py::test_legacy_gui_activity_rail_modules_are_removed`, which asserts the old modules stay absent and retained target shell, command registry, and standard state-component coverage remains present.
+- Target activity/navigation chrome ownership remains under `data_viewer/gui/shell.py`, `data_viewer/gui/commands.py`, and command/state contracts instead of emoji-based legacy rail buttons.
+- Updated migration inventory and changelog wording so `gui/` remains a current legacy migration input while its activity-rail modules are recorded as removed.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy activity-rail module removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_activity_rail_modules_are_removed -q` | failed as expected before implementation because `gui/activity_bar.py` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_activity_rail_modules_are_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_gui_shell.py tests\test_command_registry.py tests\test_gui_state_components.py -q` | 24 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_gui_shell.py tests\test_command_registry.py tests\test_gui_state_components.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 435 passed |
+
+Known gaps:
+
+- This removes only the legacy activity-rail modules from `gui/`. Remaining legacy `gui/` component groups and coupled `core/` modules still exist as separate migration/removal groups.

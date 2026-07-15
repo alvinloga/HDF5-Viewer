@@ -95,6 +95,7 @@ All notable Data Viewer changes are recorded here.
 - Removed the legacy `gui/sidebar/` package; target navigation, search, shell, and Plugin API registries now own those workbench surfaces.
 - Removed legacy `gui/secondary_panel.py`; target shell, navigation/search services, and Plugin API v1 own the former Search/Plugins side-panel behavior.
 - Removed legacy `gui/main_window.py`; the target Data Viewer Qt bootstrap and shell now own the application window, commands, open flow, workspace regions, and packaged runtime surface.
+- Removed legacy `gui/activity_bar.py` and `gui/secondary_bar.py`; target shell command regions, command registry, and standard state components now own activity/navigation chrome without emoji-based legacy rails.
 - Removed the broken explicit legacy CLI fallback from the target `data_viewer` entrypoint (DV-1008 slice): `--legacy` now fails argument parsing and `DATA_VIEWER_LEGACY=1` no longer overrides the default Data Viewer bootstrap.
 - Removed legacy runtime paths from the release compile gate (DV-1008 slice): CI now compiles the target Data Viewer package, CI scripts, and packaging tools as the release-facing compile scope while legacy tests remain as migration-reference regressions.
 - Removed obsolete legacy PyInstaller/build entrypoints (DV-1008 slice): root `build.py` is now a Data Viewer release-build front end, and the old `HDF5Viewer.spec`, `build_windows.py`, and `build_windows.bat` launchers were deleted.

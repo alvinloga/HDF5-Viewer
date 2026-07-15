@@ -483,3 +483,23 @@ def test_legacy_gui_main_window_module_is_removed() -> None:
         "tests/test_packaging_artifacts.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_gui_activity_rail_modules_are_removed() -> None:
+    """DV-1008 removes obsolete legacy activity-rail chrome modules."""
+
+    for legacy_module in (
+        "gui/activity_bar.py",
+        "gui/secondary_bar.py",
+    ):
+        assert not (PROJECT_ROOT / legacy_module).exists()
+
+    for retained_target_path in (
+        "data_viewer/gui/shell.py",
+        "data_viewer/gui/commands.py",
+        "data_viewer/gui/state_components.py",
+        "tests/test_gui_shell.py",
+        "tests/test_command_registry.py",
+        "tests/test_gui_state_components.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()
