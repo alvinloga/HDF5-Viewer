@@ -95,6 +95,7 @@ All notable Data Viewer changes are recorded here.
 - Removed the obsolete manual script runner from `tests/test_core.py`; the retained core coverage now runs only through pytest collection.
 - Removed the obsolete manual script runner from `tests/test_integration.py`; retained integration coverage now runs only through pytest collection.
 - Removed the obsolete manual script runner from `tests/test_edge_cases.py`; retained edge-case coverage now runs only through pytest collection.
+- Removed the obsolete manual script runner from `tests/test_phase1.py`; retained legacy Phase 1 GUI smoke coverage now runs only through pytest collection.
 - Normalized lock-file evidence across Windows and Linux checkouts and verified release jobs stop when quality tests fail.
 
 ### Documentation

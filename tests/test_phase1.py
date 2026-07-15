@@ -10,16 +10,15 @@ import h5py
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PyQt6.QtWidgets import QApplication
-app = QApplication.instance() or QApplication([])
-
-from core.event_bus import EventBus
 from core.h5_source import H5Source
 from core.registry import DataSourceRegistry
 from gui.editor.tab_manager import TabManager
-from gui.editor.file_panel import FilePanel, SliceInput
-from gui.editor.data_table import DataTable, DataTablePanel
-from gui.sidebar.explorer import ExplorerPanel, ExplorerTree
+from gui.editor.file_panel import SliceInput
+from gui.editor.data_table import DataTable
+from gui.sidebar.explorer import ExplorerPanel
 from gui.status_bar import StatusBar
+
+app = QApplication.instance() or QApplication([])
 
 
 def create_test_hdf5(path: str) -> None:
@@ -133,24 +132,3 @@ def test_status_bar():
     status_bar = StatusBar()
     status_bar.set_message("Test message")
     print("  StatusBar: OK")
-
-
-def main():
-    """运行所有测试"""
-    print("=" * 50)
-    print("Legacy HDF5 Viewer - Phase 1 Tests")
-    print("=" * 50)
-
-    test_tab_manager()
-    test_explorer()
-    test_slice_input()
-    test_data_table()
-    test_status_bar()
-
-    print("=" * 50)
-    print("All Phase 1 tests passed!")
-    print("=" * 50)
-
-
-if __name__ == "__main__":
-    main()

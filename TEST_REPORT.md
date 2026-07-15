@@ -3017,3 +3017,32 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete manual runner from the retained edge-case pytest module. Other legacy regression suites still have manual script runners and legacy imports until each group is cleaned or removed with parity evidence.
+
+## DV-1008 legacy Phase 1 manual runner removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed the obsolete `main()` / `if __name__ == "__main__"` manual runner from `tests/test_phase1.py`, including the historical "Legacy HDF5 Viewer - Phase 1 Tests" banner.
+- Kept the pytest tests for `TabManager`, `ExplorerPanel`, `SliceInput`, `DataTable`, and `StatusBar` intact.
+- Removed unused imports and normalized import ordering exposed by the runner cleanup from `tests/test_phase1.py`.
+- `tests/test_packaging_artifacts.py` now asserts the manual runner stays absent while preserving the Phase 1 pytest module.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy Phase 1 runner regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_phase1_test_manual_runner_is_removed -q` | failed as expected before implementation because `tests/test_phase1.py` still contained the legacy banner and manual runner |
+| Targeted regression and retained Phase 1 tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_phase1_test_manual_runner_is_removed tests\test_phase1.py -q` | 6 passed |
+| Affected GUI lifecycle subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_phase1.py tests\test_test_environment.py -q` | 27 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_phase1.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q tests\test_packaging_artifacts.py tests\test_phase1.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 535 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Removed-runner reference audit | `rg -n "Legacy HDF5 Viewer - Phase 1 Tests|def main\\(|__main__" tests\test_phase1.py tests\test_packaging_artifacts.py` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
+
+Known gaps:
+
+- This removes only the obsolete manual runner from the retained Phase 1 pytest module. Other legacy regression suites still have manual script runners and legacy imports until each group is cleaned or removed with parity evidence.
