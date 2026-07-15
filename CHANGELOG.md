@@ -101,6 +101,7 @@ All notable Data Viewer changes are recorded here.
 - Removed the root legacy `main.py` bootstrap; current launch documentation now points to `python -m data_viewer`.
 - Removed the legacy GUI dependency from first-release format-scope tests so those checks now target the Data Viewer registry and entrypoint only.
 - Removed the obsolete legacy `tests/test_phase1.py` GUI smoke suite; retained target GUI shell/base/state coverage remains in the active suite.
+- Removed the obsolete legacy `tests/test_core.py` unit suite; retained target source registry, HDF5 adapter, cache, task, and selection coverage remains in the active suite.
 - Normalized lock-file evidence across Windows and Linux checkouts and verified release jobs stop when quality tests fail.
 
 ### Documentation

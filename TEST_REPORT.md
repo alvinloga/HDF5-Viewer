@@ -3187,3 +3187,27 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete legacy Phase 1 GUI smoke suite. Other retained legacy regression suites still import `core/`, `gui/`, `plugins/`, and `services/` until each is removed or ported with parity evidence.
+
+## DV-1008 legacy core unit suite removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed obsolete `tests/test_core.py`, a legacy unit suite that imported `core.event_bus`, `core.h5_source`, `core.slicer`, `core.cache`, and `core.registry` directly.
+- Replaced the previous manual-runner-only guard with `tests/test_packaging_artifacts.py::test_legacy_core_unit_suite_is_removed`, which asserts the file stays removed and target source registry, HDF5 adapter, cache, task, and selection suites remain present.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy core suite removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_core_unit_suite_is_removed -q` | failed as expected before implementation because `tests/test_core.py` still existed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_core_unit_suite_is_removed tests\test_source_registry.py tests\test_hdf5_adapter.py tests\test_infrastructure_cache.py tests\test_task_lifecycle.py tests\test_selection_payload_types.py -q` | 53 passed |
+| Removed-file check | `Test-Path tests\test_core.py` | False |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 527 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- This removes only the obsolete legacy core unit suite. Other retained legacy regression suites still import `core/`, `gui/`, `plugins/`, and `services/` until each is removed or ported with parity evidence.

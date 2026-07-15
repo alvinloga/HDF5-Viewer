@@ -156,14 +156,19 @@ def test_legacy_all_features_smoke_script_is_removed() -> None:
         assert (PROJECT_ROOT / retained_suite).exists()
 
 
-def test_legacy_core_test_manual_runner_is_removed() -> None:
-    """DV-1008 keeps legacy core tests as pytest tests, not standalone scripts."""
+def test_legacy_core_unit_suite_is_removed() -> None:
+    """DV-1008 removes the obsolete legacy core unit suite."""
 
-    core_test = (PROJECT_ROOT / "tests" / "test_core.py").read_text(encoding="utf-8")
+    assert not (PROJECT_ROOT / "tests" / "test_core.py").exists()
 
-    assert "Legacy HDF5 Viewer - Core Module Tests" not in core_test
-    assert "def main(" not in core_test
-    assert '__name__ == "__main__"' not in core_test
+    for retained_target_suite in (
+        "tests/test_source_registry.py",
+        "tests/test_hdf5_adapter.py",
+        "tests/test_infrastructure_cache.py",
+        "tests/test_task_lifecycle.py",
+        "tests/test_selection_payload_types.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_suite).exists()
 
 
 def test_legacy_integration_test_manual_runner_is_removed() -> None:
