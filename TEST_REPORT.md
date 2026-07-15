@@ -1892,7 +1892,7 @@ Known gaps:
 
 ## DV-0802 Distribution Summary plugin - 2026-07-15
 
-Revision: working tree based on `0c795a4` before committing the DV-0802 implementation.
+Revision: implementation commit `79c5318ae54751f34de1707cff78c2879712276a`.
 
 Implementation evidence:
 
@@ -1918,7 +1918,9 @@ Dual-platform CI verification after commit:
 
 | Check | Command/source | Observed result |
 |---|---|---|
-| GitHub Actions run | pending after DV-0802 commit/push | pending |
+| GitHub Actions run | `gh run view 29383105678 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `79c5318ae54751f34de1707cff78c2879712276a`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29383105678 |
+| Ubuntu quality | GitHub Actions job `87250747799` | success; started `2026-07-15T02:02:21Z`, completed `2026-07-15T02:03:52Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87250747806` | success; started `2026-07-15T02:02:21Z`, completed `2026-07-15T02:04:19Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
 
 Known gaps:
 
