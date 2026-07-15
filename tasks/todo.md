@@ -509,7 +509,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: aspect/zoom/interpolation/value/cursor/source coordinates; axis/index controls; linked slices; bounded reads; raw/display mode.
 - Verify: coordinate/shape/high-dimensional/cancel/rapid navigation tests.
 
-### [ ] DV-0807 Implement correlation heatmap and missing-data map
+### [x] DV-0807 Implement correlation heatmap and missing-data map
 
 - Depends: DV-0803.
 - Acceptance: labeled axes/legend/range; large table budget/sampling; missing semantics; accessible table alternative.

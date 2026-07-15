@@ -2070,3 +2070,40 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Concrete Qt plot rendering, correlation heatmap, missing-data map, NIfTI orthogonal viewer, and full shell wiring for advanced linked slice interactions remain later P8 tasks.
+
+## DV-0807 Correlation heatmap and missing-data map plugins - 2026-07-15
+
+Revision: implementation commit `086fcdd6ba1b9743212f1510faccf8241b5df4cc`.
+
+Implementation evidence:
+
+- `data_viewer/plugins/builtin/plots/plugin.py` adds `CorrelationHeatmapPlugin` and `MissingDataMapPlugin`. Both produce renderer-owned heatmap `PlotSpec` results with labeled coordinates, optional finite heatmap intensity values, exportable data-table metadata, and no GUI/Matplotlib ownership inside plugin code.
+- `data_viewer/plugins/results.py` extends `PlotMark` with optional finite `values` matching `x`/`y` length, preserving existing line/scatter/histogram/box construction while allowing heatmap cell intensities.
+- `data_viewer/plugins/builtin/correlation_heatmap/plugin.json` and `data_viewer/plugins/builtin/missing_data_map/plugin.json` add independent packaged built-in visualization manifests. `pyproject.toml` includes both manifests in package data.
+- `docs/PLUGIN_API.md` documents the optional heatmap values channel and the concrete DV-0807 catalog behavior.
+- `tests/test_builtin_heatmap_plugins.py` covers packaged discovery, labeled correlation heatmap value/range/legend/table metadata, missing-data map deterministic observation sampling and 0/1 legend semantics, and forbidden-import boundaries.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing heatmap plugin tests | `venv\Scripts\python.exe -m pytest tests\test_builtin_heatmap_plugins.py -q` | failed as expected before implementation: heatmap plugin manifests were not discovered |
+| Focused heatmap plugin tests | `venv\Scripts\python.exe -m pytest tests\test_builtin_heatmap_plugins.py -q` | 4 passed |
+| Plugin P7/P8 regression subset | `venv\Scripts\python.exe -m pytest tests\test_builtin_heatmap_plugins.py tests\test_builtin_plot_plugins.py tests\test_builtin_correlation_covariance_plugin.py tests\test_plugin_results.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py tests\test_plugin_runner.py -q` | 48 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_heatmap_plugins.py tests\test_builtin_plot_plugins.py tests\test_plugin_results.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\plugins tests\test_builtin_heatmap_plugins.py tests\test_builtin_plot_plugins.py tests\test_plugin_results.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 100 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 480 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Wheel package-data smoke | `venv\Scripts\python.exe -m pip wheel . -w .tmp-wheel --no-deps --no-build-isolation --no-cache-dir`; then inspect wheel with `zipfile` for `correlation_heatmap/plugin.json`, `missing_data_map/plugin.json`, and `data_viewer/plugins/builtin/plots/plugin.py` | wheel built successfully; required files present; temporary `.tmp-wheel` removed |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29387945897 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `086fcdd6ba1b9743212f1510faccf8241b5df4cc`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29387945897 |
+| Ubuntu quality | GitHub Actions job `87265016663` | success; started `2026-07-15T04:01:35Z`, completed `2026-07-15T04:03:08Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87265016664` | success; started `2026-07-15T04:01:35Z`, completed `2026-07-15T04:03:32Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- NIfTI orthogonal viewer, result renderer widgets, and final P8 plugin catalog evidence remain later tasks.
