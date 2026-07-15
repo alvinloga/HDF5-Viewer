@@ -3372,3 +3372,30 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes the test-layer legacy runtime imports. Legacy product packages still exist in the repository until the final product-code removal/import-smoke slice proves there are no active runtime/build references.
+
+## DV-1008 legacy utils package removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed `utils/__init__.py`, the last tracked file in the empty legacy compatibility package.
+- Cleaned the generated local `utils/__pycache__` directory so `utils` cannot remain visible as an accidental namespace package during import checks.
+- Added `tests/test_packaging_artifacts.py::test_legacy_empty_utils_package_is_removed`, which asserts the package directory stays absent and retained target utility/config/path modules remain present.
+- Updated README, target architecture, and migration inventory wording so `utils/` is recorded as removed rather than a current legacy migration input.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy utils removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_empty_utils_package_is_removed -q` | failed as expected before implementation because `utils/` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_empty_utils_package_is_removed -q` | passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 424 passed |
+
+Known gaps:
+
+- This removes only the empty legacy `utils/` compatibility package. Legacy product packages `core/`, `gui/`, `plugins/`, and `services/` still exist as migration reference inputs until their individual parity/removal groups are proven.

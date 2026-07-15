@@ -17,7 +17,7 @@ Current source areas:
 | `gui/` | shell, tabs, trees, views | retain useful interaction patterns; rebuild against controllers/state |
 | `plugins/` | built-in analyses/plots coupled to current app | port one by one to Plugin API v1 |
 | `services/` | legacy services | evaluate per service; migrate only tested behavior |
-| `utils/` | mixed helpers | move only cohesive, tested utilities |
+| `utils/` | empty compatibility package by DV-1008 review | removed in DV-1008; no target code depends on it |
 | `config.json` | repository-local settings | migrate to versioned platform config |
 | `HDF5Viewer.spec`, build scripts | packaging | replace names/paths and add smoke tests |
 

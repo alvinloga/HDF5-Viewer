@@ -4,7 +4,7 @@
 
 This document defines the target architecture for Data Viewer v1. It is normative for module boundaries, ownership, threading, data identity, and runtime flow.
 
-The current `core/`, `gui/`, `plugins/`, and `services/` packages are legacy migration inputs. New architecture belongs under `data_viewer/` unless a task explicitly creates a compatibility bridge.
+The current `core/`, `gui/`, `plugins/`, and `services/` packages are legacy migration inputs. The former empty `utils/` compatibility package was removed in DV-1008 and is preserved only in history. New architecture belongs under `data_viewer/` unless a task explicitly creates a compatibility bridge.
 
 ## 2. Architectural goals
 

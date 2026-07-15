@@ -314,3 +314,17 @@ def test_test_environment_files_do_not_import_legacy_runtime() -> None:
             "import services",
         ):
             assert legacy_import not in text
+
+
+def test_legacy_empty_utils_package_is_removed() -> None:
+    """DV-1008 removes the empty legacy utils compatibility package."""
+
+    assert not (PROJECT_ROOT / "utils").exists()
+
+    for retained_target_module in (
+        "data_viewer/domain/resources.py",
+        "data_viewer/domain/payload.py",
+        "data_viewer/infrastructure/paths.py",
+        "data_viewer/infrastructure/config.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_module).exists()
