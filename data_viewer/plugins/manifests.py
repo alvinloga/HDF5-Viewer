@@ -29,6 +29,20 @@ _MANIFEST_KEYS = {
     "input",
     "parameters_schema",
     "result_kinds",
+    "required_dependencies",
+}
+_REQUIRED_MANIFEST_KEYS = {
+    "schema_version",
+    "api_version",
+    "id",
+    "name",
+    "version",
+    "description",
+    "entry_point",
+    "kind",
+    "input",
+    "parameters_schema",
+    "result_kinds",
 }
 _INPUT_KEYS = {
     "domains",
@@ -80,6 +94,7 @@ class PluginManifest:
     input: PluginInputSpec
     parameters_schema: dict[str, object]
     result_kinds: tuple[ResultKind, ...]
+    required_dependencies: tuple[str, ...] = ()
     manifest_path: Path | None = None
 
 
@@ -106,7 +121,7 @@ def validate_plugin_manifest(
     """Validate an untrusted manifest dictionary and return typed metadata."""
 
     _reject_unknown(data, _MANIFEST_KEYS, "manifest")
-    _require_keys(data, _MANIFEST_KEYS, "manifest")
+    _require_keys(data, _REQUIRED_MANIFEST_KEYS, "manifest")
 
     schema_version = _expect_int(data["schema_version"], "schema_version")
     if schema_version != PLUGIN_MANIFEST_SCHEMA_VERSION:
@@ -149,6 +164,7 @@ def validate_plugin_manifest(
         input=_parse_input_spec(data["input"]),
         parameters_schema=_parse_parameters_schema(data["parameters_schema"]),
         result_kinds=result_kinds,
+        required_dependencies=_parse_required_dependencies(data.get("required_dependencies", [])),
         manifest_path=manifest_path,
     )
 
@@ -200,6 +216,15 @@ def _parse_result_kinds(value: object) -> tuple[ResultKind, ...]:
         except ValueError as error:
             raise PluginManifestError(f"Unsupported result_kinds value: {text}") from error
     return tuple(kinds)
+
+
+def _parse_required_dependencies(value: object) -> tuple[str, ...]:
+    if not isinstance(value, list):
+        raise PluginManifestError("required_dependencies must be a list")
+    dependencies = tuple(_expect_nonempty_str(item, "required_dependencies") for item in value)
+    if len(set(dependencies)) != len(dependencies):
+        raise PluginManifestError("required_dependencies must not contain duplicates")
+    return dependencies
 
 
 def _reject_unknown(data: dict[str, object], allowed: set[str], label: str) -> None:

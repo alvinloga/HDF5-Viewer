@@ -70,7 +70,16 @@ def test_valid_manifest_is_typed_without_importing_plugin_code() -> None:
     assert manifest.id == "org.dataviewer.dataset_profile"
     assert manifest.api_version == PLUGIN_API_VERSION
     assert manifest.input.domains == ("array", "table")
+    assert manifest.required_dependencies == ()
     assert manifest.result_kinds == (ResultKind.SUMMARY, ResultKind.TABLE)
+
+
+def test_valid_manifest_accepts_optional_required_dependencies() -> None:
+    """Required plugin dependencies are optional additive manifest metadata."""
+
+    manifest = validate_plugin_manifest(_valid_manifest(required_dependencies=["scipy", "nibabel"]))
+
+    assert manifest.required_dependencies == ("scipy", "nibabel")
 
 
 @pytest.mark.parametrize(

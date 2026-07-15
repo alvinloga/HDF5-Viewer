@@ -9,7 +9,8 @@ The public contract has `api_version = 1`. Breaking changes require a new API ve
 Current implementation status:
 
 - DV-0701 implements the public type skeleton in `data_viewer.plugins.api`, strict manifest validation in `data_viewer.plugins.manifests`, and built-in registry discovery/lazy loading in `data_viewer.plugins.registry`.
-- Compatibility evaluation, parameter form rendering, runner/input access, result validation/materialization, and reference plugin conformance remain later P7 tasks and must not be claimed as implemented by the presence of the API skeleton.
+- DV-0702 implements the first compatibility evaluator in `data_viewer.plugins.compatibility`, the supported parameter-schema/default/value validator in `data_viewer.plugins.parameters`, and a standard keyboard-accessible Qt parameter form in `data_viewer.gui.plugin_forms`.
+- Runner/input access, result validation/materialization, and reference plugin conformance remain later P7 tasks and must not be claimed as implemented by the presence of the API skeleton.
 
 ## 2. Package boundary
 
@@ -17,6 +18,8 @@ Current implementation status:
 data_viewer/
   plugins/
     api.py              # public types only
+    compatibility.py    # input/resource compatibility decisions
+    parameters.py       # supported parameter schema subset
     registry.py         # manifest discovery and validation
     runner.py           # task integration
     results.py          # result validation/materialization
@@ -43,6 +46,7 @@ Every plugin directory contains `plugin.json`:
   "description": "Summarizes shape, dtype, missingness, and finite-value ranges.",
   "entry_point": "data_viewer.plugins.builtin.dataset_profile.plugin:DatasetProfilePlugin",
   "kind": "analysis",
+  "required_dependencies": [],
   "input": {
     "domains": ["array", "table"],
     "min_ndim": 1,
@@ -68,6 +72,7 @@ Rules:
 - `id` is globally stable reverse-DNS text and never reused for another meaning.
 - `version` uses semantic versioning.
 - `entry_point` must resolve inside the installed Data Viewer package in v1.
+- `required_dependencies` is optional additive metadata listing import/package capabilities that must be available before Run is enabled.
 - The manifest is JSON Schema validated before importing plugin code.
 - UI names/descriptions are display text; logic keys use stable IDs.
 - Unknown manifest keys are rejected in v1 to catch misspellings.
@@ -165,16 +170,19 @@ Compatibility is computed before enabling Run:
 
 Disabled plugins show the exact reasons. They are not hidden, because discoverability and remediation matter.
 
+DV-0702 implements the single-input v1 foundation for domain, dimension, dtype-family, selection support, random-access capability, memory-budget, input-count, and required-dependency reasons. Multi-input shape/alignment semantics are still owned by later plugin-runner/reference-plugin work.
+
 ## 6. Parameter schema
 
 `parameters_schema` uses a documented JSON Schema subset:
 
-- object, string, integer, number, boolean, array;
-- enum, minimum/maximum, minItems/maxItems, default, title, description;
-- `ui:widget` hints for axis selector, colormap, resource selector, and range;
+- object roots with string, integer, number, and boolean properties;
+- enum, minimum/maximum, default, title, and description;
 - conditional schemas are excluded from v1 unless the form renderer gains tested support.
 
 The UI builds a standard parameter panel, validates locally, and passes immutable JSON-safe values. Plugins do not create modal GUI dialogs.
+
+Array parameters, `minItems`/`maxItems`, and `ui:widget` hints remain planned but unimplemented until tests and widgets are added for those shapes.
 
 ## 7. Execution
 

@@ -1663,3 +1663,30 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Compatibility evaluation, parameter forms, plugin runner/input access, typed result validation, and reference plugin conformance are later P7 tasks.
+
+## DV-0702 plugin compatibility evaluator and parameter form - 2026-07-15
+
+Revision: working tree based on `628f2cc` before committing the DV-0702 implementation.
+
+Implementation evidence:
+
+- `data_viewer/plugins/compatibility.py` evaluates a built-in plugin manifest against selected resource candidates before Run is enabled, including input count, required dependencies, domain, ndim bounds, dtype family, selection support, random-access capability, and non-chunked memory-budget checks with exact disabled reasons.
+- `data_viewer/plugins/parameters.py` validates the supported v1 parameter-schema subset, returns immutable default/value mappings, rejects unknown/missing/invalid values, and keeps plugin inputs JSON-safe for later runner work.
+- `data_viewer/gui/plugin_forms.py` renders the supported parameter types with standard Qt widgets, keyboard focus, accessible names/descriptions, round-trip validation, and no plugin-created dialogs.
+- Multi-input alignment, optional dependency checks, runner input access, and result materialization remain later P7 tasks.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing compatibility/form test | `venv\Scripts\python.exe -m pytest tests\test_plugin_compatibility_parameters.py -q` | failed as expected before implementation because `data_viewer.plugins.compatibility` did not exist |
+| Focused compatibility/form tests | `venv\Scripts\python.exe -m pytest tests\test_plugin_compatibility_parameters.py -q` | 6 passed |
+| Plugin P7 regression subset | `venv\Scripts\python.exe -m pytest tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py -q` | 23 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\plugins data_viewer\gui\plugin_forms.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\plugins data_viewer\gui\plugin_forms.py tests\test_plugin_compatibility_parameters.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 92 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 432 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- DV-0702 is not checked complete until the implementation commit has green Windows and Ubuntu CI evidence.
