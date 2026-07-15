@@ -8,7 +8,7 @@ Data Viewer 是面向科研人员、数据工程师和算法开发者的跨平�
 
 仓库目前处于架构重构准备阶段。
 
-- `core/`、`gui/`、`plugins/`、`services/` 是 legacy/旧版 HDF5 Viewer v0.3.1 之前的实现；根目录旧入口 `main.py` 和空兼容包 `utils/` 已在 DV-1008 中移除。
+- `core/`、`gui/`、`plugins/` 是 legacy/旧版 HDF5 Viewer v0.3.1 之前的实现；根目录旧入口 `main.py`、legacy `services/` 包和空兼容包 `utils/` 已在 DV-1008 中移除。
 - 旧版只应视为迁移输入，不代表本文档描述的目标能力已经完成。
 - Data Viewer 的目标规范、公共接口和执行顺序已经写入 `docs/`、`ARCHITECTURE.md` 和 `tasks/`。
 - 后续实现必须按任务清单逐步迁移，不允许通过一次性重写跳过行为测试。

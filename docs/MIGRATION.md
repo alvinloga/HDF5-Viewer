@@ -16,7 +16,7 @@ Current source areas:
 | `core/` | HDF5-centric loading/models/cache | extract behavior; replace through DataSource/domain contracts |
 | `gui/` | shell, tabs, trees, views | retain useful interaction patterns; rebuild against controllers/state |
 | `plugins/` | built-in analyses/plots coupled to current app | port one by one to Plugin API v1 |
-| `services/` | legacy services | evaluate per service; migrate only tested behavior |
+| `services/` | legacy export/search services | removed in DV-1008 after target export queue/exporting/navigation coverage |
 | `utils/` | empty compatibility package by DV-1008 review | removed in DV-1008; no target code depends on it |
 | `config.json` | repository-local settings | migrate to versioned platform config |
 | `HDF5Viewer.spec`, build scripts | packaging | replace names/paths and add smoke tests |

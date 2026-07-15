@@ -8,7 +8,7 @@ Data Viewer is a cross-platform desktop scientific data workbench for researcher
 
 This repository is preparing for an architectural migration.
 
-- `core/`, `gui/`, `plugins/`, and `services/` are the legacy HDF5 Viewer implementation; the root legacy `main.py` entrypoint and empty compatibility `utils/` package were removed in DV-1008.
+- `core/`, `gui/`, and `plugins/` are the legacy HDF5 Viewer implementation; the root legacy `main.py` entrypoint, legacy `services/` package, and empty compatibility `utils/` package were removed in DV-1008.
 - The legacy application is migration input. It does not implement the complete Data Viewer specification.
 - The target contract lives in `docs/`, `ARCHITECTURE.md`, and `tasks/`.
 - Future changes must migrate behavior incrementally and preserve a testable application after every task.

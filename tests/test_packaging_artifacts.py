@@ -328,3 +328,19 @@ def test_legacy_empty_utils_package_is_removed() -> None:
         "data_viewer/infrastructure/config.py",
     ):
         assert (PROJECT_ROOT / retained_target_module).exists()
+
+
+def test_legacy_services_package_is_removed() -> None:
+    """DV-1008 removes obsolete legacy service modules after target parity coverage."""
+
+    assert not (PROJECT_ROOT / "services").exists()
+
+    for retained_target_path in (
+        "data_viewer/app/export_queue.py",
+        "data_viewer/app/navigation.py",
+        "data_viewer/exporting/service.py",
+        "tests/test_exporting.py",
+        "tests/test_navigation_search.py",
+        "tests/test_export_queue_diagnostics.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()

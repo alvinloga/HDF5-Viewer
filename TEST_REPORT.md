@@ -3399,3 +3399,32 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the empty legacy `utils/` compatibility package. Legacy product packages `core/`, `gui/`, `plugins/`, and `services/` still exist as migration reference inputs until their individual parity/removal groups are proven.
+
+## DV-1008 legacy services package removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `services/__init__.py`, `services/exporter.py`, and `services/search.py`.
+- The deleted legacy exporter returned boolean success/failure, flattened high-dimensional arrays for CSV output, and bypassed the target export receipt/scope model.
+- The deleted legacy search panel imported `core.event_bus`, `core.datasource`, and `gui.theme`, keeping search coupled to legacy GUI/runtime internals.
+- Added `tests/test_packaging_artifacts.py::test_legacy_services_package_is_removed`, which asserts `services/` stays absent and retained target export queue, exporting service, navigation/search, and diagnostics tests remain present.
+- Updated README, target architecture, and migration inventory wording so `services/` is recorded as removed rather than a current legacy migration input.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy services removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_services_package_is_removed -q` | failed as expected before implementation because `services/` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_services_package_is_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_exporting.py tests\test_navigation_search.py tests\test_export_queue_diagnostics.py -q` | 16 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 425 passed |
+
+Known gaps:
+
+- This removes only the legacy `services/` package. Legacy product packages `core/`, `gui/`, and `plugins/` still exist as migration reference inputs until their individual parity/removal groups are proven.
