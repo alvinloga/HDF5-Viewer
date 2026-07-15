@@ -2216,3 +2216,40 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - DV-0902 still owns asynchronous restore, relocation, degraded mode, and current-file status classification.
+
+## DV-0902 Asynchronous restore, relocation, and degraded mode - 2026-07-15
+
+Revision: implementation commit `163aad0b930bfea4ceba0739c44b768a53258cd9`.
+
+Implementation evidence:
+
+- `data_viewer/workspace/restore.py` adds `WorkspaceRestoreCoordinator`, explicit source restore states, view-shell restore states, plugin-result freshness states, and a `WorkspaceRestorePlan` degraded-mode model for UI consumption.
+- Restore planning resolves persisted source paths without mutating the manifest and classifies available, missing, changed, moved-candidate, ambiguous, unsupported, and failed sources independently.
+- Relocation matching is bounded to user-provided replacement roots and uses basename plus persisted fingerprint hints (`size`/`size_bytes`, `mtime_ns`/`modified_time_ns`, and `prefix_sha256`). Ambiguous matches are reported; no source path is changed until `apply_confirmed_relocations(...)` receives an explicit source-ID confirmation.
+- View shells are restored before metadata and payload reads. Available sources produce pending payload shells; unavailable sources produce blocked shells while preserving original source/resource identity.
+- Persisted plugin results are marked stale when an input source is unavailable or its current fingerprint differs from the stored input fingerprint.
+- `plan_restore_async(...)` runs the same restore contract asynchronously and honors cooperative cancellation before and during relocation scanning, including non-ASCII relative paths.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing workspace restore tests | `venv\Scripts\python.exe -m pytest tests\test_workspace_restore.py -q` | failed as expected before implementation: `data_viewer.workspace.restore` module was missing |
+| Focused restore tests | `venv\Scripts\python.exe -m pytest tests\test_workspace_restore.py -q` | 4 passed |
+| Workspace/persistence regression subset | `venv\Scripts\python.exe -m pytest tests\test_workspace_restore.py tests\test_workspace_manifest.py tests\test_persistence_transaction.py -q` | 26 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\workspace tests\test_workspace_restore.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests\test_workspace_restore.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 104 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 491 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | `gh run view 29390259329 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `163aad0b930bfea4ceba0739c44b768a53258cd9`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29390259329 |
+| Ubuntu quality | GitHub Actions job `87271930467` | success; started `2026-07-15T04:58:31Z`, completed `2026-07-15T05:00:01Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87271930481` | success; started `2026-07-15T04:58:31Z`, completed `2026-07-15T05:00:24Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- Interactive Locate/Locate Folder dialogs and session auto-restore policy remain later P9 tasks. DV-0902 provides the restore/degraded state model those UI surfaces will consume.

@@ -538,7 +538,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: exact v1 fields/types/budgets; no executable/bulk data; relative/absolute paths; unknown preservation; deterministic UTF-8; atomic save; source dirty independent.
 - Verify: schema fixtures, golden round-trip, failure/newer-version/security tests.
 
-### [ ] DV-0902 Implement asynchronous restore, relocation, and degraded mode
+### [x] DV-0902 Implement asynchronous restore, relocation, and degraded mode
 
 - Depends: DV-0901, DV-0504.
 - Scope: restore coordinator, relocation matcher, degraded UI, tests.
