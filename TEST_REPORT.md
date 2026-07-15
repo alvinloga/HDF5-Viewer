@@ -2400,3 +2400,37 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Full Qt Tasks/Problems/Diagnostics panels and native background executor wiring remain later UI integration work. DV-0906 supplies the validated app-layer queue, receipt history, Problems link, retry, and diagnostics bundle contracts those surfaces will consume.
+
+## DV-0907 Checkpoint 9 workbench evidence - 2026-07-15
+
+Revision: documentation-only checkpoint ledger update over baseline head `d14e36179d0e2ede2b58c6918c6431e90b1241be`.
+
+Checkpoint scope:
+
+- P9 workspace foundation completed: `.dvw` schema/model/save-load service, source restore planner, relocation/degraded-state decisions, session restore policy, and external change detection.
+- P9 comparison/usability foundation completed: comparison workspace state, compatibility contracts, semantic navigation history, recent/pinned/favorite state, global search contracts, background export queue, Problems links, and diagnostics bundle preview/redaction.
+- Workspace manifests remain external-reference based and do not embed large source data. Application-local usability state such as recent files, pinned files, and last-workspace restore pointer remains outside `.dvw` manifests.
+- Comparison, search, restore, export, and diagnostics logic is Qt-free application state that later UI surfaces can consume without scanning widget internals.
+- Dirty edits and external changes remain fail-closed: session restore does not auto-open unsafe state, dirty patches do not auto-overwrite changed sources, and queued exports use reviewed plans plus terminal receipts.
+
+Checkpoint local evidence:
+
+| Evidence area | Command/source | Observed result |
+|---|---|---|
+| Latest full local suite | `venv\Scripts\python.exe -m pytest -q` | 511 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Latest target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 108 source files |
+| Focused P9 workbench matrix | `venv\Scripts\python.exe -m pytest tests\test_workspace_manifest.py tests\test_workspace_restore.py tests\test_comparison_workspace.py tests\test_navigation_search.py tests\test_session_restore.py tests\test_export_queue_diagnostics.py -q` | 29 passed |
+
+Checkpoint dual-platform evidence:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Final pre-checkpoint GitHub Actions run | `gh run view 29393535798 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `d14e36179d0e2ede2b58c6918c6431e90b1241be`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29393535798 |
+| Ubuntu quality | GitHub Actions job `87281904343` | success; started `2026-07-15T06:12:35Z`, completed `2026-07-15T06:14:30Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Windows quality | GitHub Actions job `87281904354` | success; started `2026-07-15T06:12:36Z`, completed `2026-07-15T06:15:06Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Checkpoint status:
+
+- `tasks/todo.md` marks DV-0901 through DV-0907 complete.
+- Checkpoint 9 exits with no known Critical or Required review issue recorded in this report.
+- Remaining work moves to P10 hardening, packaging, smoke validation, and release tasks.

@@ -573,7 +573,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: queued progress/cancel/retry; receipt access; Problems links to task/source; diagnostics includes versions/platform/plugins/recent errors but redacts configured paths/data; user previews bundle.
 - Verify: multi-export/cancel/failure, redaction/property, diagnostics package tests.
 
-### [ ] DV-0907 Record Checkpoint 9 workbench evidence
+### [x] DV-0907 Record Checkpoint 9 workbench evidence
 
 - Depends: DV-0901 through DV-0906.
 - Verify: workspace/compare/usability e2e matrix on Windows/Linux and ledger update.
