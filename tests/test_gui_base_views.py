@@ -13,14 +13,17 @@ from data_viewer.domain import (
     OperationScope,
     ReadResult,
     SelectionSpec,
+    SpatialMetadata,
     TablePayload,
     TextPayload,
+    VolumePayload,
 )
 from data_viewer.gui.views import (
     ArrayViewWidget,
     BaseViewContract,
     ImageViewWidget,
     MultidimensionalSliceNavigatorWidget,
+    NiftiOrthogonalViewerWidget,
     TableViewWidget,
     TextViewWidget,
     ViewKind,
@@ -242,6 +245,98 @@ def test_slice_navigator_maps_cursor_to_high_dimensional_source_coordinates() ->
         widget.findChild(QLabel, "image_cursor_label").text()
         == "cursor: display (2, 3) source (1, 12, 23) value 13"
     )
+
+
+def test_nifti_orthogonal_viewer_reports_planes_voxel_world_and_4d_index() -> None:
+    """NIfTI orthogonal views keep orientation, crosshair, and world coordinates visible."""
+
+    app = _qapp()
+    selection = SelectionSpec.all().normalize((2, 3, 4, 5)).unwrap()
+    payload = VolumePayload(
+        values=np.arange(2 * 3 * 4 * 5, dtype=np.float32).reshape(2, 3, 4, 5),
+        selection=selection,
+        spatial=SpatialMetadata(
+            affine=(
+                (2.0, 0.0, 0.0, 10.0),
+                (0.0, 3.0, 0.0, 20.0),
+                (0.0, 0.0, 4.0, 30.0),
+                (0.0, 0.0, 0.0, 1.0),
+            ),
+            voxel_sizes=(2.0, 3.0, 4.0, 1.0),
+            axis_codes=("R", "A", "S"),
+            units=("mm", "sec"),
+        ),
+    )
+    widget = NiftiOrthogonalViewerWidget()
+    widget.render_read_result(
+        ReadResult(
+            payload=payload,
+            scope=OperationScope.SLICE,
+            bytes_read=int(payload.values.nbytes),
+            is_sampled=False,
+            sample=None,
+            warnings=("NIfTI values are scaled by the source proxy.",),
+        )
+    )
+    widget.set_crosshair((1, 2, 3), volume_index=4)
+    app.processEvents()
+
+    assert widget.contract().kind is ViewKind.VOLUME
+    assert widget.findChild(QLabel, "nifti_axial_label").text() == "axial: L->R / P->A @ S=3"
+    assert widget.findChild(QLabel, "nifti_coronal_label").text() == "coronal: L->R / I->S @ A=2"
+    assert widget.findChild(QLabel, "nifti_sagittal_label").text() == "sagittal: P->A / I->S @ R=1"
+    assert widget.findChild(QLabel, "nifti_crosshair_label").text() == (
+        "voxel: (1, 2, 3, 4) world: (12, 26, 42) value: 119 (scaled proxy; raw unavailable)"
+    )
+    assert widget.findChild(QLabel, "nifti_volume_index_label").text() == "volume/time index: 4 / 0..4"
+    assert widget.findChild(QLabel, "nifti_resampling_label").text() == "resampling: none"
+
+
+def test_nifti_orthogonal_viewer_exposes_window_level_and_affine_inspector() -> None:
+    """NIfTI inspector exposes header/affine state without source resampling."""
+
+    app = _qapp()
+    selection = SelectionSpec.all().normalize((2, 3, 4)).unwrap()
+    payload = VolumePayload(
+        values=np.arange(24, dtype=np.int16).reshape(2, 3, 4),
+        selection=selection,
+        spatial=SpatialMetadata(
+            affine=(
+                (1.0, 0.0, 0.0, -1.0),
+                (0.0, 2.0, 0.0, -2.0),
+                (0.0, 0.0, 3.0, -3.0),
+                (0.0, 0.0, 0.0, 1.0),
+            ),
+            voxel_sizes=(1.0, 2.0, 3.0),
+            axis_codes=("L", "P", "I"),
+            units=("mm", "unknown"),
+        ),
+    )
+    widget = NiftiOrthogonalViewerWidget()
+    widget.render_read_result(
+        ReadResult(
+            payload=payload,
+            scope=OperationScope.SLICE,
+            bytes_read=int(payload.values.nbytes),
+            is_sampled=False,
+            sample=None,
+        )
+    )
+    widget.set_window_level(window=400.0, level=40.0)
+    widget.set_crosshair((1, 1, 2), volume_index=0)
+    app.processEvents()
+
+    assert widget.findChild(QLabel, "nifti_window_level_label").text() == "window/level: 400 / 40"
+    assert widget.findChild(QLabel, "nifti_crosshair_label").text() == (
+        "voxel: (1, 1, 2) world: (0, 0, 3) value: 18 (display value; raw unavailable)"
+    )
+    inspector = widget.findChild(QPlainTextEdit, "nifti_header_inspector")
+    assert inspector is not None
+    text = inspector.toPlainText()
+    assert "axis codes: L, P, I" in text
+    assert "voxel sizes: 1, 2, 3" in text
+    assert "affine:" in text
+    assert "[1, 0, 0, -1]" in text
 
 
 def test_base_view_contract_is_plugin_result_extensible() -> None:

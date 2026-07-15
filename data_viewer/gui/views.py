@@ -29,6 +29,7 @@ from data_viewer.domain import (
     ReadResult,
     TablePayload,
     TextPayload,
+    VolumePayload,
 )
 from data_viewer.domain.selection import NormalizedAxisSelection, NormalizedSelection
 from data_viewer.gui.i18n import Locale, UiStringKey, tr
@@ -41,6 +42,7 @@ class ViewKind(StrEnum):
     ARRAY = "array"
     TEXT = "text"
     IMAGE = "image"
+    VOLUME = "volume"
 
 
 @dataclass(frozen=True, slots=True)
@@ -531,6 +533,130 @@ class MultidimensionalSliceNavigatorWidget(ImageViewWidget):
         return f"display axis {position}"
 
 
+class NiftiOrthogonalViewerWidget(_BaseDataView):
+    """NIfTI orthogonal volume view over an already-bounded VolumePayload."""
+
+    def __init__(self, *, locale: Locale = Locale.EN_US) -> None:
+        super().__init__(
+            BaseViewContract(
+                kind=ViewKind.VOLUME,
+                result_channel="workspace.volume",
+                supports_selection=True,
+                supports_export=True,
+            ),
+            locale=locale,
+        )
+        self._payload: VolumePayload | None = None
+        self._warnings: tuple[str, ...] = ()
+        self._axial_label = QLabel("axial: -", self)
+        self._axial_label.setObjectName("nifti_axial_label")
+        self._coronal_label = QLabel("coronal: -", self)
+        self._coronal_label.setObjectName("nifti_coronal_label")
+        self._sagittal_label = QLabel("sagittal: -", self)
+        self._sagittal_label.setObjectName("nifti_sagittal_label")
+        self._crosshair_label = QLabel("voxel: -", self)
+        self._crosshair_label.setObjectName("nifti_crosshair_label")
+        self._volume_index_label = QLabel("volume/time index: -", self)
+        self._volume_index_label.setObjectName("nifti_volume_index_label")
+        self._window_level_label = QLabel("window/level: auto", self)
+        self._window_level_label.setObjectName("nifti_window_level_label")
+        self._resampling_label = QLabel("resampling: none", self)
+        self._resampling_label.setObjectName("nifti_resampling_label")
+        for label in (
+            self._axial_label,
+            self._coronal_label,
+            self._sagittal_label,
+            self._crosshair_label,
+            self._volume_index_label,
+            self._window_level_label,
+            self._resampling_label,
+        ):
+            label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            self._layout.addWidget(label)
+        self._inspector = QPlainTextEdit(self)
+        self._inspector.setObjectName("nifti_header_inspector")
+        self._inspector.setAccessibleName("NIfTI header and affine inspector")
+        self._inspector.setReadOnly(True)
+        self._layout.addWidget(self._inspector, 1)
+
+    def render_read_result(self, result: ReadResult) -> None:
+        if not isinstance(result.payload, VolumePayload):
+            raise TypeError("NiftiOrthogonalViewerWidget requires VolumePayload")
+        payload = result.payload
+        values = np.asarray(payload.values)
+        if values.ndim not in {3, 4}:
+            raise ValueError("NIfTI orthogonal viewer requires a 3D or 4D volume payload")
+        self._payload = payload
+        self._warnings = tuple(result.warnings)
+        selection = cast(NormalizedSelection, payload.selection)
+        self._set_scope(result)
+        self._coordinates_label.setText(f"coordinates: {_selection_coordinates(selection)}")
+        self._shape_label.setText(f"shape: {selection.original_shape} -> {values.shape}")
+        self._slice_label.setText(f"slice: {_format_selection(selection)}")
+        self._resampling_label.setText("resampling: none")
+        self._update_plane_labels((0, 0, 0))
+        self._update_volume_index(0)
+        self._crosshair_label.setText("voxel: -")
+        self._inspector.setPlainText(_nifti_inspector_text(payload))
+
+    def set_crosshair(self, voxel: tuple[int, int, int], *, volume_index: int = 0) -> None:
+        """Update linked orthogonal crosshairs and voxel/world/value labels."""
+
+        if self._payload is None:
+            self._crosshair_label.setText("voxel: -")
+            return
+        values = np.asarray(self._payload.values)
+        x, y, z = voxel
+        _validate_index(x, values.shape[0], "x")
+        _validate_index(y, values.shape[1], "y")
+        _validate_index(z, values.shape[2], "z")
+        if values.ndim == 4:
+            _validate_index(volume_index, values.shape[3], "volume index")
+            source = self._payload.source_coordinates((x, y, z, volume_index))
+            value = values[x, y, z, volume_index]
+        else:
+            source = self._payload.source_coordinates((x, y, z))
+            value = values[x, y, z]
+        source_voxel = (int(source[0]), int(source[1]), int(source[2]))
+        world = _voxel_to_world(self._payload, source_voxel)
+        self._update_plane_labels(source_voxel)
+        self._update_volume_index(volume_index)
+        self._crosshair_label.setText(
+            f"voxel: {source} world: {_format_tuple(world)} "
+            f"value: {_format_display_value(value)} ({_nifti_value_semantics(self._warnings)})"
+        )
+
+    def set_window_level(self, *, window: float, level: float) -> None:
+        """Expose display-only window/level without modifying source values."""
+
+        if window <= 0:
+            raise ValueError("window must be positive")
+        self._window_level_label.setText(
+            f"window/level: {_format_number(window)} / {_format_number(level)}"
+        )
+
+    def _update_plane_labels(self, voxel: tuple[int, int, int]) -> None:
+        if self._payload is None:
+            return
+        codes = self._payload.spatial.axis_codes
+        x_label, y_label, z_label = (_orientation_axis_label(code) for code in codes[:3])
+        self._axial_label.setText(f"axial: {x_label} / {y_label} @ {codes[2]}={voxel[2]}")
+        self._coronal_label.setText(f"coronal: {x_label} / {z_label} @ {codes[1]}={voxel[1]}")
+        self._sagittal_label.setText(f"sagittal: {y_label} / {z_label} @ {codes[0]}={voxel[0]}")
+
+    def _update_volume_index(self, volume_index: int) -> None:
+        if self._payload is None:
+            self._volume_index_label.setText("volume/time index: -")
+            return
+        values = np.asarray(self._payload.values)
+        if values.ndim == 4:
+            self._volume_index_label.setText(
+                f"volume/time index: {volume_index} / 0..{values.shape[3] - 1}"
+            )
+        else:
+            self._volume_index_label.setText("volume/time index: n/a")
+
+
 def _format_cell(value: Any) -> str:
     if isinstance(value, np.ndarray):
         if value.shape == ():
@@ -565,11 +691,76 @@ def _describe_slice_axis(axis: NormalizedAxisSelection, role: str) -> str:
     return f"axis {axis.axis}: {role} [{axis.start}:{axis.stop}:{axis.step}]"
 
 
+def _orientation_axis_label(code: str) -> str:
+    return {
+        "R": "L->R",
+        "L": "R->L",
+        "A": "P->A",
+        "P": "A->P",
+        "S": "I->S",
+        "I": "S->I",
+    }.get(code, f"?->{code}")
+
+
+def _voxel_to_world(payload: VolumePayload, voxel: tuple[int, int, int]) -> tuple[float, float, float]:
+    affine = np.asarray(payload.spatial.affine, dtype=np.float64)
+    vector = np.array([voxel[0], voxel[1], voxel[2], 1.0], dtype=np.float64)
+    world = affine @ vector
+    return (float(world[0]), float(world[1]), float(world[2]))
+
+
+def _nifti_value_semantics(warnings: tuple[str, ...]) -> str:
+    if any("scaled" in warning.lower() for warning in warnings):
+        return "scaled proxy; raw unavailable"
+    return "display value; raw unavailable"
+
+
+def _nifti_inspector_text(payload: VolumePayload) -> str:
+    spatial = payload.spatial
+    affine_rows = "\n".join(
+        f"  [{', '.join(_format_number(value) for value in row)}]"
+        for row in spatial.affine
+    )
+    return "\n".join(
+        (
+            f"axis codes: {', '.join(spatial.axis_codes)}",
+            f"voxel sizes: {', '.join(_format_number(value) for value in spatial.voxel_sizes)}",
+            f"units: {', '.join(spatial.units)}",
+            "affine:",
+            affine_rows,
+        )
+    )
+
+
+def _format_tuple(values: tuple[float, ...]) -> str:
+    return f"({', '.join(_format_number(value) for value in values)})"
+
+
+def _format_display_value(value: Any) -> str:
+    if isinstance(value, np.generic):
+        value = value.item()
+    if isinstance(value, int | float) and not isinstance(value, bool):
+        return _format_number(float(value))
+    return _format_cell(value)
+
+
+def _format_number(value: float) -> str:
+    return str(int(value)) if float(value).is_integer() else f"{value:.6g}"
+
+
+def _validate_index(value: int, size: int, label: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{label} index must be an integer")
+    if value < 0 or value >= size:
+        raise ValueError(f"{label} index is out of bounds")
+
+
 __all__ = [
     "ArrayViewWidget",
     "BaseViewContract",
     "ImageViewWidget",
     "MultidimensionalSliceNavigatorWidget",
+    "NiftiOrthogonalViewerWidget",
     "TableViewWidget",
     "TextViewWidget",
     "ViewKind",

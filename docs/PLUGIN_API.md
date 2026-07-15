@@ -19,7 +19,7 @@ Current implementation status:
 - DV-0804 adds `org.dataviewer.dataset_compare` for exact-shape numeric dataset comparisons with metadata compatibility rows, equality counts, finite/nonfinite accounting, absolute/relative error metrics, and explicit no-broadcast refusal.
 - DV-0805 adds `org.dataviewer.line_plot`, `org.dataviewer.scatter_plot`, `org.dataviewer.histogram_plot`, and `org.dataviewer.box_plot` for renderer-owned declarative `PlotSpec` results with explicit point sampling, finite-value filtering, accessible summaries, export provenance, and JSON-safe data-table metadata.
 - DV-0807 adds `org.dataviewer.correlation_heatmap` and `org.dataviewer.missing_data_map` for renderer-owned heatmap `PlotSpec` results with labeled axes, value ranges/legends, budgeted variable selection, deterministic missing-map observation sampling, and data-table alternatives.
-- The remaining P8 catalog still owns image/slice/navigation visualization plugins, correlation heatmap, missing-data map, NIfTI viewer, and concrete Qt plot renderer widgets.
+- The remaining P8 catalog still owns final NIfTI viewer evidence, concrete renderer-widget integration, and checkpoint catalog evidence.
 
 ## 2. Package boundary
 
