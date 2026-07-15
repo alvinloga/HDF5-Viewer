@@ -2,7 +2,6 @@
 
 import sys
 import os
-import tempfile
 import numpy as np
 import h5py
 import pytest
@@ -58,7 +57,7 @@ def test_tab_manager(qapp, tmp_h5):
 
     # 测试打开文件
     result = tab_manager.open_file(tmp_h5)
-    assert result == True
+    assert result
 
     # 测试获取当前面板
     panel = tab_manager.get_current_panel()
@@ -195,7 +194,7 @@ def test_status_bar(qapp):
 def test_bottom_panel(qapp):
     """测试底部面板"""
     from gui.bottom_panel import BottomPanel, PropertiesView
-    from core.datasource import DataMeta, NodeType
+    from core.datasource import DataMeta
 
     # 测试 PropertiesView
     props = PropertiesView()
@@ -244,44 +243,3 @@ def test_search_panel(qapp):
     results = ["/group1/data1", "/group2/data2", "/data3"]
     search_panel.results.load_results(results)
     assert search_panel.results.topLevelItemCount() == 3
-
-
-def main():
-    """运行所有测试"""
-    print("=" * 60)
-    print("Legacy HDF5 Viewer - GUI Interaction Tests")
-    print("=" * 60)
-
-    tests = [
-        test_main_window_creation,
-        test_tab_manager,
-        test_explorer_panel,
-        test_slice_input,
-        test_data_table,
-        test_status_bar,
-        test_bottom_panel,
-        test_activity_bar,
-        test_search_panel,
-    ]
-
-    passed = 0
-    failed = 0
-
-    for test in tests:
-        try:
-            test()
-            passed += 1
-        except Exception as e:
-            print(f"  [FAIL] {test.__name__}: {e}")
-            failed += 1
-
-    print("\n" + "=" * 60)
-    print(f"Results: {passed} passed, {failed} failed")
-    print("=" * 60)
-
-    return failed == 0
-
-
-if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)

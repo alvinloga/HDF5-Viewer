@@ -3046,3 +3046,32 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete manual runner from the retained Phase 1 pytest module. Other legacy regression suites still have manual script runners and legacy imports until each group is cleaned or removed with parity evidence.
+
+## DV-1008 legacy GUI-interaction manual runner removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed the obsolete `main()` / `if __name__ == "__main__"` manual runner from `tests/test_gui_interaction.py`, including the historical "Legacy HDF5 Viewer - GUI Interaction Tests" banner.
+- Kept the pytest tests for legacy main window creation, tab manager, explorer, slice input, data table, status bar, bottom panel, activity bar, and search panel intact.
+- Removed unused imports and normalized one legacy truth assertion exposed by the runner cleanup from `tests/test_gui_interaction.py`.
+- `tests/test_packaging_artifacts.py` now asserts the manual runner stays absent while preserving the GUI-interaction pytest module.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy GUI-interaction runner regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_interaction_test_manual_runner_is_removed -q` | failed as expected before implementation because `tests/test_gui_interaction.py` still contained the legacy banner and manual runner |
+| Targeted regression and retained GUI-interaction tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_interaction_test_manual_runner_is_removed tests\test_gui_interaction.py -q` | 10 passed |
+| Affected GUI subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_gui_interaction.py tests\test_test_environment.py tests\test_gui_theme.py tests\test_gui_shell.py -q` | 57 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_gui_interaction.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q tests\test_packaging_artifacts.py tests\test_gui_interaction.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 536 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Removed-runner reference audit | `rg -n "Legacy HDF5 Viewer - GUI Interaction Tests|def main\\(|__main__" tests\test_gui_interaction.py tests\test_packaging_artifacts.py` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Diff whitespace check | `git diff --check` | passed; Git emitted only expected LF-to-CRLF working-copy warnings on Windows |
+
+Known gaps:
+
+- This removes only the obsolete manual runner from the retained GUI-interaction pytest module. `tests/test_stress.py` still has a manual script runner until it is cleaned with parity evidence.

@@ -195,3 +195,15 @@ def test_legacy_phase1_test_manual_runner_is_removed() -> None:
     assert "Legacy HDF5 Viewer - Phase 1 Tests" not in phase1_test
     assert "def main(" not in phase1_test
     assert '__name__ == "__main__"' not in phase1_test
+
+
+def test_legacy_gui_interaction_test_manual_runner_is_removed() -> None:
+    """DV-1008 keeps legacy GUI interaction coverage under pytest collection only."""
+
+    gui_interaction_test = (
+        PROJECT_ROOT / "tests" / "test_gui_interaction.py"
+    ).read_text(encoding="utf-8")
+
+    assert "Legacy HDF5 Viewer - GUI Interaction Tests" not in gui_interaction_test
+    assert "def main(" not in gui_interaction_test
+    assert '__name__ == "__main__"' not in gui_interaction_test
