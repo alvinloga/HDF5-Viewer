@@ -374,3 +374,16 @@ def test_legacy_plugins_package_is_removed() -> None:
         "docs/PLUGIN_API.md",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_core_cache_module_is_removed() -> None:
+    """DV-1008 removes the obsolete in-memory legacy core cache module."""
+
+    assert not (PROJECT_ROOT / "core" / "cache.py").exists()
+
+    for retained_target_path in (
+        "data_viewer/infrastructure/cache.py",
+        "tests/test_infrastructure_cache.py",
+        "tests/test_gzip_extraction_cache.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()

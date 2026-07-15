@@ -3511,3 +3511,31 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This completes legacy `plugins/` package removal. Legacy product packages `core/` and `gui/` still exist as migration reference inputs until their individual removal groups are proven.
+
+## DV-1008 legacy core cache module removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `core/cache.py`, an in-memory ndarray LRU cache that no current runtime/test/build path imports.
+- Added `tests/test_packaging_artifacts.py::test_legacy_core_cache_module_is_removed`, which asserts the old module stays absent and retained target cache/gzip extraction tests remain present.
+- Target cache ownership remains under `data_viewer/infrastructure/cache.py`, which provides bounded file-backed cache entries, persistent index metadata, checksums, tombstones, and cleanup semantics used by gzip extraction.
+- Updated migration inventory and changelog wording so `core/` remains a current legacy migration input but its cache module is recorded as removed.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy cache module removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_core_cache_module_is_removed -q` | failed as expected before implementation because `core/cache.py` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_core_cache_module_is_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_infrastructure_cache.py tests\test_gzip_extraction_cache.py -q` | 10 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_infrastructure_cache.py tests\test_gzip_extraction_cache.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 428 passed |
+
+Known gaps:
+
+- This removes only the legacy cache module from `core/`. Remaining legacy `core/` modules and `gui/` still exist as separate migration/removal groups.
