@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPlainTextEdit,
+    QSpinBox,
     QTableView,
     QVBoxLayout,
     QWidget,
@@ -29,7 +30,7 @@ from data_viewer.domain import (
     TablePayload,
     TextPayload,
 )
-from data_viewer.domain.selection import NormalizedSelection
+from data_viewer.domain.selection import NormalizedAxisSelection, NormalizedSelection
 from data_viewer.gui.i18n import Locale, UiStringKey, tr
 
 
@@ -371,6 +372,163 @@ class ImageViewWidget(_BaseDataView):
         )
 
 
+class MultidimensionalSliceNavigatorWidget(ImageViewWidget):
+    """Image projection view with explicit high-dimensional slice controls."""
+
+    def __init__(self, *, locale: Locale = Locale.EN_US) -> None:
+        super().__init__(locale=locale)
+        self._selection: NormalizedSelection | None = None
+        self._axis_index_overrides: dict[int, int] = {}
+        self._display_mode = "raw"
+        self._linked_slices = False
+        self._mode_label = QLabel("mode: raw", self)
+        self._mode_label.setObjectName("slice_navigator_mode_label")
+        self._mode_label.setAccessibleName("Slice navigator display mode")
+        self._linked_label = QLabel("linked slices: off", self)
+        self._linked_label.setObjectName("slice_navigator_linked_label")
+        self._linked_label.setAccessibleName("Linked slice state")
+        self._bounds_label = QLabel("bounded read: -", self)
+        self._bounds_label.setObjectName("slice_navigator_bounds_label")
+        self._bounds_label.setAccessibleName("Slice read bounds")
+        self._axis_summary_label = QLabel("axes: -", self)
+        self._axis_summary_label.setObjectName("slice_navigator_axis_summary_label")
+        self._axis_summary_label.setAccessibleName("Slice axis summary")
+        self._axis_summary_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        self._axis_controls = QWidget(self)
+        self._axis_controls.setObjectName("slice_navigator_axis_controls")
+        self._axis_controls.setAccessibleName("Slice navigator axis controls")
+        self._axis_controls_layout = QHBoxLayout(self._axis_controls)
+        self._axis_controls_layout.setContentsMargins(0, 0, 0, 0)
+        self._axis_controls_layout.setSpacing(8)
+
+        navigator_header = QWidget(self)
+        navigator_layout = QHBoxLayout(navigator_header)
+        navigator_layout.setContentsMargins(0, 0, 0, 0)
+        navigator_layout.setSpacing(8)
+        navigator_layout.addWidget(self._mode_label)
+        navigator_layout.addWidget(self._linked_label)
+        navigator_layout.addWidget(self._bounds_label)
+        navigator_layout.addStretch(1)
+        self._layout.insertWidget(1, navigator_header)
+        self._layout.insertWidget(2, self._axis_summary_label)
+        self._layout.insertWidget(3, self._axis_controls)
+
+    def render_read_result(self, result: ReadResult) -> None:
+        super().render_read_result(result)
+        payload = cast(ArrayPayload, result.payload)
+        selection = cast(NormalizedSelection, payload.selection)
+        self._selection = selection
+        self._axis_index_overrides = {
+            axis.axis: axis.index
+            for axis in selection.axes
+            if axis.kind.value == "index" and axis.index is not None
+        }
+        self._bounds_label.setText(
+            f"bounded read: {OperationScope(result.scope).value}, {result.bytes_read} bytes"
+        )
+        self._refresh_axis_summary()
+        self._rebuild_axis_controls()
+
+    def set_display_mode(self, mode: str) -> None:
+        """Set raw/display presentation mode without mutating source data."""
+
+        normalized = mode.strip().lower()
+        if normalized not in {"raw", "display"}:
+            raise ValueError("display mode must be 'raw' or 'display'")
+        self._display_mode = normalized
+        self._mode_label.setText(f"mode: {self._display_mode}")
+
+    def set_linked_slices(self, enabled: bool) -> None:
+        """Expose whether cursor/slice changes are linked to sibling views."""
+
+        if not isinstance(enabled, bool):
+            raise ValueError("linked slices state must be boolean")
+        self._linked_slices = enabled
+        state = "on" if enabled else "off"
+        self._linked_label.setText(f"linked slices: {state}")
+
+    def set_axis_index(self, *, axis: int, index: int) -> None:
+        """Record a requested fixed-axis index for the next bounded slice read."""
+
+        if self._selection is None:
+            raise ValueError("slice navigator has no rendered selection")
+        if isinstance(axis, bool) or not isinstance(axis, int):
+            raise ValueError("axis must be an integer")
+        if isinstance(index, bool) or not isinstance(index, int):
+            raise ValueError("index must be an integer")
+        if axis < 0 or axis >= len(self._selection.original_shape):
+            raise ValueError("axis is out of bounds")
+        dimension = self._selection.original_shape[axis]
+        if index < 0 or index >= dimension:
+            raise ValueError("index is out of bounds")
+        self._axis_index_overrides[axis] = index
+        self._refresh_axis_summary()
+        spin_box = self.findChild(QSpinBox, f"slice_axis_{axis}_index")
+        if spin_box is not None and spin_box.value() != index:
+            spin_box.setValue(index)
+
+    def _rebuild_axis_controls(self) -> None:
+        while self._axis_controls_layout.count():
+            item = self._axis_controls_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+        if self._selection is None:
+            self._axis_controls_layout.addWidget(QLabel("axes: -", self._axis_controls))
+            return
+        for axis in self._selection.axes:
+            if axis.kind.value == "index":
+                spin_box = QSpinBox(self._axis_controls)
+                spin_box.setObjectName(f"slice_axis_{axis.axis}_index")
+                spin_box.setAccessibleName(f"Slice axis {axis.axis} fixed index")
+                spin_box.setRange(0, self._selection.original_shape[axis.axis] - 1)
+                spin_box.setValue(self._axis_index_overrides.get(axis.axis, axis.index or 0))
+                spin_box.valueChanged.connect(
+                    lambda value, axis_number=axis.axis: self.set_axis_index(
+                        axis=axis_number,
+                        index=int(value),
+                    )
+                )
+                self._axis_controls_layout.addWidget(QLabel(f"axis {axis.axis}", self._axis_controls))
+                self._axis_controls_layout.addWidget(spin_box)
+            else:
+                label = QLabel(_describe_slice_axis(axis, self._display_axis_role(axis)), self._axis_controls)
+                label.setObjectName(f"slice_axis_{axis.axis}_label")
+                self._axis_controls_layout.addWidget(label)
+        self._axis_controls_layout.addStretch(1)
+
+    def _refresh_axis_summary(self) -> None:
+        if self._selection is None:
+            self._axis_summary_label.setText("axes: -")
+            return
+        parts: list[str] = []
+        for axis in self._selection.axes:
+            if axis.kind.value == "index":
+                index = self._axis_index_overrides.get(axis.axis, axis.index or 0)
+                maximum = self._selection.original_shape[axis.axis] - 1
+                parts.append(f"axis {axis.axis}: index {index} / 0..{maximum}")
+            else:
+                parts.append(_describe_slice_axis(axis, self._display_axis_role(axis)))
+        self._axis_summary_label.setText("axes: " + "; ".join(parts))
+
+    def _display_axis_role(self, axis: NormalizedAxisSelection) -> str:
+        if self._selection is None:
+            return "display axis"
+        display_axes = [
+            selection_axis.axis
+            for selection_axis in self._selection.axes
+            if selection_axis.contributes_display_axis
+        ]
+        position = display_axes.index(axis.axis)
+        if position == 0:
+            return "display row"
+        if position == 1:
+            return "display column"
+        return f"display axis {position}"
+
+
 def _format_cell(value: Any) -> str:
     if isinstance(value, np.ndarray):
         if value.shape == ():
@@ -401,10 +559,15 @@ def _selection_coordinates(selection: NormalizedSelection) -> str:
     return f"original {selection.original_shape} result {selection.result_shape}"
 
 
+def _describe_slice_axis(axis: NormalizedAxisSelection, role: str) -> str:
+    return f"axis {axis.axis}: {role} [{axis.start}:{axis.stop}:{axis.step}]"
+
+
 __all__ = [
     "ArrayViewWidget",
     "BaseViewContract",
     "ImageViewWidget",
+    "MultidimensionalSliceNavigatorWidget",
     "TableViewWidget",
     "TextViewWidget",
     "ViewKind",

@@ -20,6 +20,7 @@ from data_viewer.gui.views import (
     ArrayViewWidget,
     BaseViewContract,
     ImageViewWidget,
+    MultidimensionalSliceNavigatorWidget,
     TableViewWidget,
     TextViewWidget,
     ViewKind,
@@ -168,6 +169,79 @@ def test_image_view_keeps_aspect_zoom_interpolation_and_cursor_metadata() -> Non
     assert widget.findChild(QLabel, "image_zoom_label").text() == "zoom: 100%"
     assert widget.findChild(QLabel, "image_interpolation_label").text() == "interpolation: nearest"
     assert widget.findChild(QLabel, "image_cursor_label").text() == "cursor: display (2, 3) source (12, 23) value 13"
+
+
+def test_slice_navigator_exposes_axes_mode_and_linked_slice_state() -> None:
+    """High-dimensional image projections expose explicit navigation state."""
+
+    app = _qapp()
+    selection = SelectionSpec.hyperslab(
+        AxisSelection(axis=0, index=1),
+        AxisSelection.slice(1, start=2, stop=6),
+        AxisSelection.slice(2, start=10, stop=15),
+    ).normalize((3, 12, 20)).unwrap()
+    payload = ArrayPayload(
+        values=np.arange(20, dtype=np.float32).reshape(4, 5),
+        original_shape=(3, 12, 20),
+        selection=selection,
+    )
+    widget = MultidimensionalSliceNavigatorWidget()
+    widget.render_read_result(
+        ReadResult(
+            payload=payload,
+            scope=OperationScope.SLICE,
+            bytes_read=80,
+            is_sampled=False,
+            sample=None,
+        )
+    )
+    widget.set_display_mode("display")
+    widget.set_linked_slices(True)
+    widget.set_axis_index(axis=0, index=2)
+    app.processEvents()
+
+    assert widget.contract().kind is ViewKind.IMAGE
+    assert widget.findChild(QLabel, "slice_navigator_mode_label").text() == "mode: display"
+    assert widget.findChild(QLabel, "slice_navigator_linked_label").text() == "linked slices: on"
+    assert widget.findChild(QLabel, "slice_navigator_bounds_label").text() == "bounded read: slice, 80 bytes"
+    axis_label = widget.findChild(QLabel, "slice_navigator_axis_summary_label")
+    assert axis_label is not None
+    assert "axis 0: index 2 / 0..2" in axis_label.text()
+    assert "axis 1: display row [2:6:1]" in axis_label.text()
+    assert "axis 2: display column [10:15:1]" in axis_label.text()
+
+
+def test_slice_navigator_maps_cursor_to_high_dimensional_source_coordinates() -> None:
+    """Cursor metadata includes fixed axes and displayed slice axes."""
+
+    app = _qapp()
+    selection = SelectionSpec.hyperslab(
+        AxisSelection(axis=0, index=1),
+        AxisSelection.slice(1, start=10, stop=14),
+        AxisSelection.slice(2, start=20, stop=25),
+    ).normalize((3, 30, 40)).unwrap()
+    payload = ArrayPayload(
+        values=np.arange(20, dtype=np.int16).reshape(4, 5),
+        original_shape=(3, 30, 40),
+        selection=selection,
+    )
+    widget = MultidimensionalSliceNavigatorWidget()
+    widget.render_read_result(
+        ReadResult(
+            payload=payload,
+            scope=OperationScope.SLICE,
+            bytes_read=40,
+            is_sampled=False,
+            sample=None,
+        )
+    )
+    widget.set_cursor_display_index((2, 3))
+    app.processEvents()
+
+    assert (
+        widget.findChild(QLabel, "image_cursor_label").text()
+        == "cursor: display (2, 3) source (1, 12, 23) value 13"
+    )
 
 
 def test_base_view_contract_is_plugin_result_extensible() -> None:
