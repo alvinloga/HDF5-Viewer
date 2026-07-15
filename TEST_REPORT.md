@@ -1889,3 +1889,37 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Distribution/outlier summaries, correlation/covariance, dataset comparison, plot plugins, and GUI renderer integration remain later P8 tasks.
+
+## DV-0802 Distribution Summary plugin - 2026-07-15
+
+Revision: working tree based on `0c795a4` before committing the DV-0802 implementation.
+
+Implementation evidence:
+
+- `data_viewer/plugins/builtin/dataset_profile/plugin.py` adds `DistributionSummaryPlugin`, a built-in analysis plugin that uses chunked `InputAccess`, produces table results, and records full/sampled provenance.
+- `data_viewer/plugins/builtin/distribution_summary/plugin.json` adds the packaged `org.dataviewer.distribution_summary` manifest with immutable parameters: `bins`, `nan_policy`, `sample_size`, and `seed`.
+- `pyproject.toml` includes the Distribution Summary manifest as package data so wheel/sdist discovery can find all three current statistics plugins.
+- `tests/test_builtin_distribution_summary_plugin.py` adds numerical golden coverage for histogram bins, IQR/MAD robust spread, skewness, excess kurtosis, constant input, empty/nonfinite input, explicit deterministic sampling metadata, manifest ordering, and forbidden-import boundaries.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing distribution plugin tests | `venv\Scripts\python.exe -m pytest tests\test_builtin_distribution_summary_plugin.py -q` | failed as expected before implementation: `org.dataviewer.distribution_summary` not discovered |
+| Focused distribution plugin tests | `venv\Scripts\python.exe -m pytest tests\test_builtin_distribution_summary_plugin.py -q` | 5 passed |
+| Plugin P7/P8 regression subset | `venv\Scripts\python.exe -m pytest tests\test_builtin_distribution_summary_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_dataset_profile_plugin.py tests\test_plugin_results.py tests\test_plugin_runner.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py -q` | 47 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_distribution_summary_plugin.py tests\test_plugin_registry.py tests\test_plugin_compatibility_parameters.py tests\test_plugin_runner.py tests\test_plugin_results.py` | passed |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer\plugins tests\conformance\plugin.py tests\test_builtin_dataset_profile_plugin.py tests\test_builtin_statistics_plugins.py tests\test_builtin_distribution_summary_plugin.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer` | passed; no issues in 97 source files |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 456 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+| Wheel package-data smoke | `venv\Scripts\python.exe -m pip wheel . -w .tmp-wheel --no-deps --no-build-isolation --no-cache-dir`; then inspect wheel with `zipfile` for Dataset Profile, Descriptive Statistics, and Distribution Summary `plugin.json` files | wheel built successfully; all three `plugin.json` files present; temporary `.tmp-wheel` removed |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| GitHub Actions run | pending after DV-0802 commit/push | pending |
+
+Known gaps:
+
+- Correlation/covariance, dataset comparison, plot plugins, and GUI renderer integration remain later P8 tasks.

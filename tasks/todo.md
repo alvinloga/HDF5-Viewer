@@ -479,7 +479,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: shape/dtype/storage/count/missing/finite/range plus axis-aware mean/std/quantiles/extrema; stable algorithms; empty/complex/masked/nonfinite rules; chunked operation and scope label.
 - Verify: independent NumPy/SciPy reference goldens across dtypes/axes/chunks.
 
-### [ ] DV-0802 Implement Distribution Summary
+### [x] DV-0802 Implement Distribution Summary
 
 - Depends: DV-0801.
 - Acceptance: histogram/robust spread/skew/kurtosis only when valid; explicit bins/missing policy; full or recorded deterministic sample.

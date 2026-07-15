@@ -59,6 +59,7 @@ All notable Data Viewer changes are recorded here.
 - Added the Plugin API v1 typed-result foundation (DV-0704): summary/table/array/image/plot/collection validators, declarative PlotSpec/PlotMark payloads, provenance export records, and bounded in-memory array result materialization.
 - Added the Plugin API v1 conformance/reference slice (DV-0705): reusable test-side plugin conformance checks plus a packaged `org.dataviewer.dataset_profile` reference plugin demonstrating manifest discovery, compatibility, immutable parameters, chunked execution, cancellation/progress, numerical goldens, edge-input handling, result/provenance validation, and forbidden-import scanning.
 - Added the first P8 statistics plugins (DV-0801): Dataset Profile now reports storage estimates and numeric/complex-magnitude semantics, and `org.dataviewer.descriptive_statistics` provides axis-aware count, missing/nonfinite counts, mean, sample standard deviation, configurable quantiles, and extrema as provenance-complete table results.
+- Added the Distribution Summary built-in plugin (DV-0802): histogram rows, IQR/MAD robust spread, skewness/kurtosis only when valid, nonfinite accounting, and explicit deterministic sampling metadata.
 
 ### Fixed
 
