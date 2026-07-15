@@ -503,7 +503,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: declarative plots; axes/series/units/legends; bounded points or explicit sampling; theme/accessibility/data-table/copy/export.
 - Verify: PlotSpec goldens, sampling, empty/nonfinite, light/dark render smoke.
 
-### [ ] DV-0806 Implement image and multidimensional slice navigator
+### [x] DV-0806 Implement image and multidimensional slice navigator
 
 - Depends: DV-0605.
 - Acceptance: aspect/zoom/interpolation/value/cursor/source coordinates; axis/index controls; linked slices; bounded reads; raw/display mode.

@@ -2034,3 +2034,39 @@ Dual-platform CI verification after commit:
 Known gaps:
 
 - Concrete Qt plot renderer widgets, image/slice navigator, correlation heatmap, missing-data map, and NIfTI viewer remain later P8 tasks.
+
+## DV-0806 Image and multidimensional slice navigator - 2026-07-15
+
+Revision: implementation commits `97587ab3676898b7ec6a0c600f414de01e1dd3e4` and `00722c8261a08ee3083311d96fd15d0d072c8004`.
+
+Implementation evidence:
+
+- `data_viewer/gui/views.py` adds `MultidimensionalSliceNavigatorWidget`, a workspace image projection view that reuses the base image view contract while exposing explicit high-dimensional axis/index navigation state, raw/display mode labels, linked-slice status, bounded-read provenance, preserved aspect/zoom/interpolation metadata, and cursor-to-original-source coordinate reporting.
+- `tests/test_gui_base_views.py` adds offscreen GUI coverage for axis/index control state, linked-slice and raw/display labels, bounded-read bytes/scope metadata, and high-dimensional cursor coordinate mapping through fixed and displayed axes.
+- `CHANGELOG.md` records the new DV-0806 workspace view behavior.
+- `tasks/todo.md` marks DV-0806 complete after local verification and successful Windows/Ubuntu CI.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial failing slice navigator tests | `venv\Scripts\python.exe -m pytest tests\test_gui_base_views.py -q` | failed as expected before implementation: `MultidimensionalSliceNavigatorWidget` could not be imported |
+| Focused base view tests | `venv\Scripts\python.exe -m pytest tests\test_gui_base_views.py -q` | 7 passed |
+| GUI regression subset | `venv\Scripts\python.exe -m pytest tests\test_gui_base_views.py tests\test_gui_shell.py tests\test_gui_i18n_accessibility.py tests\test_gui_state_components.py -q` | 36 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check data_viewer\gui\views.py tests\test_gui_base_views.py` | passed |
+| Target type check | `venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py` | passed; no issues in 100 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer tests\test_gui_base_views.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 476 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Dual-platform CI verification after commit:
+
+| Check | Command/source | Observed result |
+|---|---|---|
+| Initial GitHub Actions run | `gh run view 29387036554 --json status,conclusion,headSha,jobs,url` | failed in Windows/Ubuntu type-check for head SHA `97587ab3676898b7ec6a0c600f414de01e1dd3e4`; fixed by `00722c8261a08ee3083311d96fd15d0d072c8004` after guarding nullable Qt layout items |
+| GitHub Actions run | `gh run view 29387169818 --json status,conclusion,headSha,jobs,url` | completed successfully for head SHA `00722c8261a08ee3083311d96fd15d0d072c8004`; run URL: https://github.com/alvinloga/HDF5-Viewer/actions/runs/29387169818 |
+| Windows quality | GitHub Actions job `87262742621` | success; started `2026-07-15T03:42:10Z`, completed `2026-07-15T03:44:11Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+| Ubuntu quality | GitHub Actions job `87262742625` | success; started `2026-07-15T03:42:10Z`, completed `2026-07-15T03:43:46Z`; full offscreen regression suite, lint, type check, compile, and package build steps passed |
+
+Known gaps:
+
+- Concrete Qt plot rendering, correlation heatmap, missing-data map, NIfTI orthogonal viewer, and full shell wiring for advanced linked slice interactions remain later P8 tasks.
