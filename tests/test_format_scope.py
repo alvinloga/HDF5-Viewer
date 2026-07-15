@@ -8,11 +8,15 @@ import pytest
 
 from data_viewer.domain import DataViewerError, ErrorCode
 from data_viewer.gui.shell import create_source_registry
-from gui.sidebar.folder_explorer import FolderExplorerTree
 
 
 class _NeverCancelled:
-    is_cancelled = False
+    @property
+    def is_cancelled(self) -> bool:
+        return False
+
+    def raise_if_cancelled(self) -> None:
+        return None
 
 
 def test_v1_registry_rejects_netcdf_and_zarr_as_unsupported(tmp_path: Path) -> None:
@@ -31,16 +35,10 @@ def test_v1_registry_rejects_netcdf_and_zarr_as_unsupported(tmp_path: Path) -> N
             registry.select_adapter(path, cancellation=_NeverCancelled())
 
         assert exc_info.value.code is ErrorCode.SOURCE_UNSUPPORTED
-        assert ".zarr" not in exc_info.value.details["adapter_ids"]
-        assert "netcdf" not in str(exc_info.value.details["adapter_ids"]).lower()
-        assert "zarr" not in str(exc_info.value.details["adapter_ids"]).lower()
-
-
-def test_legacy_folder_explorer_defaults_do_not_advertise_zarr() -> None:
-    filters = FolderExplorerTree._DEFAULT_FILE_FILTERS
-
-    assert ".zarr" not in filters
-    assert all("zarr" not in extension.lower() for extension in filters)
+        adapter_ids = str(exc_info.value.details["adapter_ids"]).lower()
+        assert ".zarr" not in adapter_ids
+        assert "netcdf" not in adapter_ids
+        assert "zarr" not in adapter_ids
 
 
 def test_target_entrypoint_does_not_import_netcdf_or_zarr_sources() -> None:

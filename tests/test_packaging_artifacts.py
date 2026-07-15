@@ -224,3 +224,14 @@ def test_legacy_stress_test_manual_runner_is_removed() -> None:
     assert "Legacy HDF5 Viewer - Stress Tests" not in stress_test
     assert "def main(" not in stress_test
     assert '__name__ == "__main__"' not in stress_test
+
+
+def test_format_scope_tests_do_not_import_legacy_gui() -> None:
+    """DV-1008 keeps first-release format scope checks on the target registry."""
+
+    format_scope_test = (PROJECT_ROOT / "tests" / "test_format_scope.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "from gui." not in format_scope_test
+    assert "import gui." not in format_scope_test

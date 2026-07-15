@@ -3132,3 +3132,31 @@ Known gaps:
 
 - `tests/test_format_scope.py` intentionally remains outside the scoped type-check command because it imports the retained legacy `gui.sidebar.folder_explorer` reference module, which triggers pre-existing legacy `core/` mypy debt. The affected behavior is still covered by pytest and lint.
 - Retained legacy packages (`core/`, `gui/`, `plugins/`, `services/`) still exist as migration reference inputs and will be removed or ported in later DV-1008 slices.
+
+## DV-1008 format-scope legacy GUI dependency removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed the legacy `gui.sidebar.folder_explorer.FolderExplorerTree` import from `tests/test_format_scope.py`.
+- Removed the obsolete legacy folder-explorer Zarr filter assertion from the first-release format-scope tests; target coverage remains on `create_source_registry()` and `data_viewer/__main__.py`.
+- Added `tests/test_packaging_artifacts.py` coverage that prevents `tests/test_format_scope.py` from regressing to legacy GUI imports.
+- Tightened `tests/test_format_scope.py` cancellation and error-detail handling so it can join the scoped type-check command.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy GUI import regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_format_scope_tests_do_not_import_legacy_gui -q` | failed as expected before implementation because `tests/test_format_scope.py` imported `gui.sidebar.folder_explorer` |
+| Targeted format-scope tests | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_format_scope_tests_do_not_import_legacy_gui tests\test_format_scope.py -q` | 5 passed |
+| Scoped type check for format scope | `venv\Scripts\python.exe -m mypy tests\test_format_scope.py` | passed; no issues in 1 source file |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_format_scope.py tests\test_packaging_artifacts.py` | passed |
+| Affected packaging/format/CLI subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_format_scope.py tests\test_data_viewer_package.py -q` | 28 passed |
+| Expanded scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py tests\test_format_scope.py tests\test_data_viewer_package.py data_viewer\__main__.py` | passed; no issues in 4 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q tests\test_packaging_artifacts.py tests\test_format_scope.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 537 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- This removes only the legacy GUI dependency from first-release format-scope tests. Retained legacy GUI/core regression suites still exist and will be removed or ported in later DV-1008 slices.
