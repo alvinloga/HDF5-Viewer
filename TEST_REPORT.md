@@ -3211,3 +3211,30 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the obsolete legacy core unit suite. Other retained legacy regression suites still import `core/`, `gui/`, `plugins/`, and `services/` until each is removed or ported with parity evidence.
+
+## DV-1008 legacy integration suite removal slice - 2026-07-15
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed obsolete `tests/test_integration.py`, a legacy source-import suite that directly exercised `core.h5_source`, `core.slicer`, `core.cache`, `core.registry`, `plugins.builtin.statistics`, `services.exporter`, and `core.event_bus`.
+- Replaced the previous manual-runner-only guard with `tests/test_packaging_artifacts.py::test_legacy_integration_suite_is_removed`, which asserts the file stays removed and target source, HDF5, plugin, registry, and export suites remain present.
+- Updated adjacent packaging guards so removed final/all-features legacy smoke scripts no longer treat the deleted integration suite as retained coverage.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy integration suite removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_integration_suite_is_removed -q` | failed as expected before implementation because `tests/test_integration.py` still existed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_integration_suite_is_removed tests\test_hdf5_adapter.py tests\test_plugin_runner.py tests\test_plugin_registry.py tests\test_exporting.py tests\test_source_registry.py -q` | 59 passed |
+| Affected packaging/target subset | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_hdf5_adapter.py tests\test_plugin_runner.py tests\test_plugin_registry.py tests\test_exporting.py tests\test_source_registry.py -q` | 74 passed |
+| Active reference audit | `rg "tests/test_integration\.py|tests\\test_integration\.py|test_legacy_integration_test_manual_runner" tests docs tasks CHANGELOG.md README.md ARCHITECTURE.md` | only the current `CHANGELOG.md` removal note remained |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 521 passed, 1 skipped, 3 existing NumPy NaN/Inf warnings |
+
+Known gaps:
+
+- This removes only the obsolete legacy integration suite. Other retained legacy regression suites still import `core/`, `gui/`, `plugins/`, and `services/` until each is removed or ported with parity evidence.

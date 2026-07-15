@@ -132,7 +132,8 @@ def test_legacy_final_integration_smoke_script_is_removed() -> None:
     for target_test in (
         "tests/test_data_viewer_package.py",
         "tests/test_installed_artifact_smoke.py",
-        "tests/test_integration.py",
+        "tests/test_source_registry.py",
+        "tests/test_hdf5_adapter.py",
     ):
         assert (PROJECT_ROOT / target_test).exists()
 
@@ -149,9 +150,10 @@ def test_legacy_all_features_smoke_script_is_removed() -> None:
     assert "test_all_features.py" not in environment_test
 
     for retained_suite in (
-        "tests/test_integration.py",
         "tests/test_gui_interaction.py",
         "tests/test_comprehensive.py",
+        "tests/test_source_registry.py",
+        "tests/test_hdf5_adapter.py",
     ):
         assert (PROJECT_ROOT / retained_suite).exists()
 
@@ -171,16 +173,19 @@ def test_legacy_core_unit_suite_is_removed() -> None:
         assert (PROJECT_ROOT / retained_target_suite).exists()
 
 
-def test_legacy_integration_test_manual_runner_is_removed() -> None:
-    """DV-1008 keeps legacy integration coverage under pytest collection only."""
+def test_legacy_integration_suite_is_removed() -> None:
+    """DV-1008 removes the obsolete legacy source-import integration suite."""
 
-    integration_test = (PROJECT_ROOT / "tests" / "test_integration.py").read_text(
-        encoding="utf-8"
-    )
+    assert not (PROJECT_ROOT / "tests" / "test_integration.py").exists()
 
-    assert "Legacy HDF5 Viewer - Integration Tests" not in integration_test
-    assert "def main(" not in integration_test
-    assert '__name__ == "__main__"' not in integration_test
+    for retained_target_suite in (
+        "tests/test_hdf5_adapter.py",
+        "tests/test_plugin_runner.py",
+        "tests/test_plugin_registry.py",
+        "tests/test_exporting.py",
+        "tests/test_source_registry.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_suite).exists()
 
 
 def test_legacy_edge_case_test_manual_runner_is_removed() -> None:
