@@ -4118,3 +4118,36 @@ Downloaded lightweight packet verification:
 - Windows packet contained `DV-1101-checklist.md` and `acceptance-summary.json`; the summary recorded task `DV-1101`, archive `DataViewer-1.0.0.dev0-windows-x86_64.zip`, archive SHA-256 `e950cd5c12f5eced7bf65250e10e85b8cf307b14eaf37a427d2b07001e1300d3`, no security blockers, `release_security_review.release_status` `ready`, and all functional/manual rows as `pending-manual`.
 - Ubuntu packet contained `DV-1102-checklist.md` and `acceptance-summary.json`; the summary recorded task `DV-1102`, archive `DataViewer-1.0.0.dev0-linux-x86_64.tar.gz`, archive SHA-256 `f661e08768fb17a1d2d1c7a74c2ce510871c5774b039128ade29fbe6f02f6054`, no security blockers, `release_security_review.release_status` `ready`, and all functional/manual rows as `pending-manual`.
 - Both packets intentionally retain `pending-after-upload` for the package artifact ID/digest inside the generated checklist/summary because those values must be filled by the release reviewer from the final uploaded package artifact metadata.
+
+## DV-1101 Windows package preflight evidence - 2026-07-16
+
+Revision: `fac3b02d58eb7c8cf29998ca8ada9c197d4b1544` package artifact, with this evidence recorded in a later documentation commit.
+
+Windows package artifact acquisition and identity:
+
+| Check | Evidence | Observed result |
+|---|---|---|
+| Download package artifact | custom two-step GitHub artifact download using artifact id `8370879948` | completed; local file `.artifacts\release-acceptance\29486945685\windows\download\data-viewer-package-Windows-29486945685-1.zip` has `132178873` bytes |
+| GitHub artifact digest | local SHA-256 of downloaded artifact zip | `sha256:38681f33364a60749e3ce078d0964c72fb1f31e25db5925a21a113baaa6d5fe5`, matching GitHub artifact metadata |
+| Package artifact contents | extracted to `.artifacts\release-acceptance\29486945685\windows\package` | contained `DataViewer-1.0.0.dev0-windows-x86_64.zip`, package checksum file, `pyinstaller-manifest.json`, `sbom.json`, `third-party-licenses.txt`, `release-security-review.json`, and embedded acceptance packet |
+| Inner package checksum | `Get-FileHash .artifacts\release-acceptance\29486945685\windows\package\DataViewer-1.0.0.dev0-windows-x86_64.zip -Algorithm SHA256` | `e950cd5c12f5eced7bf65250e10e85b8cf307b14eaf37a427d2b07001e1300d3`, matching `DataViewer-1.0.0.dev0-windows-x86_64.zip.sha256` |
+| Security review | `release-security-review.json` inside package artifact | `release_status` `ready`; leak scan `passed`; no findings |
+| Final Windows preflight packet | `python tools\prepare_release_acceptance_packet.py ... --artifact-id 8370879948 --artifact-digest sha256:38681f33364a60749e3ce078d0964c72fb1f31e25db5925a21a113baaa6d5fe5 --version-output "Data Viewer 1.0.0.dev0"` | generated `.artifacts\release-acceptance\29486945685\windows\evidence\DV-1101-checklist.md` and `acceptance-summary.json`; blockers `[]`; all manual rows remain `pending-manual` |
+| Packaged `--version` | Python `subprocess.run([DataViewer.exe, "--version"], capture_output=True, text=True)` from extracted package | exit code `0`; stdout `Data Viewer 1.0.0.dev0` |
+| Packaged installed smoke, Windows native Qt platform | extracted `DataViewer.exe --ci-smoke ...` without forcing `QT_QPA_PLATFORM=offscreen` | passed; report `.artifacts\release-acceptance\29486945685\windows\installed-smoke-native\installed-smoke-report.json`; screenshot `.artifacts\release-acceptance\29486945685\windows\installed-smoke-native\installed-smoke-screenshot.png` |
+
+Packaged smoke report summary:
+
+- Status `passed`; application `Data Viewer 1.0.0.dev0`.
+- Opened representative HDF5, CSV, NIfTI `.nii.gz`, CSV `.gz`, and workspace fixtures.
+- Ran `org.dataviewer.dataset_profile` plugin version `1.0.0` successfully.
+- Exported Dataset Profile result as JSON with outcome `succeeded`.
+- Closed 4 documents cleanly.
+
+Visual note:
+
+- The earlier offscreen smoke screenshot rendered user-visible text as square tofu because Qt's offscreen platform in this environment reported an empty font database. A native Windows Qt font probe reported `328` font families and default font `Microsoft YaHei UI`; the native packaged smoke screenshot rendered text normally. Therefore offscreen screenshots are not acceptable as the final Windows visual/localization evidence. DV-1101 still requires the manual Windows visual/accessibility/localization matrix on the real platform.
+
+Known gaps:
+
+- DV-1101 is not complete. The functional matrix, Chinese localization flow, light/dark themes, Windows 100/150/200% scaling, minimum/typical/large layouts, keyboard/accessibility review, issue review, and human sign-off remain pending.
