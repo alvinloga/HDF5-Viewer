@@ -118,6 +118,13 @@ Run this matrix on Windows for DV-1101 and on Linux for DV-1102. Use representat
 
 Every platform must capture and review the applicable visual matrix from `docs/UI_UX_SPEC.md`.
 
+Visual evidence must come from the packaged application running on the platform's native interactive display stack. Offscreen/headless screenshots may support CI smoke diagnostics, but they do not satisfy the manual visual, accessibility, localization, or DPI evidence requirement for DV-1101 or DV-1102. If an offscreen screenshot differs from native rendering, record the native screenshot as authoritative and link the offscreen artifact only as diagnostic context.
+
+For each visual evidence packet, record the display stack and rendering context:
+
+- Windows: Qt platform plugin, monitor scaling, display adapter or remote-session note, and the default UI font observed by the packaged application.
+- Linux: distribution/version, desktop environment or window manager, display server (`x11`/`xcb` or Wayland), scaling setting, and the default UI font observed by the packaged application.
+
 ### Windows DV-1101 visual matrix
 
 | Scaling | Window size | Themes | Required states |

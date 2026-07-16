@@ -139,6 +139,7 @@ All notable Data Viewer changes are recorded here.
 - Recorded Checkpoint 6 UI evidence for semantic themes, command context, shell layout, standard states, base views, safe dialogs, localization/accessibility, high-DPI baseline, and Windows/Ubuntu CI.
 - Recorded Checkpoint 7 plugin-platform evidence for manifest validation, compatibility/parameters, runner/input access, typed results/provenance, the reference Dataset Profile plugin, reusable conformance checks, and Windows/Ubuntu CI.
 - Recorded Checkpoint 9 workbench evidence for workspace persistence/restore, comparison state, navigation/search usability, session/external-change safety, background export/diagnostics contracts, and Windows/Ubuntu CI.
+- Clarified the P11 release acceptance runbook so native interactive display screenshots, display-stack metadata, and packaged-application font evidence are required for DV-1101/DV-1102 visual acceptance; offscreen/headless screenshots remain diagnostic only.
 
 ### Known legacy limitations
 

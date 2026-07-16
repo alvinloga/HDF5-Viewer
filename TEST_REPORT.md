@@ -4176,3 +4176,25 @@ Important boundary:
 Known gaps:
 
 - DV-1102 is not complete. It still requires Linux packaged execution outside CI, the full functional matrix, Linux 100/200% visual/accessibility/localization checks, documented platform differences, issue review, and human sign-off.
+
+## P11 visual evidence runbook hardening - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Change:
+
+- `docs/RELEASE_ACCEPTANCE.md` now makes native interactive display evidence mandatory for DV-1101/DV-1102 visual, accessibility, localization, and DPI acceptance.
+- Offscreen/headless screenshots are explicitly diagnostic only. They may support CI smoke analysis, but cannot satisfy the manual visual matrix or replace platform screenshots from the packaged application.
+- The runbook now asks reviewers to record display-stack and default UI font context for Windows and Linux evidence packets.
+
+Local Windows verification in the project `.venv` locked environment:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Release acceptance runbook contract | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_docs.py -q` | 4 passed in 3.36s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tests\test_release_acceptance_docs.py` | passed |
+| Diff hygiene | `git diff --check` | passed; only Windows line-ending conversion warnings for touched Markdown and test files |
+
+Known gaps:
+
+- DV-1101 and DV-1102 remain open. This hardens the manual evidence rule but does not execute or sign either platform acceptance matrix.

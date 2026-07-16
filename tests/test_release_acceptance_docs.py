@@ -74,3 +74,16 @@ def test_release_acceptance_runbook_covers_visual_matrix_and_signoff() -> None:
         "no unresolved integrity or security blocker remains",
     ):
         assert required in text
+
+
+def test_release_acceptance_requires_native_visual_evidence() -> None:
+    text = RUNBOOK.read_text(encoding="utf-8")
+
+    for required in (
+        "native interactive display stack",
+        "Offscreen/headless screenshots may support CI smoke diagnostics",
+        "do not satisfy the manual visual, accessibility, localization, or DPI evidence",
+        "default UI font observed by the packaged application",
+        "display server (`x11`/`xcb` or Wayland)",
+    ):
+        assert required in text
