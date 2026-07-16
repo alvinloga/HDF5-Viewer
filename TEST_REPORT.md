@@ -4417,3 +4417,27 @@ Known gaps:
 - DV-1101 remains open. The Windows prepared packet still needs native packaged execution against the full functional matrix, native visual/accessibility/localization/DPI screenshots, issue review, and reviewer sign-off.
 - DV-1102 remains open. The Ubuntu prepared packet still needs supported-Linux native packaged execution against the full functional matrix, Linux visual/accessibility/localization/DPI screenshots, issue review, and reviewer sign-off.
 - DV-1103 and DV-1104 remain blocked on signed Windows and Linux acceptance packets that pass `tools/validate_release_acceptance_packet.py`.
+
+## P11 release acceptance packet hydration helper - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Change:
+
+- Added `tools/hydrate_release_acceptance_packet.py` so release reviewers can fill package artifact metadata from a saved GitHub Actions artifacts API response instead of hand-copying the package artifact row.
+- The helper verifies that the downloaded acceptance packet records the requested run, task, and platform before selecting the matching `data-viewer-package-<platform>-<run>-<attempt>` artifact.
+- The helper delegates the actual packet mutation to `tools/update_release_acceptance_artifact_metadata.py`, so it still only replaces package artifact ID/digest fields and does not mark manual functional rows, visual rows, evidence links, or sign-off fields as complete.
+- `docs/RELEASE_ACCEPTANCE.md` now documents the safer hydration flow before the lower-level manual updater fallback.
+
+Local Windows verification in the project `.venv` locked environment:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Acceptance packet and runbook contracts | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 17 passed in 1.76s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tools\hydrate_release_acceptance_packet.py tools\update_release_acceptance_artifact_metadata.py tools\validate_release_acceptance_packet.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py` | passed |
+| Scoped type check | `.venv\Scripts\python.exe -m mypy tools\hydrate_release_acceptance_packet.py tools\update_release_acceptance_artifact_metadata.py tools\validate_release_acceptance_packet.py` | passed; no issues in 3 source files |
+| Diff hygiene | `git diff --check` | passed; only Windows line-ending conversion warnings for touched Markdown and test files |
+
+Known gaps:
+
+- This helper supports DV-1101/DV-1102 evidence preparation only. It does not download artifacts, execute packaged manual acceptance, sign packets, or complete DV-1101/DV-1102.

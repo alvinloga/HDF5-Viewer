@@ -8,6 +8,9 @@ import sys
 from pathlib import Path
 
 from tools.prepare_release_acceptance_packet import AcceptanceMetadata, prepare_acceptance_packet
+from tools.hydrate_release_acceptance_packet import (
+    hydrate_release_acceptance_packet,
+)
 from tools.update_release_acceptance_artifact_metadata import (
     update_acceptance_artifact_metadata,
 )
@@ -322,6 +325,98 @@ def test_update_release_acceptance_artifact_metadata_rejects_mismatches(tmp_path
         assert "artifact name" in str(exc)
     else:  # pragma: no cover - assertion guard
         raise AssertionError("artifact name mismatch should fail")
+
+
+def test_hydrate_release_acceptance_packet_uses_matching_package_artifact(
+    tmp_path: Path,
+) -> None:
+    packet_dir = _prepare_ready_packet(
+        tmp_path,
+        task_id="DV-1101",
+        platform_name="Windows",
+        artifact_id="pending-after-upload",
+        artifact_digest="pending-after-upload",
+    )
+    artifacts_json = tmp_path / "artifacts.json"
+    artifacts_json.write_text(
+        json.dumps(
+            {
+                "artifacts": [
+                    {
+                        "id": 111,
+                        "name": "data-viewer-acceptance-Windows-123-1",
+                        "digest": "sha256:acceptance",
+                    },
+                    {
+                        "id": 222,
+                        "name": "data-viewer-package-Windows-123-1",
+                        "digest": "sha256:package",
+                    },
+                    {
+                        "id": 333,
+                        "name": "data-viewer-package-Ubuntu-123-1",
+                        "digest": "sha256:ubuntu",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = hydrate_release_acceptance_packet(
+        packet_dir,
+        artifacts_json=artifacts_json,
+        platform_name="Windows",
+        run_id="123",
+    )
+
+    assert result["artifact_name"] == "data-viewer-package-Windows-123-1"
+    assert result["artifact_id"] == "222"
+    assert result["artifact_digest"] == "sha256:package"
+    summary = json.loads((packet_dir / "acceptance-summary.json").read_text(encoding="utf-8"))
+    assert summary["artifact"]["id"] == "222"
+    assert summary["artifact"]["github_digest"] == "sha256:package"
+    assert summary["manual_status"] == "pending-manual"
+    assert summary["manual_rows"]["FMT-HDF5"] == "pending-manual"
+
+
+def test_hydrate_release_acceptance_packet_rejects_wrong_run(
+    tmp_path: Path,
+) -> None:
+    packet_dir = _prepare_ready_packet(
+        tmp_path,
+        task_id="DV-1102",
+        platform_name="Ubuntu",
+        artifact_id="pending-after-upload",
+        artifact_digest="pending-after-upload",
+    )
+    artifacts_json = tmp_path / "artifacts.json"
+    artifacts_json.write_text(
+        json.dumps(
+            {
+                "artifacts": [
+                    {
+                        "id": 444,
+                        "name": "data-viewer-package-Ubuntu-999-1",
+                        "digest": "sha256:package",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    try:
+        hydrate_release_acceptance_packet(
+            packet_dir,
+            artifacts_json=artifacts_json,
+            platform_name="Ubuntu",
+            run_id="999",
+        )
+    except ValueError as exc:
+        assert "github_actions_run" in str(exc)
+    else:  # pragma: no cover - assertion guard
+        raise AssertionError("run mismatch should fail")
 
 
 def _sha256(path: Path) -> str:

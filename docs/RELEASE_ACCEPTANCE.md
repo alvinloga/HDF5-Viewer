@@ -88,7 +88,24 @@ The generated `DV-1101-checklist.md` or `DV-1102-checklist.md` is a starting poi
 
 The CI quality workflow also runs this helper before uploading package artifacts. CI-generated packets live under `artifacts/<platform>/package/acceptance/` inside the package upload and are also uploaded as a small `data-viewer-acceptance-<platform>-<run>-<attempt>` artifact so reviewers can retrieve the checklist and summary without first downloading the full packaged application archive. Those packets are intentionally pre-upload packets: GitHub artifact ID and artifact digest fields are `pending-after-upload` until the release reviewer fills them from the uploaded package artifact metadata.
 
-After retrieving the uploaded package artifact metadata from GitHub Actions, fill only those upload metadata fields with:
+After retrieving the uploaded package artifact metadata from GitHub Actions, fill only those upload metadata fields.
+The safer path is to save the GitHub Actions artifact API response and let the hydration helper select the package artifact for the recorded run and platform:
+
+```bash
+gh api repos/<owner>/<repo>/actions/runs/<run-id>/artifacts \
+  > .artifacts/release-acceptance/<run-id>/artifacts.json
+
+python tools/hydrate_release_acceptance_packet.py \
+  release-evidence/v1/windows \
+  --artifacts-json .artifacts/release-acceptance/<run-id>/artifacts.json \
+  --platform Windows \
+  --run-id <run-id> \
+  --run-attempt <attempt>
+```
+
+Use `--platform Ubuntu` or `--platform Linux` for DV-1102. The helper verifies that the packet's `acceptance-summary.json` records the same run and task before filling the package artifact ID/digest. It still does not mark functional rows, visual rows, evidence links, or sign-off fields as complete.
+
+If artifact metadata was copied manually, use the lower-level updater directly:
 
 ```bash
 python tools/update_release_acceptance_artifact_metadata.py \
@@ -98,7 +115,7 @@ python tools/update_release_acceptance_artifact_metadata.py \
   --artifact-digest sha256:<github-artifact-digest>
 ```
 
-Use `DV-1102` and the Linux evidence directory for the Linux packet. The tool only replaces the package artifact ID and GitHub artifact digest in `acceptance-summary.json` and the matching checklist. It does not mark functional rows, visual rows, evidence links, or sign-off fields as complete.
+Use `DV-1102` and the Linux evidence directory for the Linux packet. The lower-level updater only replaces the package artifact ID and GitHub artifact digest in `acceptance-summary.json` and the matching checklist. It does not mark functional rows, visual rows, evidence links, or sign-off fields as complete.
 
 After the reviewer completes and signs a packet, run the validator before linking it from `TEST_REPORT.md`:
 
