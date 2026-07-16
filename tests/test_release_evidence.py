@@ -34,9 +34,9 @@ def test_release_evidence_writes_checksums_sbom_notices_and_review(tmp_path: Pat
                 "app_name": "DataViewer",
                 "version": "0.1.0",
                 "platform": "windows-x86_64",
-                "artifact": str(archive),
-                "bundle_dir": str(tmp_path / "dist" / "DataViewer"),
-                "executable": str(tmp_path / "dist" / "DataViewer" / "DataViewer.exe"),
+                "artifact": archive.name,
+                "bundle_dir": "../dist/DataViewer",
+                "executable": "../dist/DataViewer/DataViewer.exe",
             }
         ),
         encoding="utf-8",
@@ -93,6 +93,43 @@ def test_release_evidence_detects_path_and_secret_leaks() -> None:
     kinds = {finding["kind"] for finding in findings}
     assert "absolute_windows_user_path" in kinds
     assert "github_token" in kinds
+
+
+def test_release_evidence_scans_uploaded_manifest_for_path_leaks(tmp_path: Path) -> None:
+    """Uploaded package attachments must fail closed if the manifest leaks local paths."""
+
+    evidence = _load_release_evidence_module()
+    package_dir = tmp_path / "package"
+    package_dir.mkdir()
+    archive = package_dir / "DataViewer-0.1.0-windows-x86_64.zip"
+    archive.write_bytes(b"data-viewer-archive")
+    (package_dir / "pyinstaller-manifest.json").write_text(
+        json.dumps(
+            {
+                "app_name": "DataViewer",
+                "version": "0.1.0",
+                "platform": "windows-x86_64",
+                "artifact": archive.name,
+                "bundle_dir": "C:\\Users\\Alvin\\Desktop\\HDF5-Viewer\\dist\\DataViewer",
+                "executable": "C:\\Users\\Alvin\\Desktop\\HDF5-Viewer\\dist\\DataViewer\\DataViewer.exe",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = evidence.generate_release_evidence(
+        package_dir=package_dir,
+        evidence_dir=tmp_path / "release-evidence",
+        project_root=PROJECT_ROOT,
+    )
+
+    assert result["release_status"] == "blocked"
+    assert result["leak_scan"]["status"] == "failed"
+    assert {
+        "file": "pyinstaller-manifest.json",
+        "kind": "absolute_windows_user_path",
+        "status": "detected",
+    } in result["leak_scan"]["findings"]
 
 
 def test_ci_generates_release_evidence_before_uploading_packages() -> None:

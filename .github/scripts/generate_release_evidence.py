@@ -52,7 +52,13 @@ def generate_release_evidence(
         build_license_notices(project_root=project_root),
     )
 
-    leak_findings = _scan_files_for_leaks([sbom_path, notices_path, *checksum_files])
+    upload_attachments = [
+        package_dir / "pyinstaller-manifest.json",
+        sbom_path,
+        notices_path,
+        *checksum_files,
+    ]
+    leak_findings = _scan_files_for_leaks([path for path in upload_attachments if path.exists()])
     findings = []
     pyqt_decision = pyqt_distribution_decision(project_root)
     if pyqt_decision != "satisfied":
@@ -157,6 +163,10 @@ def detect_sensitive_text(text: str) -> list[dict[str, str]]:
         (
             "absolute_windows_user_path",
             re.compile(r"(?i)\b[A-Z]:\\Users\\[^\\\r\n\t ]+\\"),
+        ),
+        (
+            "absolute_windows_user_path",
+            re.compile(r"(?i)\b[A-Z]:\\\\Users\\\\[^\\\r\n\t ]+\\\\"),
         ),
         (
             "absolute_posix_user_path",

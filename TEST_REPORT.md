@@ -3882,3 +3882,31 @@ GitHub Actions verification:
 Known gaps:
 
 - None for DV-1008. Public release remains gated by later release-candidate, manual Windows/Linux acceptance, and release tasks.
+
+## DV-1007 release evidence attachment leak hardening - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- `tools/build_pyinstaller_artifact.py` now writes upload-safe relative paths in `pyinstaller-manifest.json` instead of build-runner absolute archive/bundle/executable paths.
+- `.github/scripts/smoke_pyinstaller_artifact.py` resolves relative manifest paths against the manifest location, preserving CI executable and functional installed-artifact smoke behavior.
+- `.github/scripts/generate_release_evidence.py` now scans uploaded `pyinstaller-manifest.json`, SBOM, license notices, and checksum files for sensitive local path or credential patterns before writing `release-security-review.json`.
+- JSON-escaped Windows user paths are detected as `absolute_windows_user_path`, so a manifest containing `C:\\Users\\...` fails closed.
+- `tests/test_release_evidence.py` and `tests/test_packaging_artifacts.py` cover the new leak gate and upload-safe manifest contract.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial manifest leak regression | `venv\Scripts\python.exe -m pytest tests\test_release_evidence.py::test_release_evidence_scans_uploaded_manifest_for_path_leaks -q` | failed before implementation because the leak scan reported `passed` for a manifest containing `C:\\Users\\...` |
+| Initial upload-safe manifest regression | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_pyinstaller_manifest_uses_upload_safe_relative_paths -q` | failed after assertion tightening because generated manifests contained absolute drive paths |
+| Release/package related tests | `venv\Scripts\python.exe -m pytest tests\test_release_evidence.py tests\test_packaging_artifacts.py tests\test_installed_artifact_smoke.py tests\test_data_viewer_package.py -q` | 50 passed |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check .github\scripts\generate_release_evidence.py .github\scripts\smoke_pyinstaller_artifact.py tools\build_pyinstaller_artifact.py tests\test_release_evidence.py tests\test_packaging_artifacts.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy .github\scripts\generate_release_evidence.py .github\scripts\smoke_pyinstaller_artifact.py tools\build_pyinstaller_artifact.py` | passed; no issues in 3 source files |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_release_evidence.py tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 441 passed in 79.66s |
+
+Known gaps:
+
+- DV-1007 remains open. The repository still documents the PyQt6 binary distribution decision as unresolved, so public binary release and DV-1009 release-candidate completion remain blocked until the owner records a compatible distribution strategy.

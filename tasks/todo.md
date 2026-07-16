@@ -633,7 +633,7 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Depends: DV-1005.
 - Scope: CI generation/validation and release attachments.
 - Acceptance: direct/transitive licenses reviewed; PyQt decision satisfied; SBOM and SHA-256 per artifact; dependency scan findings resolved or documented with owner/expiry; no credentials/paths leaked.
-- Verify: regenerate and validate artifacts from CI outputs.
+- Verify: release-evidence generation, checksum/SBOM/notices, upload-safe relative PyInstaller manifests, and manifest/evidence leak scanning are covered locally; task remains open until the PyQt distribution-license decision is satisfied and final CI artifacts are regenerated/validated for that decision.
 
 ### [x] DV-1008 Remove eligible legacy runtime code and compatibility bridges
 

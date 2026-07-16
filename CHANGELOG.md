@@ -79,6 +79,7 @@ All notable Data Viewer changes are recorded here.
 - Added the initial Data Viewer PyInstaller packaging slice (DV-1005): Windows and Linux CI now build `DataViewer-<version>-<platform>` archives from a locked environment, run a packaged `--version` smoke test, upload package artifacts, and lint/type-check the packaging scripts.
 - Added the installed-artifact functional smoke slice (DV-1006): packaged Data Viewer executables now run a hidden CI workflow that opens representative HDF5, CSV, NIfTI, gzip, and workspace data, runs the Dataset Profile reference plugin, exports a plugin result, closes documents, captures an offscreen screenshot, and uploads smoke evidence before package artifacts are accepted.
 - Added the DV-1007 release-evidence automation slice: CI now generates SHA-256 checksums, `sbom.json`, `third-party-licenses.txt`, and `release-security-review.json` for each package artifact after installed functional smoke, while continuing to block public release until the PyQt distribution-license decision is satisfied.
+- Hardened the DV-1007 release-evidence leak gate: uploaded PyInstaller manifests now use relative paths, installed-artifact smoke resolves those paths for CI, and release evidence scans uploaded manifest/evidence attachments for local path or credential leaks.
 
 ### Fixed
 

@@ -9,7 +9,7 @@ from pathlib import Path
 import yaml
 
 from data_viewer import __version__
-from tools.build_pyinstaller_artifact import artifact_name, executable_name, platform_tag
+from tools.build_pyinstaller_artifact import artifact_name, executable_name, platform_tag, write_manifest
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +37,27 @@ def test_packaging_artifact_names_are_data_viewer_and_platform_specific() -> Non
     assert executable_name(platform="linux") == "DataViewer"
     assert platform_tag("win32") == "windows-x86_64"
     assert platform_tag("linux") == "linux-x86_64"
+
+
+def test_pyinstaller_manifest_uses_upload_safe_relative_paths(tmp_path: Path) -> None:
+    """Uploaded package manifests must not expose build-machine absolute paths."""
+
+    output_dir = tmp_path / "package"
+    archive = output_dir / "DataViewer-0.1.0-windows-x86_64.zip"
+    bundle_dir = tmp_path / "dist" / "DataViewer"
+    executable = bundle_dir / executable_name()
+    bundle_dir.mkdir(parents=True)
+    archive.parent.mkdir(parents=True)
+    archive.write_bytes(b"archive")
+    executable.write_text("binary", encoding="utf-8")
+
+    manifest_path = write_manifest(output_dir=output_dir, archive=archive, bundle_dir=bundle_dir)
+    text = manifest_path.read_text(encoding="utf-8")
+
+    assert str(tmp_path) not in text
+    assert ":\\" not in text
+    assert "DataViewer-0.1.0-windows-x86_64.zip" in text
+    assert "DataViewer.exe" in text or '"executable": "DataViewer/DataViewer"' in text
 
 
 def test_ci_builds_and_uploads_data_viewer_pyinstaller_artifacts() -> None:

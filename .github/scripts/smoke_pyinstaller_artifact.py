@@ -17,7 +17,7 @@ def main() -> int:
     args = parser.parse_args()
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
-    executable = Path(manifest["executable"])
+    executable = _resolve_manifest_path(args.manifest, manifest["executable"])
     if not executable.exists():
         raise FileNotFoundError(executable)
     completed = _run_executable(executable, ["--version"], timeout=30)
@@ -49,6 +49,13 @@ def main() -> int:
             raise FileNotFoundError(screenshot)
         print(completed.stdout.strip())
     return 0
+
+
+def _resolve_manifest_path(manifest_path: Path, value: str) -> Path:
+    path = Path(value)
+    if path.is_absolute():
+        return path
+    return (manifest_path.parent / path).resolve()
 
 
 def _run_executable(executable: Path, args: list[str], *, timeout: int) -> subprocess.CompletedProcess[str]:

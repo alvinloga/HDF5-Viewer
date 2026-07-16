@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -108,13 +109,18 @@ def write_manifest(
 ) -> Path:
     """Write a JSON manifest consumed by CI smoke steps."""
 
+    output_dir = output_dir.resolve()
+
+    def upload_safe_path(path: Path) -> str:
+        return Path(os.path.relpath(path.resolve(), output_dir)).as_posix()
+
     manifest = {
         "app_name": APP_NAME,
         "version": version,
         "platform": platform_tag(),
-        "artifact": str(archive),
-        "bundle_dir": str(bundle_dir),
-        "executable": str(bundle_dir / executable_name()),
+        "artifact": upload_safe_path(archive),
+        "bundle_dir": upload_safe_path(bundle_dir),
+        "executable": upload_safe_path(bundle_dir / executable_name()),
     }
     path = output_dir / "pyinstaller-manifest.json"
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
