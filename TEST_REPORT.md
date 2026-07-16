@@ -4100,3 +4100,21 @@ Local Windows verification in the project `.venv` locked environment:
 Known gaps:
 
 - DV-1101 and DV-1102 remain open until Windows and Linux package artifacts are fully downloaded/tested, the functional and visual matrices are executed, final artifact metadata is filled in, and signed platform checklists are linked from this report.
+
+GitHub Actions verification:
+
+| Check | Evidence | Observed result |
+|---|---|---|
+| Windows/Linux CI with separate lightweight acceptance artifacts | run `29486945685` on branch `codex/data-viewer-foundation`, revision `fac3b02d58eb7c8cf29998ca8ada9c197d4b1544` | workflow conclusion `success`; Windows quality and Ubuntu quality jobs passed |
+| Windows quality job | job `87583577265` | full gate passed, including `Prepare release acceptance packet`, `Upload Data Viewer package artifact`, and `Upload release acceptance packet artifact` |
+| Ubuntu quality job | job `87583577243` | full gate passed, including `Prepare release acceptance packet`, `Upload Data Viewer package artifact`, and `Upload release acceptance packet artifact` |
+| Windows acceptance artifact | `data-viewer-acceptance-Windows-29486945685-1` | uploaded; artifact id `8370880432`; size `2384`; digest `sha256:92bc1ecab7b942e2d110dbe834c409f0b4f9029dcf1d4fbdef2bdca6793ff6c0`; downloaded locally with `gh run download 29486945685 -n data-viewer-acceptance-Windows-29486945685-1 -D .artifacts\release-acceptance\29486945685\windows\acceptance` |
+| Ubuntu acceptance artifact | `data-viewer-acceptance-Ubuntu-29486945685-1` | uploaded; artifact id `8370860669`; size `2458`; digest `sha256:a31906ffc8d539d008152d922c4ea8180c4cfda4d3ce88e37a916d2c444538ce`; downloaded locally with `gh run download 29486945685 -n data-viewer-acceptance-Ubuntu-29486945685-1 -D .artifacts\release-acceptance\29486945685\ubuntu\acceptance` |
+| Windows package artifact | `data-viewer-package-Windows-29486945685-1` | uploaded; artifact id `8370879948`; size `132178873`; digest `sha256:38681f33364a60749e3ce078d0964c72fb1f31e25db5925a21a113baaa6d5fe5`; not expired |
+| Ubuntu package artifact | `data-viewer-package-Ubuntu-29486945685-1` | uploaded; artifact id `8370860438`; size `173533355`; digest `sha256:efd58777e919e96364b7aef6ff54a415962169e7fa46d60c9d8c0042d705df07`; not expired |
+
+Downloaded lightweight packet verification:
+
+- Windows packet contained `DV-1101-checklist.md` and `acceptance-summary.json`; the summary recorded task `DV-1101`, archive `DataViewer-1.0.0.dev0-windows-x86_64.zip`, archive SHA-256 `e950cd5c12f5eced7bf65250e10e85b8cf307b14eaf37a427d2b07001e1300d3`, no security blockers, `release_security_review.release_status` `ready`, and all functional/manual rows as `pending-manual`.
+- Ubuntu packet contained `DV-1102-checklist.md` and `acceptance-summary.json`; the summary recorded task `DV-1102`, archive `DataViewer-1.0.0.dev0-linux-x86_64.tar.gz`, archive SHA-256 `f661e08768fb17a1d2d1c7a74c2ce510871c5774b039128ade29fbe6f02f6054`, no security blockers, `release_security_review.release_status` `ready`, and all functional/manual rows as `pending-manual`.
+- Both packets intentionally retain `pending-after-upload` for the package artifact ID/digest inside the generated checklist/summary because those values must be filled by the release reviewer from the final uploaded package artifact metadata.
