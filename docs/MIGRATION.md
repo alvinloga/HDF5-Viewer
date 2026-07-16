@@ -13,7 +13,7 @@ Current source areas:
 | Legacy area | Role | Migration disposition |
 |---|---|---|
 | `main.py` | historical entry point and legacy app bootstrap | removed in DV-1008; target launch is `python -m data_viewer` |
-| `core/` | HDF5-centric loading/models/cache/event bus/slicer/async loader | cache, event-bus, string-slicer, and async-loader modules removed in DV-1008; remaining behavior replaced through DataSource/domain contracts one group at a time |
+| `core/` | HDF5-centric loading/models/cache/event bus/slicer/async loader | removed in DV-1008 after target DataSource API, source registry, HDF5 adapter/session, task lifecycle, cache, selection, and domain contracts replaced it |
 | `gui/` | shell, tabs, trees, views | removed in DV-1008 after target shell, theme, view, command, state, navigation, accessibility, and document/editing parity coverage |
 | `plugins/` | legacy plugin base/API and GUI-coupled built-in analyses/plots | removed in DV-1008 after Plugin API v1 parity coverage |
 | `services/` | legacy export/search services | removed in DV-1008 after target export queue/exporting/navigation coverage |

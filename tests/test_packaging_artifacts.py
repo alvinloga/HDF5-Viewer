@@ -568,3 +568,22 @@ def test_legacy_gui_package_is_removed() -> None:
         "tests/test_gui_state_components.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_core_package_is_removed() -> None:
+    """DV-1008 removes the obsolete legacy core package."""
+
+    assert not (PROJECT_ROOT / "core").exists()
+
+    for retained_target_path in (
+        "data_viewer/sources/api.py",
+        "data_viewer/sources/registry.py",
+        "data_viewer/sources/hdf5/adapter.py",
+        "data_viewer/sources/hdf5/session.py",
+        "data_viewer/domain/resources.py",
+        "data_viewer/domain/metadata.py",
+        "tests/test_source_registry.py",
+        "tests/test_hdf5_adapter.py",
+        "tests/test_domain_types.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()

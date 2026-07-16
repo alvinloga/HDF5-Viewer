@@ -3822,3 +3822,31 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes the legacy `gui/` package. Remaining legacy `core/` modules still exist as separate migration/removal groups.
+
+## DV-1008 legacy core package removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed the remaining legacy `core/__init__.py`, `core/datasource.py`, `core/h5_source.py`, `core/registry.py`, and generated `core/__pycache__` residue so the obsolete root `core/` package no longer exists in the working tree.
+- Added `tests/test_packaging_artifacts.py::test_legacy_core_package_is_removed`, which asserts the old root package stays absent and retained target DataSource API, source registry, HDF5 adapter/session, domain, and metadata coverage remains present.
+- Target source/domain/plugin ownership now lives under `data_viewer/sources`, `data_viewer/domain`, and `data_viewer/plugins` instead of the legacy `DataSource`, `H5Source`, `DataSourceRegistry`, and plugin manager compatibility surface.
+- Updated migration inventory and changelog wording so `core/` is recorded as removed in DV-1008 rather than partially retained.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy core package removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_core_package_is_removed -q` | failed as expected before implementation because `core/` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_core_package_is_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_source_registry.py tests\test_hdf5_adapter.py tests\test_domain_types.py -q` | 40 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_source_registry.py tests\test_hdf5_adapter.py tests\test_domain_types.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 439 passed |
+
+Known gaps:
+
+- This removes the last legacy runtime root package known to DV-1008. DV-1008 still requires final whole-repository absence checks, task-status updates, and Windows/Linux CI evidence on the final removal revision before it can be marked complete.

@@ -92,6 +92,7 @@ All notable Data Viewer changes are recorded here.
 - Removed legacy `core/event_bus.py`; target command, task, diagnostic, and document lifecycle state now use explicit typed services instead of a process-global event bus.
 - Removed legacy `core/slicer.py`; target reads and views now rely on normalized `SelectionSpec`/`NormalizedSelection` values and explicit slice controls instead of a string-based compatibility parser.
 - Removed legacy `core/async_loader.py`; target background work now relies on cooperative task records, cancellation tokens, and explicit document/request lifecycle handling instead of a synchronous compatibility loader.
+- Removed the remaining legacy `core/` package, including the old `DataSource`, `H5Source`, `DataSourceRegistry`, and plugin manager compatibility surface; target source/domain/plugin ownership now lives under `data_viewer/`.
 - Removed the legacy `gui/sidebar/` package; target navigation, search, shell, and Plugin API registries now own those workbench surfaces.
 - Removed legacy `gui/secondary_panel.py`; target shell, navigation/search services, and Plugin API v1 own the former Search/Plugins side-panel behavior.
 - Removed legacy `gui/main_window.py`; the target Data Viewer Qt bootstrap and shell now own the application window, commands, open flow, workspace regions, and packaged runtime surface.
