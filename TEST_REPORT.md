@@ -4037,14 +4037,17 @@ Implementation evidence:
 - The tool verifies that the package archive is present, the GitHub artifact digest is recorded, the archive SHA-256 matches the bundled checksum file, `pyinstaller-manifest.json`, `sbom.json`, `third-party-licenses.txt`, and `release-security-review.json` are present, and the release security review is ready with a passed leak scan.
 - The generated checklist intentionally leaves functional and visual rows as `pending-manual`; it cannot create a human signature or claim DV-1101/DV-1102 completion.
 - Updated `docs/RELEASE_ACCEPTANCE.md` with the helper command so future release agents can prepare consistent evidence packets after downloading artifacts.
+- CI now runs the helper after release evidence generation and before package upload, writing pre-upload acceptance evidence into `artifacts/<platform>/package/acceptance/` so the package artifact carries `DV-1101-checklist.md` or `DV-1102-checklist.md` plus `acceptance-summary.json`.
+- Because GitHub artifact IDs and artifact-level digests do not exist until after upload, CI-generated packets mark those fields as `pending-after-upload`; a human release reviewer must fill final artifact ID/digest during DV-1101/DV-1102 sign-off.
 
 Local Windows verification in the project `.venv` locked environment:
 
 | Check | Command | Observed result |
 |---|---|---|
-| Acceptance packet and runbook contracts | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 5 passed in 1.37s |
-| Scoped lint | `.venv\Scripts\python.exe -m ruff check tools\prepare_release_acceptance_packet.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py` | passed |
-| Scoped compile | `.venv\Scripts\python.exe -m compileall -q tools\prepare_release_acceptance_packet.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py` | passed |
+| Acceptance packet, runbook, and CI workflow contracts | `.venv\Scripts\python.exe -m pytest tests\test_ci_reporting.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 10 passed in 3.77s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tools\prepare_release_acceptance_packet.py tests\test_release_acceptance_packet.py tests\test_ci_reporting.py tests\test_release_acceptance_docs.py` | passed |
+| Scoped type check | `.venv\Scripts\python.exe -m mypy tools\prepare_release_acceptance_packet.py` | passed; no issues in 1 source file |
+| Scoped compile | `.venv\Scripts\python.exe -m compileall -q tools\prepare_release_acceptance_packet.py tests\test_release_acceptance_packet.py tests\test_ci_reporting.py tests\test_release_acceptance_docs.py` | passed |
 
 Latest candidate artifact metadata checked through GitHub API:
 

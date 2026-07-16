@@ -80,5 +80,8 @@ def test_workflows_upload_quality_evidence_and_release_requires_quality() -> Non
     assert "tests/test_selection_payload_types.py" in quality_workflow
     assert "tests/test_source_registry.py" in quality_workflow
     assert "tests/test_task_lifecycle.py" in quality_workflow
+    assert "Prepare release acceptance packet" in quality_workflow
+    assert "tools/prepare_release_acceptance_packet.py" in quality_workflow
+    assert "artifacts/${{ matrix.name }}/package/acceptance/**" in quality_workflow
     assert "uses: ./.github/workflows/ci.yml" in release_workflow
     assert "needs: quality" in release_workflow

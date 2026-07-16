@@ -123,6 +123,15 @@ def test_prepare_release_acceptance_packet_reports_security_blockers(tmp_path: P
     }
 
 
+def test_ci_generates_preupload_acceptance_packet_before_package_upload() -> None:
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert "Prepare release acceptance packet" in workflow
+    assert "--artifact-id \"pending-after-upload\"" in workflow
+    assert "--artifact-digest \"pending-after-upload\"" in workflow
+    assert "artifacts/${{ matrix.name }}/package/acceptance/**" in workflow
+
+
 def _sha256(path: Path) -> str:
     import hashlib
 

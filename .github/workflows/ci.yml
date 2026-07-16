@@ -104,6 +104,7 @@ jobs:
           .github/scripts/generate_release_evidence.py
           .github/scripts/smoke_pyinstaller_artifact.py
           tools/build_pyinstaller_artifact.py
+          tools/prepare_release_acceptance_packet.py
 
       - name: Compile Data Viewer target paths
         run: >-
@@ -144,6 +145,20 @@ jobs:
           --package-dir artifacts/${{ matrix.name }}/package
           --evidence-dir ci-reports/${{ matrix.name }}/release-evidence
 
+      - name: Prepare release acceptance packet
+        run: >-
+          uv run --locked python tools/prepare_release_acceptance_packet.py
+          --platform "${{ matrix.name }}"
+          --artifact-dir artifacts/${{ matrix.name }}/package
+          --output-dir artifacts/${{ matrix.name }}/package/acceptance
+          --candidate-commit "${{ github.sha }}"
+          --run-id "${{ github.run_id }}"
+          --job-id "github-actions-quality-${{ matrix.name }}"
+          --artifact-name "data-viewer-package-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}"
+          --artifact-id "pending-after-upload"
+          --artifact-digest "pending-after-upload"
+          --version-output "verified by CI package smoke"
+
       - name: Upload quality evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -167,6 +182,7 @@ jobs:
             artifacts/${{ matrix.name }}/package/sbom.json
             artifacts/${{ matrix.name }}/package/third-party-licenses.txt
             artifacts/${{ matrix.name }}/package/release-security-review.json
+            artifacts/${{ matrix.name }}/package/acceptance/**
           if-no-files-found: error
           retention-days: 14
 
