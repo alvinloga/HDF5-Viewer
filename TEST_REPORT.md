@@ -3910,3 +3910,19 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - DV-1007 remains open. The repository still documents the PyQt6 binary distribution decision as unresolved, so public binary release and DV-1009 release-candidate completion remain blocked until the owner records a compatible distribution strategy.
+
+GitHub Actions verification after the Linux manifest assertion fix:
+
+| Check | Evidence | Observed result |
+|---|---|---|
+| Final Windows/Linux CI for this slice | run `29470452614` on branch `codex/data-viewer-foundation`, revision `112e3b5fe92d4c832a488ac5630ba320ed30ec73` | workflow conclusion `success`; Windows quality and Ubuntu quality jobs passed |
+| Ubuntu quality job | job `87532451322` | lock install, direct import smoke, lint, type check, compile, collection, full offscreen regression, wheel/sdist, PyInstaller package build, executable smoke, installed-artifact functional smoke, release evidence generation, quality upload, and package upload all passed |
+| Windows quality job | job `87532451358` | same gate passed |
+| Ubuntu package artifact | `data-viewer-package-Ubuntu-29470452614-1` | uploaded; artifact id `8364638629`; size `218901210`; not expired |
+| Windows package artifact | `data-viewer-package-Windows-29470452614-1` | uploaded; artifact id `8364638536`; size `178386513`; not expired |
+| Ubuntu quality artifact | `data-viewer-quality-Ubuntu-29470452614-1` | uploaded; artifact id `8364636782`; size `219605546`; not expired |
+| Windows quality artifact | `data-viewer-quality-Windows-29470452614-1` | uploaded; artifact id `8364637274`; size `179043851`; not expired |
+
+Known remaining blocker:
+
+- DV-1007 is still not complete because its acceptance criteria explicitly require the PyQt distribution-license decision to be satisfied. The current CI evidence proves the automated generation, smoke, leak-scan, and attachment path-hardening portions only.
