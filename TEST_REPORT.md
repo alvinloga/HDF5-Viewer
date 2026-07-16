@@ -4026,3 +4026,33 @@ Local Windows verification in the project `.venv` locked environment:
 Known gaps:
 
 - DV-1101 and DV-1102 remain open. They require executed, signed platform evidence packets with screenshots, logs, artifact checksums/digests, and no unresolved integrity/security blocker.
+
+## P11 acceptance packet tooling - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Added `tools/prepare_release_acceptance_packet.py` to generate the machine-checkable portion of a DV-1101/DV-1102 evidence packet from a downloaded package artifact.
+- The tool verifies that the package archive is present, the GitHub artifact digest is recorded, the archive SHA-256 matches the bundled checksum file, `pyinstaller-manifest.json`, `sbom.json`, `third-party-licenses.txt`, and `release-security-review.json` are present, and the release security review is ready with a passed leak scan.
+- The generated checklist intentionally leaves functional and visual rows as `pending-manual`; it cannot create a human signature or claim DV-1101/DV-1102 completion.
+- Updated `docs/RELEASE_ACCEPTANCE.md` with the helper command so future release agents can prepare consistent evidence packets after downloading artifacts.
+
+Local Windows verification in the project `.venv` locked environment:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Acceptance packet and runbook contracts | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 5 passed in 1.37s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tools\prepare_release_acceptance_packet.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py` | passed |
+| Scoped compile | `.venv\Scripts\python.exe -m compileall -q tools\prepare_release_acceptance_packet.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py` | passed |
+
+Latest candidate artifact metadata checked through GitHub API:
+
+| Platform | Package artifact | Artifact id | GitHub artifact digest | Run / commit |
+|---|---|---:|---|---|
+| Windows | `data-viewer-package-Windows-29483165512-1` | `8369401779` | `sha256:d14b13c86010676a774e834b09b01584f4b4d1643a93ab0f81f7896a7b0f8aad` | run `29483165512`, commit `90373421bafab642543a94b67f6868223db3a19e` |
+| Ubuntu | `data-viewer-package-Ubuntu-29483165512-1` | `8369390168` | `sha256:3647a49811401da533d9102e3de1896d1cb61e913ea175dddc3af8df7c50a1e4` | run `29483165512`, commit `90373421bafab642543a94b67f6868223db3a19e` |
+
+Known gaps:
+
+- Local `gh run download 29483165512 -n data-viewer-package-Windows-29483165512-1 -D .artifacts\release-acceptance\29483165512\windows\package` was attempted with 120s and then 300s timeouts, but no complete artifact directory was produced before timeout. DV-1101/DV-1102 remain open until package artifacts are downloaded, evidence packets are generated, manual functional/visual matrices are executed, and signed checklists are linked from this report.

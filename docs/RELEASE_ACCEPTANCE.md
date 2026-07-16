@@ -68,6 +68,24 @@ Before running a platform checklist:
    - `release-security-review.json`.
 8. Review `release-security-review.json`; any leak/security/dependency failure blocks acceptance.
 
+The helper below can prepare the machine-checkable part of the evidence packet from a downloaded package artifact. It does not complete manual acceptance and leaves functional/visual rows as `pending-manual`.
+
+```bash
+python tools/prepare_release_acceptance_packet.py \
+  --platform Windows \
+  --artifact-dir .artifacts/release-acceptance/<run-id>/windows/package \
+  --output-dir .artifacts/release-acceptance/<run-id>/windows/evidence \
+  --candidate-commit <commit> \
+  --run-id <run-id> \
+  --job-id <job-id> \
+  --artifact-name <artifact-name> \
+  --artifact-id <artifact-id> \
+  --artifact-digest sha256:<github-artifact-digest> \
+  --version-output "Data Viewer <version>"
+```
+
+The generated `DV-1101-checklist.md` or `DV-1102-checklist.md` is a starting point for the human reviewer, not a signature.
+
 ## 4. Functional acceptance matrix
 
 Run this matrix on Windows for DV-1101 and on Linux for DV-1102. Use representative small fixtures for normal flows and generated stress fixtures where the item calls for large/responsive behavior.

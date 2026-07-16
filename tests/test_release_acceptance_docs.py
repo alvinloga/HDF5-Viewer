@@ -19,6 +19,7 @@ def test_release_acceptance_runbook_exists_and_names_p11_tasks() -> None:
     assert "supported Linux x86-64" in text
     assert "packaged artifacts" in text
     assert "Source-tree checks may support diagnosis" in text
+    assert "prepare_release_acceptance_packet.py" in text
 
 
 def test_release_acceptance_runbook_covers_required_functional_rows() -> None:
