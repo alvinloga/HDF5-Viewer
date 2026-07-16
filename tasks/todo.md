@@ -658,12 +658,14 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Read: Product success criteria, UI/UX §13, Testing §14, Release.
 - Acceptance: every format/gzip, edit/read-only/export, plugins, compare, workspace, error/cancel/recovery, English/Chinese, light/dark, 100/150/200% DPI, minimum/typical/large layout, keyboard/accessibility, packaged smoke pass; evidence identifies Windows version/hardware/artifact checksum.
 - Verify: signed checklist, screenshots, logs, issue links; no unresolved integrity/security blocker.
+- Prep: `docs/RELEASE_ACCEPTANCE.md` now defines the shared manual acceptance runbook and DV-1101 checklist template. This does not complete DV-1101 until a signed Windows evidence packet is recorded in `TEST_REPORT.md`.
 
 ### [ ] DV-1102 Complete Linux manual acceptance matrix
 
 - Depends: DV-1009.
 - Acceptance: same functional matrix as Windows at Linux 100/200% scaling on named supported distribution/display stack; documented platform differences are intentional and accepted.
 - Verify: signed checklist, screenshots, logs, artifact checksum; no unresolved integrity/security blocker.
+- Prep: `docs/RELEASE_ACCEPTANCE.md` now defines the shared manual acceptance runbook and DV-1102 checklist template. This does not complete DV-1102 until a signed Linux evidence packet is recorded in `TEST_REPORT.md`.
 
 ### [ ] DV-1103 Produce requirement traceability and documentation truth audit
 

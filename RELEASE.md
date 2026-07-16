@@ -54,6 +54,8 @@ Release evidence is generated only after the packaged functional smoke succeeds.
 8. Publish only when every required job is green; retain artifacts/logs.
 9. Perform post-release download/launch/hash smoke and document rollback instructions.
 
+The manual Windows/Linux acceptance procedure and sign-off template are defined in `docs/RELEASE_ACCEPTANCE.md`. DV-1101 and DV-1102 cannot be marked complete from CI evidence alone.
+
 ## Hotfix rule
 
 A hotfix may narrow only unaffected expensive manual suites when the owner documents evidence, risk, and follow-up. It may never skip both-platform launch, changed-behavior tests, data-integrity tests, security/license checks, or artifact verification.

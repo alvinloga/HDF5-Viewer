@@ -13,6 +13,7 @@
 | 5 | behavior specs under `docs/` | Format, editing, UI, testing, dependencies, performance budgets |
 | 5 | `docs/CONFIGURATION.md` | Platform config schema, locations, and legacy migration rules |
 | 5 | `docs/FORMAT_INVENTORY.md` | Current format inventory and checkpoint evidence |
+| 5 | `docs/RELEASE_ACCEPTANCE.md` | v1 manual Windows/Linux acceptance runbook and sign-off template |
 | 6 | `tasks/plan.md` | Implementation ordering and checkpoints |
 | 7 | `tasks/todo.md` | Executable work items |
 
@@ -29,6 +30,7 @@
 | UI | UI_UX_SPEC, ARCHITECTURE, ADR-009 |
 | Performance/hardening | TESTING, PERFORMANCE_BUDGETS, ARCHITECTURE |
 | Packaging/CI | TESTING, DEPENDENCIES, ADR-008 |
+| Release acceptance | RELEASE, RELEASE_ACCEPTANCE, PRODUCT_SPEC, TESTING, UI_UX_SPEC, ADR-008, ADR-010 |
 
 ## Historical documents
 
