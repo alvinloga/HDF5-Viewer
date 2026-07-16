@@ -4288,3 +4288,52 @@ Local Windows verification in the project `.venv` locked environment:
 Known gaps:
 
 - DV-1103 remains open. The template can be filled only after DV-1101 and DV-1102 are complete, signed, linked from `TEST_REPORT.md`, and pass `tools/validate_release_acceptance_packet.py`.
+
+## P11 latest package artifact evidence refresh - 2026-07-16
+
+Revision: `5778f5ff21e13517fb68cfa524abdc106fd42b00`.
+
+GitHub Actions run:
+
+- Run: `29502366268`
+- URL: `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29502366268`
+- Result: success
+- Commit: `5778f5ff21e13517fb68cfa524abdc106fd42b00`
+
+Windows and Ubuntu quality/package jobs for this revision passed locked install,
+direct dependency smoke, lint, type check, compile, test collection, full
+offscreen regression, wheel/sdist build, PyInstaller package build, executable
+smoke, installed-artifact functional smoke, release evidence generation,
+acceptance packet generation, package upload, and lightweight acceptance
+artifact upload.
+
+Uploaded package and acceptance artifacts:
+
+| Platform | Artifact | GitHub artifact ID | GitHub artifact digest | Archive SHA-256 from acceptance summary |
+|---|---|---:|---|---|
+| Windows | `data-viewer-package-Windows-29502366268-1` | `8377109780` | `sha256:e325c1f9f694c558a9e45565f66eb3061c4d540fcc55a69882d3ef39457727d8` | `88076287a2c3f0337a7006dba7dd18255a7438c1d7565a3d273b6534ee94206e` |
+| Windows | `data-viewer-acceptance-Windows-29502366268-1` | `8377110082` | `sha256:401391835a89b1ed381a02476fed19ee54d9e5226cb07526d4d8c63ff637a322` | n/a |
+| Ubuntu | `data-viewer-package-Ubuntu-29502366268-1` | `8377090309` | `sha256:c9c13426cd6e57977c76bd54d75b5054815a2e0c8994837518c6329228191052` | `a9ceee9c3164df06b60e0588be48c185e112ca5eb4b15575e03218e16dafd376` |
+| Ubuntu | `data-viewer-acceptance-Ubuntu-29502366268-1` | `8377090606` | `sha256:d6f65a1e5810c2f32d9239ce0fc77c0a215661242ace7e827f0f9dcd6e15896b` | n/a |
+
+Local Windows metadata checks:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Latest run status | `gh run list --branch codex/data-viewer-foundation --limit 1 --json databaseId,status,conclusion,headSha,displayTitle,url,createdAt` | run `29502366268` completed with `success` |
+| Artifact metadata | `gh api repos/alvinloga/HDF5-Viewer/actions/runs/29502366268/artifacts` | returned six unexpired artifacts: Windows/Ubuntu quality, package, and acceptance uploads |
+| Windows lightweight acceptance packet | `gh run download 29502366268 --name data-viewer-acceptance-Windows-29502366268-1 --dir .artifacts\release-acceptance\29502366268\windows\acceptance-upload` | downloaded `acceptance-summary.json` and `DV-1101-checklist.md`; summary blockers `[]`, release security review `ready`, leak scan `passed`, manual rows `pending-manual`, package artifact ID/digest still `pending-after-upload` by design |
+| Ubuntu lightweight acceptance packet | `gh run download 29502366268 --name data-viewer-acceptance-Ubuntu-29502366268-1 --dir .artifacts\release-acceptance\29502366268\ubuntu\acceptance-upload` | downloaded `acceptance-summary.json` and `DV-1102-checklist.md`; summary blockers `[]`, release security review `ready`, leak scan `passed`, manual rows `pending-manual`, package artifact ID/digest still `pending-after-upload` by design |
+| Large package artifact download attempt | `gh run download 29502366268 --name data-viewer-package-Windows-29502366268-1 --dir .artifacts\release-acceptance\29502366268\windows\package` and Ubuntu equivalent | both large downloads timed out locally after 600 seconds or earlier; package artifacts remain available in GitHub Actions with the IDs and digests above |
+
+Known gaps:
+
+- This refresh records the latest green packaged CI evidence and artifact
+  identity only. It does not complete DV-1101 or DV-1102.
+- The lightweight acceptance artifacts are CI-generated pre-upload packets; a
+  human reviewer must fill the uploaded package artifact ID/digest fields from
+  the artifact table above, execute the packaged application on the native
+  platform/display stack, replace `pending-manual` rows with real results,
+  attach screenshots/logs/issues, and sign the packet.
+- DV-1103 and DV-1104 remain blocked on signed Windows and Linux acceptance
+  packets that pass `tools/validate_release_acceptance_packet.py`.
