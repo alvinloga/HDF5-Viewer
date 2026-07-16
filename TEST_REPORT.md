@@ -3765,3 +3765,32 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the legacy status, bottom-panel, and command-palette modules from `gui/`. Remaining legacy `gui/` editor component groups and coupled `core/` modules still exist as separate migration/removal groups.
+
+## DV-1008 legacy GUI editor implementation removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed legacy `gui/editor/attr_panel.py`, `data_editor.py`, `data_table.py`, `file_panel.py`, and `tab_manager.py`, obsolete editor implementation modules that were no longer referenced by current runtime, tests, build, or packaging paths.
+- Added `tests/test_packaging_artifacts.py::test_legacy_gui_editor_modules_are_removed`, which asserts the old modules stay absent and retained target base views, shell, document controller, and editing-session coverage remains present.
+- Target ownership remains under `data_viewer/gui/views.py`, `data_viewer/gui/shell.py`, `data_viewer/app/documents.py`, and `data_viewer/editing/session.py` instead of legacy Qt editor widgets coupled to removed core event-bus/slicer APIs.
+- Updated migration inventory and changelog wording so `gui/` remains a current legacy migration input while these editor implementation modules are recorded as removed.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy editor module removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_editor_modules_are_removed -q` | failed as expected before implementation because `gui/editor/attr_panel.py` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_editor_modules_are_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_gui_base_views.py tests\test_gui_shell.py tests\test_document_controller.py tests\test_editing_session.py -q` | 41 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_gui_base_views.py tests\test_gui_shell.py tests\test_document_controller.py tests\test_editing_session.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite first attempt | `venv\Scripts\python.exe -m pytest -q` with a 120 second tool timeout | timed out after 120 seconds while still running; no pytest failure was reported before timeout |
+| Full local suite rerun | `venv\Scripts\python.exe -m pytest -q` with a 240 second tool timeout | 437 passed |
+
+Known gaps:
+
+- This removes only the legacy editor implementation modules from `gui/`. Empty legacy package shells, legacy `gui/theme.py`, and remaining coupled `core/` modules still exist as separate migration/removal groups.

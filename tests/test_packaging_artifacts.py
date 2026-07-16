@@ -525,3 +525,28 @@ def test_legacy_gui_status_bottom_command_modules_are_removed() -> None:
         "tests/test_gui_i18n_accessibility.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_gui_editor_modules_are_removed() -> None:
+    """DV-1008 removes obsolete legacy editor implementation modules."""
+
+    for legacy_module in (
+        "gui/editor/attr_panel.py",
+        "gui/editor/data_editor.py",
+        "gui/editor/data_table.py",
+        "gui/editor/file_panel.py",
+        "gui/editor/tab_manager.py",
+    ):
+        assert not (PROJECT_ROOT / legacy_module).exists()
+
+    for retained_target_path in (
+        "data_viewer/gui/views.py",
+        "data_viewer/gui/shell.py",
+        "data_viewer/app/documents.py",
+        "data_viewer/editing/session.py",
+        "tests/test_gui_base_views.py",
+        "tests/test_gui_shell.py",
+        "tests/test_document_controller.py",
+        "tests/test_editing_session.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()
