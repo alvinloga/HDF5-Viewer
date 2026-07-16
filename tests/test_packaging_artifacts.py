@@ -550,3 +550,21 @@ def test_legacy_gui_editor_modules_are_removed() -> None:
         "tests/test_editing_session.py",
     ):
         assert (PROJECT_ROOT / retained_target_path).exists()
+
+
+def test_legacy_gui_package_is_removed() -> None:
+    """DV-1008 removes the obsolete legacy GUI package shell and theme bridge."""
+
+    assert not (PROJECT_ROOT / "gui").exists()
+
+    for retained_target_path in (
+        "data_viewer/gui/theme.py",
+        "data_viewer/gui/shell.py",
+        "data_viewer/gui/views.py",
+        "data_viewer/gui/state_components.py",
+        "tests/test_gui_theme.py",
+        "tests/test_gui_shell.py",
+        "tests/test_gui_base_views.py",
+        "tests/test_gui_state_components.py",
+    ):
+        assert (PROJECT_ROOT / retained_target_path).exists()

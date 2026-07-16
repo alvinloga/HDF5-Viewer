@@ -3794,3 +3794,31 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes only the legacy editor implementation modules from `gui/`. Empty legacy package shells, legacy `gui/theme.py`, and remaining coupled `core/` modules still exist as separate migration/removal groups.
+
+## DV-1008 legacy GUI package shell removal slice - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Removed the remaining legacy `gui/__init__.py`, `gui/editor/__init__.py`, `gui/theme.py`, and generated `gui/__pycache__` residue so the obsolete root `gui/` package no longer exists in the working tree.
+- Added `tests/test_packaging_artifacts.py::test_legacy_gui_package_is_removed`, which asserts the old root package stays absent and retained target GUI theme, shell, views, and state-component coverage remains present.
+- Target GUI ownership now lives only under `data_viewer/gui`, including semantic theme tokens, target shell regions, base views, and standard state components.
+- Updated migration inventory and changelog wording so `gui/` is recorded as removed in DV-1008 rather than partially retained.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Initial legacy GUI package removal regression test | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_package_is_removed -q` | failed as expected before implementation because `gui/` still existed |
+| Targeted removal guard | `venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py::test_legacy_gui_package_is_removed -q` | 1 passed |
+| Targeted retained target coverage | `venv\Scripts\python.exe -m pytest tests\test_gui_theme.py tests\test_gui_shell.py tests\test_gui_base_views.py tests\test_gui_state_components.py -q` | 37 passed |
+| Active legacy import audit | `rg -n "from (core|gui|plugins|services|utils)|import (core|gui|plugins|services|utils)" tests tools data_viewer packaging .github` | only intentional guard strings remained in `tests/test_packaging_artifacts.py` |
+| Scoped lint | `venv\Scripts\python.exe -m ruff check tests\test_packaging_artifacts.py tests\test_gui_theme.py tests\test_gui_shell.py tests\test_gui_base_views.py tests\test_gui_state_components.py` | passed |
+| Scoped type check | `venv\Scripts\python.exe -m mypy tests\test_packaging_artifacts.py` | passed; no issues in 1 source file |
+| Scoped compile | `venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools tests\test_packaging_artifacts.py` | passed |
+| Full local suite | `venv\Scripts\python.exe -m pytest -q` | 438 passed |
+
+Known gaps:
+
+- This removes the legacy `gui/` package. Remaining legacy `core/` modules still exist as separate migration/removal groups.
