@@ -89,7 +89,7 @@ as current without implementation and evidence.
 | Document | Truth check | Result | Required correction |
 |---|---|---|---|
 | `README.md` | Product name, current status, quick-start, format matrix, known gaps. | TODO | TODO |
-| `README_EN.md` | Same claims as README and no stale HDF5 Viewer release claim. | TODO | TODO |
+| `README_EN.md` | Same claims as README and no stale legacy-product-name release claim. | TODO | TODO |
 | `docs/PRODUCT_SPEC.md` | Requirements still match implemented release scope and known limitations. | TODO | TODO |
 | `ARCHITECTURE.md` | Architecture invariants match current module boundaries. | TODO | TODO |
 | `docs/FORMAT_SUPPORT.md` | Format/edit/gzip behavior matches tests and manual packets. | TODO | TODO |
@@ -105,7 +105,7 @@ as current without implementation and evidence.
 Recommended scans:
 
 ```bash
-rg -n "specified but not implemented|pending-manual|pending-after-upload|TODO|HDF5 Viewer|PyQt6|NetCDF|Zarr" README.md README_EN.md docs RELEASE.md CHANGELOG.md TEST_REPORT.md tasks
+rg -n "specified but not implemented|pending-manual|pending-after-upload|TODO|<legacy-product-name>|PyQt6|NetCDF|Zarr" README.md README_EN.md docs RELEASE.md CHANGELOG.md TEST_REPORT.md tasks
 python -m pytest tests/test_release_acceptance_docs.py tests/test_release_acceptance_packet.py -q
 ```
 

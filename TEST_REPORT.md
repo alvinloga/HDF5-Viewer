@@ -4281,6 +4281,7 @@ Local Windows verification in the project `.venv` locked environment:
 | Check | Command | Observed result |
 |---|---|---|
 | Release traceability documentation contract | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_docs.py -q` | 7 passed in 0.83s |
+| CI old-product-name regression check plus release docs | `.venv\Scripts\python.exe -m pytest tests\test_data_viewer_package.py::test_repository_old_product_name_references_are_explicitly_historical tests\test_release_acceptance_docs.py -q` | 8 passed in 15.32s |
 | Scoped lint | `.venv\Scripts\python.exe -m ruff check tests\test_release_acceptance_docs.py` | passed |
 | Diff hygiene | `git diff --check` | passed; only Windows line-ending conversion warnings for touched Markdown and test files |
 
