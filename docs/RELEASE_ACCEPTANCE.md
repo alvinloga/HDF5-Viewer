@@ -86,7 +86,7 @@ python tools/prepare_release_acceptance_packet.py \
 
 The generated `DV-1101-checklist.md` or `DV-1102-checklist.md` is a starting point for the human reviewer, not a signature.
 
-The CI quality workflow also runs this helper before uploading package artifacts. CI-generated packets live under `artifacts/<platform>/package/acceptance/` inside the package upload. Those packets are intentionally pre-upload packets: GitHub artifact ID and artifact digest fields are `pending-after-upload` until the release reviewer fills them from the uploaded artifact metadata.
+The CI quality workflow also runs this helper before uploading package artifacts. CI-generated packets live under `artifacts/<platform>/package/acceptance/` inside the package upload and are also uploaded as a small `data-viewer-acceptance-<platform>-<run>-<attempt>` artifact so reviewers can retrieve the checklist and summary without first downloading the full packaged application archive. Those packets are intentionally pre-upload packets: GitHub artifact ID and artifact digest fields are `pending-after-upload` until the release reviewer fills them from the uploaded package artifact metadata.
 
 ## 4. Functional acceptance matrix
 

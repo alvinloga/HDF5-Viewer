@@ -130,6 +130,8 @@ def test_ci_generates_preupload_acceptance_packet_before_package_upload() -> Non
     assert "--artifact-id \"pending-after-upload\"" in workflow
     assert "--artifact-digest \"pending-after-upload\"" in workflow
     assert "artifacts/${{ matrix.name }}/package/acceptance/**" in workflow
+    assert "Upload release acceptance packet artifact" in workflow
+    assert "data-viewer-acceptance-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}" in workflow
 
 
 def _sha256(path: Path) -> str:

@@ -4077,3 +4077,26 @@ GitHub Actions verification after CI acceptance-packet integration:
 Known gaps after this CI run:
 
 - DV-1101 and DV-1102 still require human review of the generated acceptance checklist, final artifact id/digest fill-in, visual matrix screenshots, logs, and signature. The CI-generated packet removes the local artifact re-download dependency for generating the starting checklist, but it does not complete manual acceptance.
+
+## P11 lightweight acceptance artifact upload - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- CI still embeds pre-upload acceptance packets inside each full package artifact under `artifacts/<platform>/package/acceptance/`.
+- CI now also uploads the same generated packet as a separate lightweight artifact named `data-viewer-acceptance-<platform>-<run>-<attempt>`.
+- The lightweight artifact is an access improvement for DV-1101/DV-1102 reviewers. It does not replace downloading and testing the packaged application artifact, and it does not complete manual acceptance.
+
+Local Windows verification in the project `.venv` locked environment:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Acceptance packet, runbook, and CI workflow contracts | `.venv\Scripts\python.exe -m pytest tests\test_ci_reporting.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 10 passed in 1.72s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tests\test_ci_reporting.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py tools\prepare_release_acceptance_packet.py` | passed |
+| Scoped type check | `.venv\Scripts\python.exe -m mypy tools\prepare_release_acceptance_packet.py` | passed; no issues in 1 source file |
+| Diff hygiene | `git diff --check` | passed; only Windows line-ending conversion warnings for touched workflow, Markdown, and test files |
+
+Known gaps:
+
+- DV-1101 and DV-1102 remain open until Windows and Linux package artifacts are fully downloaded/tested, the functional and visual matrices are executed, final artifact metadata is filled in, and signed platform checklists are linked from this report.

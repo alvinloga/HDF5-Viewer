@@ -83,5 +83,7 @@ def test_workflows_upload_quality_evidence_and_release_requires_quality() -> Non
     assert "Prepare release acceptance packet" in quality_workflow
     assert "tools/prepare_release_acceptance_packet.py" in quality_workflow
     assert "artifacts/${{ matrix.name }}/package/acceptance/**" in quality_workflow
+    assert "Upload release acceptance packet artifact" in quality_workflow
+    assert "data-viewer-acceptance-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}" in quality_workflow
     assert "uses: ./.github/workflows/ci.yml" in release_workflow
     assert "needs: quality" in release_workflow
