@@ -110,7 +110,7 @@ def _read_packet_summary(packet_dir: Path) -> dict[str, Any]:
 
 
 def _read_artifacts(path: Path) -> list[dict[str, Any]]:
-    data = json.loads(path.read_text(encoding="utf-8"))
+    data = json.loads(_read_json_text(path))
     artifacts = data.get("artifacts") if isinstance(data, dict) else None
     if not isinstance(artifacts, list):
         raise ValueError("artifacts JSON must contain an artifacts array")
@@ -119,6 +119,16 @@ def _read_artifacts(path: Path) -> list[dict[str, Any]]:
         if isinstance(artifact, dict):
             normalized.append(artifact)
     return normalized
+
+
+def _read_json_text(path: Path) -> str:
+    raw = path.read_bytes()
+    for encoding in ("utf-8", "utf-8-sig", "utf-16"):
+        try:
+            return raw.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    raise UnicodeDecodeError("utf-8", raw, 0, 1, "unsupported JSON text encoding")
 
 
 def _select_package_artifact(

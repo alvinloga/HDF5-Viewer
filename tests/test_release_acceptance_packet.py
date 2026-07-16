@@ -419,6 +419,43 @@ def test_hydrate_release_acceptance_packet_rejects_wrong_run(
         raise AssertionError("run mismatch should fail")
 
 
+def test_hydrate_release_acceptance_packet_accepts_powershell_utf16_json(
+    tmp_path: Path,
+) -> None:
+    packet_dir = _prepare_ready_packet(
+        tmp_path,
+        task_id="DV-1101",
+        platform_name="Windows",
+        artifact_id="pending-after-upload",
+        artifact_digest="pending-after-upload",
+    )
+    artifacts_json = tmp_path / "artifacts-utf16.json"
+    artifacts_json.write_text(
+        json.dumps(
+            {
+                "artifacts": [
+                    {
+                        "id": 555,
+                        "name": "data-viewer-package-Windows-123-1",
+                        "digest": "sha256:powershell",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-16",
+    )
+
+    result = hydrate_release_acceptance_packet(
+        packet_dir,
+        artifacts_json=artifacts_json,
+        platform_name="Windows",
+        run_id="123",
+    )
+
+    assert result["artifact_id"] == "555"
+    assert result["artifact_digest"] == "sha256:powershell"
+
+
 def _sha256(path: Path) -> str:
     import hashlib
 

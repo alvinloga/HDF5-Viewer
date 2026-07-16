@@ -28,6 +28,7 @@ def test_release_acceptance_runbook_exists_and_names_p11_tasks() -> None:
     assert "gh api repos/<owner>/<repo>/actions/runs/<run-id>/artifacts" in text
     assert "update_release_acceptance_artifact_metadata.py" in text
     assert "same run and task" in text
+    assert "UTF-16 text produced by Windows PowerShell redirection" in text
     assert "does not mark functional rows" in text
 
 

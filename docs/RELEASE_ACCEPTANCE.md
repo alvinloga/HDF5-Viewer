@@ -103,7 +103,7 @@ python tools/hydrate_release_acceptance_packet.py \
   --run-attempt <attempt>
 ```
 
-Use `--platform Ubuntu` or `--platform Linux` for DV-1102. The helper verifies that the packet's `acceptance-summary.json` records the same run and task before filling the package artifact ID/digest. It still does not mark functional rows, visual rows, evidence links, or sign-off fields as complete.
+Use `--platform Ubuntu` or `--platform Linux` for DV-1102. The helper verifies that the packet's `acceptance-summary.json` records the same run and task before filling the package artifact ID/digest. The artifacts JSON may be UTF-8, UTF-8 with BOM, or the UTF-16 text produced by Windows PowerShell redirection. The helper still does not mark functional rows, visual rows, evidence links, or sign-off fields as complete.
 
 If artifact metadata was copied manually, use the lower-level updater directly:
 

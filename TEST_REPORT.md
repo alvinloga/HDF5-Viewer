@@ -4433,7 +4433,7 @@ Local Windows verification in the project `.venv` locked environment:
 
 | Check | Command | Observed result |
 |---|---|---|
-| Acceptance packet and runbook contracts | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 17 passed in 1.76s |
+| Acceptance packet and runbook contracts | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 18 passed in 1.94s |
 | Scoped lint | `.venv\Scripts\python.exe -m ruff check tools\hydrate_release_acceptance_packet.py tools\update_release_acceptance_artifact_metadata.py tools\validate_release_acceptance_packet.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py` | passed |
 | Scoped type check | `.venv\Scripts\python.exe -m mypy tools\hydrate_release_acceptance_packet.py tools\update_release_acceptance_artifact_metadata.py tools\validate_release_acceptance_packet.py` | passed; no issues in 3 source files |
 | Diff hygiene | `git diff --check` | passed; only Windows line-ending conversion warnings for touched Markdown and test files |
@@ -4441,3 +4441,56 @@ Local Windows verification in the project `.venv` locked environment:
 Known gaps:
 
 - This helper supports DV-1101/DV-1102 evidence preparation only. It does not download artifacts, execute packaged manual acceptance, sign packets, or complete DV-1101/DV-1102.
+
+## P11 final prepared acceptance packet refresh - 2026-07-16, run 29511071525
+
+Revision: `f680e1aa37e772d446749440e261a80de97e5666` (`tools: hydrate release acceptance artifact metadata`).
+
+GitHub Actions run:
+
+- Run: `29511071525`
+- URL: `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29511071525`
+- Result: success
+- Branch: `codex/data-viewer-foundation`
+- Windows job ID: `87664357280`
+- Ubuntu job ID: `87664357256`
+
+Windows and Ubuntu quality/package jobs for this revision passed locked install,
+direct dependency smoke, lint, type check, compile, test collection, full
+offscreen regression, wheel/sdist build, PyInstaller package build, executable
+smoke, installed-artifact functional smoke, release evidence generation,
+acceptance packet generation, package upload, and lightweight acceptance
+artifact upload.
+
+Uploaded package and acceptance artifacts:
+
+| Platform | Artifact | GitHub artifact ID | GitHub artifact digest | Size |
+|---|---|---:|---|---:|
+| Windows | `data-viewer-package-Windows-29511071525-1` | `8380760975` | `sha256:1d67a86a72c90799b0b565f89d160f6aa27667b84ab09c2ffc210b52bd98cbb1` | `132179144` |
+| Windows | `data-viewer-acceptance-Windows-29511071525-1` | `8380761340` | `sha256:307d716b637d64635c0d49139028a93d63ce9899c12e1c0a8deb92bc2e870ec1` | `2385` |
+| Ubuntu | `data-viewer-package-Ubuntu-29511071525-1` | `8380754191` | `sha256:7b364a526047d14015adf02b1ff409f32a7b694768eb3f14ff59b5519e6c45d6` | `173541495` |
+| Ubuntu | `data-viewer-acceptance-Ubuntu-29511071525-1` | `8380754827` | `sha256:d0c8d8017782c5ecfd5431a7160269e107ede870e6ff6f307d4ab2a096ad6c15` | `2459` |
+
+Local Windows evidence preparation:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Latest run status | `gh run view 29511071525 --json status,conclusion,jobs,url,headSha` | completed with `success`; Windows and Ubuntu jobs both completed with `success` |
+| Artifact metadata | `gh api repos/alvinloga/HDF5-Viewer/actions/runs/29511071525/artifacts > .artifacts\release-acceptance\29511071525\artifacts.json` | returned six unexpired artifacts: Windows/Ubuntu quality, package, and acceptance uploads; PowerShell redirection produced UTF-16 JSON, now covered by the hydration helper |
+| Windows lightweight packet download | `gh run download 29511071525 --name data-viewer-acceptance-Windows-29511071525-1 --dir .artifacts\release-acceptance\29511071525\windows\acceptance-upload-prepared` | downloaded `acceptance-summary.json` and `DV-1101-checklist.md` |
+| Ubuntu lightweight packet download | `gh run download 29511071525 --name data-viewer-acceptance-Ubuntu-29511071525-1 --dir .artifacts\release-acceptance\29511071525\ubuntu\acceptance-upload-prepared` | downloaded `acceptance-summary.json` and `DV-1102-checklist.md` |
+| Windows packet hydration | `.venv\Scripts\python.exe tools\hydrate_release_acceptance_packet.py .artifacts\release-acceptance\29511071525\windows\acceptance-upload-prepared --artifacts-json .artifacts\release-acceptance\29511071525\artifacts.json --platform Windows --run-id 29511071525 --run-attempt 1` | passed; selected package artifact `8380760975` with digest `sha256:1d67a86a72c90799b0b565f89d160f6aa27667b84ab09c2ffc210b52bd98cbb1` |
+| Ubuntu packet hydration | `.venv\Scripts\python.exe tools\hydrate_release_acceptance_packet.py .artifacts\release-acceptance\29511071525\ubuntu\acceptance-upload-prepared --artifacts-json .artifacts\release-acceptance\29511071525\artifacts.json --platform Ubuntu --run-id 29511071525 --run-attempt 1` | passed; selected package artifact `8380754191` with digest `sha256:7b364a526047d14015adf02b1ff409f32a7b694768eb3f14ff59b5519e6c45d6` |
+| Windows prepared packet validator | `.venv\Scripts\python.exe tools\validate_release_acceptance_packet.py .artifacts\release-acceptance\29511071525\windows\acceptance-upload-prepared --task-id DV-1101 --json` | failed as expected with 26 manual/sign-off/visual issues only; no `pending-after-upload`, missing artifact identity, or `preflight-not-passed` issue |
+| Ubuntu prepared packet validator | `.venv\Scripts\python.exe tools\validate_release_acceptance_packet.py .artifacts\release-acceptance\29511071525\ubuntu\acceptance-upload-prepared --task-id DV-1102 --json` | failed as expected with 26 manual/sign-off/visual issues only; no `pending-after-upload`, missing artifact identity, or `preflight-not-passed` issue |
+
+Prepared local packet directories:
+
+- Windows: `.artifacts\release-acceptance\29511071525\windows\acceptance-upload-prepared`
+- Ubuntu: `.artifacts\release-acceptance\29511071525\ubuntu\acceptance-upload-prepared`
+
+Known gaps:
+
+- DV-1101 remains open. The Windows prepared packet still needs native packaged execution against the full functional matrix, native visual/accessibility/localization/DPI screenshots, issue review, and reviewer sign-off.
+- DV-1102 remains open. The Ubuntu prepared packet still needs supported-Linux native packaged execution against the full functional matrix, Linux visual/accessibility/localization/DPI screenshots, issue review, and reviewer sign-off.
+- DV-1103 and DV-1104 remain blocked on signed Windows and Linux acceptance packets that pass `tools/validate_release_acceptance_packet.py`.
