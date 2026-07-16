@@ -82,6 +82,7 @@ All notable Data Viewer changes are recorded here.
 - Hardened the DV-1007 release-evidence leak gate: uploaded PyInstaller manifests now use relative paths, installed-artifact smoke resolves those paths for CI, and release evidence scans uploaded manifest/evidence attachments for local path or credential leaks.
 - Added a lightweight release-acceptance artifact upload so Windows/Linux reviewers can download the prefilled DV-1101/DV-1102 checklist and acceptance summary without downloading the full package artifact first.
 - Added a release-acceptance packet validator so signed DV-1101/DV-1102 evidence can be checked for pending generated fields, unresolved blockers, missing artifact identity, missing evidence links, and missing visual screenshot/sign-off fields before release.
+- Added a release-acceptance artifact metadata updater so reviewers can safely replace CI pre-upload `pending-after-upload` package artifact ID/digest fields without touching manual functional rows or sign-off fields.
 - Added a DV-1104 GitHub Release notes template covering assets, checksums, SBOM/licenses, security review, evidence links, known limitations, rollback, and post-release smoke requirements.
 - Added a DV-1103 traceability and documentation truth-audit template covering FR-001 through FR-010, nonfunctional release blockers, the v1 format/gzip matrix, known limitations, documentation truth checks, and independent reviewer sample checks.
 

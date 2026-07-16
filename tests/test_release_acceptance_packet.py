@@ -6,6 +6,9 @@ import json
 from pathlib import Path
 
 from tools.prepare_release_acceptance_packet import AcceptanceMetadata, prepare_acceptance_packet
+from tools.update_release_acceptance_artifact_metadata import (
+    update_acceptance_artifact_metadata,
+)
 from tools.validate_release_acceptance_packet import validate_acceptance_packet
 
 
@@ -202,6 +205,95 @@ def test_ci_generates_preupload_acceptance_packet_before_package_upload() -> Non
     assert "data-viewer-acceptance-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}" in workflow
 
 
+def test_update_release_acceptance_artifact_metadata_fills_preupload_fields_only(
+    tmp_path: Path,
+) -> None:
+    packet_dir = _prepare_ready_packet(
+        tmp_path,
+        task_id="DV-1101",
+        platform_name="Windows",
+        artifact_id="pending-after-upload",
+        artifact_digest="pending-after-upload",
+    )
+
+    result = update_acceptance_artifact_metadata(
+        packet_dir,
+        task_id="DV-1101",
+        artifact_id="8377858744",
+        artifact_digest="sha256:73c0aa7b0dbf14ce2d38ab9b0a28def8475bc65f706a2b4ad9f18d2e848b1163",
+        artifact_name="data-viewer-package-Windows-123-1",
+    )
+
+    assert result["task_id"] == "DV-1101"
+    assert result["artifact_id"] == "8377858744"
+    assert result["artifact_digest"] == "sha256:73c0aa7b0dbf14ce2d38ab9b0a28def8475bc65f706a2b4ad9f18d2e848b1163"
+
+    summary = json.loads((packet_dir / "acceptance-summary.json").read_text(encoding="utf-8"))
+    assert summary["artifact"]["id"] == "8377858744"
+    assert summary["artifact"]["github_digest"] == result["artifact_digest"]
+    assert summary["manual_status"] == "pending-manual"
+    assert summary["manual_rows"]["FMT-HDF5"] == "pending-manual"
+
+    checklist = (packet_dir / "DV-1101-checklist.md").read_text(encoding="utf-8")
+    assert "- Package artifact ID: 8377858744" in checklist
+    assert f"- GitHub artifact digest: {result['artifact_digest']}" in checklist
+    assert "| FMT-HDF5 | pending-manual |" in checklist
+    assert "Signature: pending-manual" in checklist
+    assert "pending-after-upload" not in checklist
+
+    issue_codes = {issue.code for issue in validate_acceptance_packet(packet_dir, task_id="DV-1101")}
+    assert "summary-required-field" not in issue_codes
+    assert "functional-not-accepted" in issue_codes
+    assert "checklist-required-field" in issue_codes
+
+
+def test_update_release_acceptance_artifact_metadata_rejects_mismatches(tmp_path: Path) -> None:
+    packet_dir = _prepare_ready_packet(
+        tmp_path,
+        task_id="DV-1102",
+        platform_name="Ubuntu",
+        artifact_id="pending-after-upload",
+        artifact_digest="pending-after-upload",
+    )
+
+    try:
+        update_acceptance_artifact_metadata(
+            packet_dir,
+            task_id="DV-1101",
+            artifact_id="8377825993",
+            artifact_digest="sha256:07a8229d2fbb5e93bef7f544ff4ba57ce6554391032897af9d3cdeb1b06f620f",
+        )
+    except ValueError as exc:
+        assert "task_id" in str(exc)
+    else:  # pragma: no cover - assertion guard
+        raise AssertionError("task mismatch should fail")
+
+    try:
+        update_acceptance_artifact_metadata(
+            packet_dir,
+            task_id="DV-1102",
+            artifact_id="8377825993",
+            artifact_digest="07a8229d2fbb5e93bef7f544ff4ba57ce6554391032897af9d3cdeb1b06f620f",
+        )
+    except ValueError as exc:
+        assert "sha256:" in str(exc)
+    else:  # pragma: no cover - assertion guard
+        raise AssertionError("digest without sha256 prefix should fail")
+
+    try:
+        update_acceptance_artifact_metadata(
+            packet_dir,
+            task_id="DV-1102",
+            artifact_id="8377825993",
+            artifact_digest="sha256:07a8229d2fbb5e93bef7f544ff4ba57ce6554391032897af9d3cdeb1b06f620f",
+            artifact_name="wrong-artifact",
+        )
+    except ValueError as exc:
+        assert "artifact name" in str(exc)
+    else:  # pragma: no cover - assertion guard
+        raise AssertionError("artifact name mismatch should fail")
+
+
 def _sha256(path: Path) -> str:
     import hashlib
 
@@ -210,7 +302,14 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _prepare_ready_packet(tmp_path: Path, *, task_id: str, platform_name: str) -> Path:
+def _prepare_ready_packet(
+    tmp_path: Path,
+    *,
+    task_id: str,
+    platform_name: str,
+    artifact_id: str = "789",
+    artifact_digest: str = "sha256:artifactdigest",
+) -> Path:
     artifact_dir = tmp_path / f"artifact-{task_id}"
     artifact_dir.mkdir()
     archive = artifact_dir / "DataViewer-0.1.0-windows-x86_64.zip"
@@ -247,8 +346,8 @@ def _prepare_ready_packet(tmp_path: Path, *, task_id: str, platform_name: str) -
             run_id="123",
             job_id="456",
             artifact_name=f"data-viewer-package-{platform_name}-123-1",
-            artifact_id="789",
-            artifact_digest="sha256:artifactdigest",
+            artifact_id=artifact_id,
+            artifact_digest=artifact_digest,
             reviewer="Alice Reviewer",
             version_output="Data Viewer 0.1.0",
         ),

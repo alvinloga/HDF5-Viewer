@@ -4337,3 +4337,27 @@ Known gaps:
   attach screenshots/logs/issues, and sign the packet.
 - DV-1103 and DV-1104 remain blocked on signed Windows and Linux acceptance
   packets that pass `tools/validate_release_acceptance_packet.py`.
+
+## P11 release acceptance artifact metadata updater - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Change:
+
+- Added `tools/update_release_acceptance_artifact_metadata.py` so release reviewers can fill the final GitHub package artifact ID and digest in a CI-generated pre-upload DV-1101/DV-1102 packet.
+- The updater checks the expected task ID, optional artifact name, nonblank artifact ID, and `sha256:` digest prefix before modifying files.
+- The updater only changes `acceptance-summary.json` artifact metadata and the matching checklist's package artifact ID/digest lines. It does not mark manual functional rows, visual rows, evidence links, or sign-off fields as complete.
+- `docs/RELEASE_ACCEPTANCE.md` now documents the updater command before the final packet validator step.
+
+Local Windows verification in the project `.venv` locked environment:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Acceptance packet and runbook contracts | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 14 passed in 1.80s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tools\update_release_acceptance_artifact_metadata.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py` | passed |
+| Scoped type check | `.venv\Scripts\python.exe -m mypy tools\update_release_acceptance_artifact_metadata.py` | passed; no issues in 1 source file |
+| Diff hygiene | `git diff --check` | passed; only Windows line-ending conversion warnings for touched Markdown and test files |
+
+Known gaps:
+
+- This tool supports DV-1101/DV-1102 evidence preparation only. It does not execute packaged manual acceptance, does not sign packets, and does not complete DV-1101 or DV-1102.
