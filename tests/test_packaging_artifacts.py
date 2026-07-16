@@ -57,7 +57,7 @@ def test_pyinstaller_manifest_uses_upload_safe_relative_paths(tmp_path: Path) ->
     assert str(tmp_path) not in text
     assert ":\\" not in text
     assert "DataViewer-0.1.0-windows-x86_64.zip" in text
-    assert "DataViewer.exe" in text or '"executable": "DataViewer/DataViewer"' in text
+    assert "../dist/DataViewer/DataViewer" in text
 
 
 def test_ci_builds_and_uploads_data_viewer_pyinstaller_artifacts() -> None:
