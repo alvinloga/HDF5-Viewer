@@ -127,6 +127,16 @@ python tools/validate_release_acceptance_packet.py \
 
 The validator fails if the packet still contains generated `pending-manual` or `pending-after-upload` fields, failed preflight checks, unresolved blockers, functional rows that are not `pass` or `not applicable with reason`, missing evidence links, visual rows without screenshot links, or missing sign-off fields. It is a guardrail for completeness, not a substitute for human review.
 
+To give the human reviewer a concise todo sheet for an already hydrated packet, render a handoff note:
+
+```bash
+python tools/render_release_acceptance_handoff.py \
+  release-evidence/v1/windows \
+  --task-id DV-1101
+```
+
+This writes `REVIEWER_HANDOFF.md` in the packet directory. The handoff summarizes artifact identity, validator issue counts, missing reviewer fields, functional rows still requiring manual review, visual evidence gaps, and the final validator command. It does not complete DV-1101/DV-1102 and must not be used as a signature.
+
 ## 4. Functional acceptance matrix
 
 Run this matrix on Windows for DV-1101 and on Linux for DV-1102. Use representative small fixtures for normal flows and generated stress fixtures where the item calls for large/responsive behavior.

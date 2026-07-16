@@ -4418,6 +4418,31 @@ Known gaps:
 - DV-1102 remains open. The Ubuntu prepared packet still needs supported-Linux native packaged execution against the full functional matrix, Linux visual/accessibility/localization/DPI screenshots, issue review, and reviewer sign-off.
 - DV-1103 and DV-1104 remain blocked on signed Windows and Linux acceptance packets that pass `tools/validate_release_acceptance_packet.py`.
 
+## P11 release acceptance reviewer handoff helper - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Change:
+
+- Added `tools/render_release_acceptance_handoff.py` so release reviewers can generate a concise `REVIEWER_HANDOFF.md` from a hydrated DV-1101/DV-1102 packet.
+- The handoff summarizes package artifact identity, validator issue counts, missing reviewer fields, functional rows still requiring manual review, visual evidence gaps, and the final validator command.
+- The helper reads the packet and validator output only. It does not mutate the checklist, mark functional/visual rows complete, or sign the packet.
+- `docs/RELEASE_ACCEPTANCE.md` now documents the handoff command after the validator instructions.
+
+Local Windows verification in the project `.venv` locked environment:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Acceptance packet and runbook contracts | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 19 passed in 1.66s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tools\render_release_acceptance_handoff.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py` | passed |
+| Scoped type check | `.venv\Scripts\python.exe -m mypy tools\render_release_acceptance_handoff.py` | passed; no issues in 1 source file |
+| Windows latest packet handoff | `.venv\Scripts\python.exe tools\render_release_acceptance_handoff.py .artifacts\release-acceptance\29512431864\windows\acceptance-upload-prepared --task-id DV-1101` | wrote `.artifacts\release-acceptance\29512431864\windows\acceptance-upload-prepared\REVIEWER_HANDOFF.md` |
+| Ubuntu latest packet handoff | `.venv\Scripts\python.exe tools\render_release_acceptance_handoff.py .artifacts\release-acceptance\29512431864\ubuntu\acceptance-upload-prepared --task-id DV-1102` | wrote `.artifacts\release-acceptance\29512431864\ubuntu\acceptance-upload-prepared\REVIEWER_HANDOFF.md` |
+
+Known gaps:
+
+- This helper supports DV-1101/DV-1102 evidence handoff only. It does not execute packaged manual acceptance, capture native screenshots, sign packets, complete DV-1101/DV-1102, or unblock DV-1103/DV-1104 without human acceptance evidence.
+
 ## P11 release acceptance packet hydration helper - 2026-07-16
 
 Revision: implementation and evidence are recorded together in the commit containing this section.

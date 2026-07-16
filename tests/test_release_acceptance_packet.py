@@ -11,6 +11,7 @@ from tools.prepare_release_acceptance_packet import AcceptanceMetadata, prepare_
 from tools.hydrate_release_acceptance_packet import (
     hydrate_release_acceptance_packet,
 )
+from tools.render_release_acceptance_handoff import render_acceptance_handoff
 from tools.update_release_acceptance_artifact_metadata import (
     update_acceptance_artifact_metadata,
 )
@@ -454,6 +455,33 @@ def test_hydrate_release_acceptance_packet_accepts_powershell_utf16_json(
 
     assert result["artifact_id"] == "555"
     assert result["artifact_digest"] == "sha256:powershell"
+
+
+def test_render_release_acceptance_handoff_summarizes_remaining_manual_work(
+    tmp_path: Path,
+) -> None:
+    packet_dir = _prepare_ready_packet(
+        tmp_path,
+        task_id="DV-1101",
+        platform_name="Windows",
+        artifact_id="8377858744",
+        artifact_digest="sha256:73c0aa7b0dbf14ce2d38ab9b0a28def8475bc65f706a2b4ad9f18d2e848b1163",
+    )
+
+    markdown = render_acceptance_handoff(packet_dir, task_id="DV-1101")
+
+    assert "# Data Viewer DV-1101 reviewer handoff" in markdown
+    assert "data-viewer-package-Windows-123-1" in markdown
+    assert "8377858744" in markdown
+    assert "sha256:73c0aa7b0dbf14ce2d38ab9b0a28def8475bc65f706a2b4ad9f18d2e848b1163" in markdown
+    assert "Missing reviewer fields" in markdown
+    assert "Display server / scaling mechanism" in markdown
+    assert "Functional rows still requiring human review" in markdown
+    assert "FMT-HDF5" in markdown
+    assert "PACKAGE" in markdown
+    assert "Visual/accessibility/localization rows still requiring screenshots" in markdown
+    assert "validate_release_acceptance_packet.py" in markdown
+    assert "This handoff does not complete DV-1101" in markdown
 
 
 def _sha256(path: Path) -> str:
