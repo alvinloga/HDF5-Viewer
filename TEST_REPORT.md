@@ -4061,3 +4061,19 @@ Known gaps:
 - Local `gh run download 29483165512 -n data-viewer-package-Windows-29483165512-1 -D .artifacts\release-acceptance\29483165512\windows\package` was attempted with 120s and then 300s timeouts, but no complete artifact directory was produced before timeout.
 - A follow-up attempt against the latest successful run `29484327492` confirmed package artifact metadata through the GitHub API, then tried three local download strategies for `data-viewer-package-Windows-29484327492-1`: background `gh run download`, background `gh api .../actions/artifacts/8369863864/zip`, and background `curl.exe` against the artifact API. Each path established connectivity but did not produce a complete artifact within the monitored window; the fastest observed partial file was `.artifacts\release-acceptance\29484327492\windows\artifact-curl.zip` at 2,404,352 bytes before the process was stopped to avoid unmonitored background network use.
 - DV-1101/DV-1102 remain open until package artifacts are downloaded completely, evidence packets are generated, manual functional/visual matrices are executed, and signed checklists are linked from this report.
+
+GitHub Actions verification after CI acceptance-packet integration:
+
+| Check | Evidence | Observed result |
+|---|---|---|
+| Windows/Linux CI with pre-upload acceptance packet generation | run `29486042403` on branch `codex/data-viewer-foundation`, revision `84743f9d1a2b932994b09a6b688ac6ea61cb6cdf` | workflow conclusion `success`; Windows quality and Ubuntu quality jobs passed |
+| Windows quality job | job `87580647130` | full gate passed, including `Prepare release acceptance packet` before quality/package uploads |
+| Ubuntu quality job | job `87580647160` | full gate passed, including `Prepare release acceptance packet` before quality/package uploads |
+| Windows package artifact | `data-viewer-package-Windows-29486042403-1` | uploaded; artifact id `8370525464`; size `132179816`; digest `sha256:69c29343d3b44c5bd71a797d03e7d397ebe1afb7f1e15dd2e4d1f81e05b73862`; not expired |
+| Ubuntu package artifact | `data-viewer-package-Ubuntu-29486042403-1` | uploaded; artifact id `8370514223`; size `173538455`; digest `sha256:f3246402645957630712e68850640ab16806890aa4d32eab6a732f38495c60f9`; not expired |
+| Windows quality artifact | `data-viewer-quality-Windows-29486042403-1` | uploaded; artifact id `8370523280`; size `132839783`; digest `sha256:54867b1db9b86821fb441aad8beb3125f4ff952e77d558f61542314498fabc69`; not expired |
+| Ubuntu quality artifact | `data-viewer-quality-Ubuntu-29486042403-1` | uploaded; artifact id `8370511688`; size `174244304`; digest `sha256:fba9febc253429092f0d8d1c215769819c49c5a729f78e9c1f99bd120963c7a2`; not expired |
+
+Known gaps after this CI run:
+
+- DV-1101 and DV-1102 still require human review of the generated acceptance checklist, final artifact id/digest fill-in, visual matrix screenshots, logs, and signature. The CI-generated packet removes the local artifact re-download dependency for generating the starting checklist, but it does not complete manual acceptance.
