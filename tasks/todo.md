@@ -643,10 +643,10 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: parity/removal criteria proven; no runtime/test/build imports; target bootstrap default; legacy fallback removed; history/docs preserved.
 - Verify: completed on 2026-07-16 at `e22b7e6e0baad53062854af72bb6fa16a4dc9afa`; final local suite passed with 439 tests, reference audit left only intentional documentation/guard strings, root legacy runtime/build paths were absent, and GitHub Actions run `29468318989` passed Windows and Ubuntu quality/package jobs with uploaded package and quality artifacts.
 
-### [ ] DV-1009 Record Checkpoint 10 release-candidate evidence
+### [x] DV-1009 Record Checkpoint 10 release-candidate evidence
 
 - Depends: DV-1001 through DV-1008.
-- Verify: complete automated gates, performance/stress, package smokes, SBOM/licenses/checksums recorded in `TEST_REPORT.md`.
+- Verify: completed on 2026-07-16. Local Windows release-candidate slices passed performance/stress coverage, packaging artifact contracts, installed-artifact smoke contracts, release-evidence generation contracts, and dependency policy checks. Windows/Linux CI run `29472508362` at `c139159e3379365e6d3a413af745dc3d8a6c4e92` passed locked install, PySide6 direct import smoke, lint, type check, compile, collection, full offscreen regression, wheel/sdist build, PyInstaller package build, executable smoke, installed-artifact functional smoke, release-evidence generation, quality artifact upload, and package artifact upload. Package and quality artifacts for Windows and Ubuntu include recorded SHA-256 digests. Manual Windows/Linux acceptance and public release remain P11 tasks.
 
 ---
 
