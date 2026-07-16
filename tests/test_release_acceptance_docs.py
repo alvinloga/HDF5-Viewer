@@ -9,6 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUNBOOK = PROJECT_ROOT / "docs" / "RELEASE_ACCEPTANCE.md"
 RELEASE = PROJECT_ROOT / "RELEASE.md"
 DOC_INDEX = PROJECT_ROOT / "docs" / "INDEX.md"
+RELEASE_NOTES_TEMPLATE = PROJECT_ROOT / "docs" / "RELEASE_NOTES_TEMPLATE.md"
 
 
 def test_release_acceptance_runbook_exists_and_names_p11_tasks() -> None:
@@ -104,3 +105,30 @@ def test_release_gate_status_matches_p11_reality() -> None:
     assert "specified but not implemented" not in release_text
     assert "legacy release history only" not in index_text
     assert "current Data Viewer v1 release gate" in index_text
+
+
+def test_release_notes_template_covers_dv1104_publication_needs() -> None:
+    template = RELEASE_NOTES_TEMPLATE.read_text(encoding="utf-8")
+    release_text = RELEASE.read_text(encoding="utf-8")
+
+    for required in (
+        "DV-1101",
+        "DV-1102",
+        "DV-1103",
+        "DV-1104",
+        "DataViewer-<version>-windows-x86_64.zip",
+        "DataViewer-<version>-linux-x86_64.tar.gz",
+        "SHA-256",
+        "sbom.json",
+        "third-party-licenses.txt",
+        "release-security-review.json",
+        "Known limitations",
+        "Rollback instructions",
+        "Post-release smoke",
+        "TEST_REPORT.md",
+    ):
+        assert required in template
+
+    assert "pending-manual" in template
+    assert "pending-after-upload" in template
+    assert "docs/RELEASE_NOTES_TEMPLATE.md" in release_text

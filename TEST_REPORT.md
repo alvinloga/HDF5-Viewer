@@ -4243,3 +4243,25 @@ Local Windows verification in the project `.venv` locked environment:
 Known gaps:
 
 - This is a documentation truth update only. DV-1101, DV-1102, DV-1103, and DV-1104 remain open.
+
+## DV-1104 release notes template preparation - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Change:
+
+- Added `docs/RELEASE_NOTES_TEMPLATE.md` as the GitHub Release body template for DV-1104 after DV-1101, DV-1102, and DV-1103 pass.
+- The template requires release assets, SHA-256 checksums, SBOM, third-party license notices, `release-security-review.json`, signed acceptance evidence links, known limitations, rollback instructions, and post-release download/hash/launch/open-close smoke evidence.
+- Updated `RELEASE.md` so future release agents start from the template and do not publish a draft that still contains unresolved `TODO`, `pending-manual`, `pending-after-upload`, missing evidence links, or unchecked integrity/security blockers.
+
+Local Windows verification in the project `.venv` locked environment:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Release notes and acceptance documentation contract | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_docs.py -q` | 6 passed in 0.89s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tests\test_release_acceptance_docs.py` | passed |
+| Diff hygiene | `git diff --check` | passed; only Windows line-ending conversion warnings for touched Markdown and test files |
+
+Known gaps:
+
+- The template does not publish a release and does not complete DV-1104. It can be used only after DV-1101, DV-1102, and DV-1103 are complete.

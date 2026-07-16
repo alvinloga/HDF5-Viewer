@@ -31,6 +31,8 @@ The product is not publicly released yet. DV-1101 Windows manual acceptance, DV-
 - SBOM and third-party license notices;
 - release notes and `TEST_REPORT.md` evidence reference.
 
+Draft GitHub Release notes must start from `docs/RELEASE_NOTES_TEMPLATE.md` after DV-1101, DV-1102, and DV-1103 pass. The template must not be published with unresolved `TODO`, `pending-manual`, `pending-after-upload`, missing evidence links, or unchecked integrity/security blockers.
+
 The supported Linux distribution baseline and Windows minimum version are finalized from clean packaging evidence, not assumed from build-runner success.
 
 ## CI package artifact layout
