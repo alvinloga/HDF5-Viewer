@@ -7,6 +7,8 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUNBOOK = PROJECT_ROOT / "docs" / "RELEASE_ACCEPTANCE.md"
+RELEASE = PROJECT_ROOT / "RELEASE.md"
+DOC_INDEX = PROJECT_ROOT / "docs" / "INDEX.md"
 
 
 def test_release_acceptance_runbook_exists_and_names_p11_tasks() -> None:
@@ -87,3 +89,18 @@ def test_release_acceptance_requires_native_visual_evidence() -> None:
         "display server (`x11`/`xcb` or Wayland)",
     ):
         assert required in text
+
+
+def test_release_gate_status_matches_p11_reality() -> None:
+    release_text = RELEASE.read_text(encoding="utf-8")
+    index_text = DOC_INDEX.read_text(encoding="utf-8")
+
+    assert "DV-1009" in release_text
+    assert "automated release-candidate checkpoint" in release_text
+    assert "not publicly released yet" in release_text
+    for task_id in ("DV-1101", "DV-1102", "DV-1103", "DV-1104"):
+        assert task_id in release_text
+
+    assert "specified but not implemented" not in release_text
+    assert "legacy release history only" not in index_text
+    assert "current Data Viewer v1 release gate" in index_text

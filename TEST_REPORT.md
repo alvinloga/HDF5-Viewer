@@ -4221,3 +4221,25 @@ Local Windows verification in the project `.venv` locked environment:
 Known gaps:
 
 - DV-1101 and DV-1102 remain open until the completed platform packets pass this validator and are signed/linked with the required screenshots, logs, issue review, artifact identity, and no unresolved integrity/security blocker.
+
+## P11 release gate documentation truth update - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Change:
+
+- Updated `RELEASE.md` so the v1 status reflects the current DV-1009 automated release-candidate checkpoint instead of the obsolete "specified but not implemented" wording.
+- `RELEASE.md` now keeps DV-1101 Windows manual acceptance, DV-1102 Linux manual acceptance, DV-1103 traceability/truth audit, and DV-1104 GitHub Release publication as explicit open release gates.
+- Updated `docs/INDEX.md` so `RELEASE.md` is identified as both legacy release history and the current Data Viewer v1 release gate document.
+
+Local Windows verification in the project `.venv` locked environment:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Release documentation contract | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_docs.py -q` | 5 passed in 0.81s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tests\test_release_acceptance_docs.py` | passed |
+| Diff hygiene | `git diff --check` | passed; only Windows line-ending conversion warnings for touched Markdown and test files |
+
+Known gaps:
+
+- This is a documentation truth update only. DV-1101, DV-1102, DV-1103, and DV-1104 remain open.

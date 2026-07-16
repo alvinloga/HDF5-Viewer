@@ -6,7 +6,9 @@ The repository contains legacy HDF5 Viewer tags `v0.2.1`, `v0.3.0`, and `v0.3.1`
 
 ## Data Viewer v1 status
 
-Data Viewer v1 is specified but not implemented. The active implementation sequence is `tasks/plan.md`; completion evidence belongs in `TEST_REPORT.md`.
+Data Viewer v1 has passed the automated release-candidate checkpoint through DV-1009, including locked Windows/Linux CI, package builds, packaged executable smoke, installed-artifact functional smoke, SBOM/license/checksum generation, and security-evidence generation.
+
+The product is not publicly released yet. DV-1101 Windows manual acceptance, DV-1102 Linux manual acceptance, DV-1103 requirement traceability/documentation truth audit, and DV-1104 GitHub Release publication remain open release gates. The active implementation ledger is `tasks/todo.md`; current evidence belongs in `TEST_REPORT.md`, not in historical release claims.
 
 ## Release blockers
 

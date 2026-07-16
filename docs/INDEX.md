@@ -34,6 +34,6 @@
 
 ## Historical documents
 
-- `RELEASE.md` describes legacy release history only.
+- `RELEASE.md` preserves legacy release history and defines the current Data Viewer v1 release gate.
 - `TEST_REPORT.md` is a current evidence ledger, not a marketing report.
 - `TODO.md` redirects to `tasks/todo.md`.
