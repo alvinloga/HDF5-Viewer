@@ -31,6 +31,12 @@ The product is not publicly released yet. DV-1101 Windows manual acceptance, DV-
 - SBOM and third-party license notices;
 - release notes and `TEST_REPORT.md` evidence reference.
 
+DV-1103 requirement traceability and documentation truth audit must start from
+`docs/TRACEABILITY_TEMPLATE.md` after DV-1101 and DV-1102 signed packets pass
+`tools/validate_release_acceptance_packet.py`. The audit cannot pass while any
+FR/NFR row, format/gzip row, known limitation, documentation truth check, or
+independent reviewer sample remains unproved or unresolved.
+
 Draft GitHub Release notes must start from `docs/RELEASE_NOTES_TEMPLATE.md` after DV-1101, DV-1102, and DV-1103 pass. The template must not be published with unresolved `TODO`, `pending-manual`, `pending-after-upload`, missing evidence links, or unchecked integrity/security blockers.
 
 The supported Linux distribution baseline and Windows minimum version are finalized from clean packaging evidence, not assumed from build-runner success.

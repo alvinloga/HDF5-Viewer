@@ -4265,3 +4265,25 @@ Local Windows verification in the project `.venv` locked environment:
 Known gaps:
 
 - The template does not publish a release and does not complete DV-1104. It can be used only after DV-1101, DV-1102, and DV-1103 are complete.
+
+## DV-1103 traceability template preparation - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Change:
+
+- Added `docs/TRACEABILITY_TEMPLATE.md` as the starting point for the DV-1103 requirement traceability and documentation truth audit after DV-1101 and DV-1102 signed packets pass validation.
+- The template requires FR-001 through FR-010, nonfunctional requirements, release blockers, the v1 format/gzip matrix, known limitations, documentation truth checks, link/conflict scans, and independent reviewer samples to be traced to current implementation and evidence.
+- Updated `RELEASE.md` and `docs/INDEX.md` so future release agents start the truth audit from the template and do not treat the template itself as DV-1103 completion.
+
+Local Windows verification in the project `.venv` locked environment:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Release traceability documentation contract | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_docs.py -q` | 7 passed in 0.83s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tests\test_release_acceptance_docs.py` | passed |
+| Diff hygiene | `git diff --check` | passed; only Windows line-ending conversion warnings for touched Markdown and test files |
+
+Known gaps:
+
+- DV-1103 remains open. The template can be filled only after DV-1101 and DV-1102 are complete, signed, linked from `TEST_REPORT.md`, and pass `tools/validate_release_acceptance_packet.py`.

@@ -10,6 +10,7 @@ RUNBOOK = PROJECT_ROOT / "docs" / "RELEASE_ACCEPTANCE.md"
 RELEASE = PROJECT_ROOT / "RELEASE.md"
 DOC_INDEX = PROJECT_ROOT / "docs" / "INDEX.md"
 RELEASE_NOTES_TEMPLATE = PROJECT_ROOT / "docs" / "RELEASE_NOTES_TEMPLATE.md"
+TRACEABILITY_TEMPLATE = PROJECT_ROOT / "docs" / "TRACEABILITY_TEMPLATE.md"
 
 
 def test_release_acceptance_runbook_exists_and_names_p11_tasks() -> None:
@@ -132,3 +133,43 @@ def test_release_notes_template_covers_dv1104_publication_needs() -> None:
     assert "pending-manual" in template
     assert "pending-after-upload" in template
     assert "docs/RELEASE_NOTES_TEMPLATE.md" in release_text
+
+
+def test_traceability_template_covers_dv1103_truth_audit_needs() -> None:
+    template = TRACEABILITY_TEMPLATE.read_text(encoding="utf-8")
+    release_text = RELEASE.read_text(encoding="utf-8")
+    index_text = DOC_INDEX.read_text(encoding="utf-8")
+
+    for requirement_id in (
+        "FR-001",
+        "FR-002",
+        "FR-003",
+        "FR-004",
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+    ):
+        assert requirement_id in template
+
+    for required in (
+        "DV-1101",
+        "DV-1102",
+        "DV-1103",
+        "tools/validate_release_acceptance_packet.py",
+        "TEST_REPORT.md",
+        "known limitations",
+        "Documentation truth audit",
+        "independent reviewer",
+        "HDF5",
+        "NIfTI",
+        "YAML/YML",
+        "release-security-review.json",
+    ):
+        assert required in template
+
+    assert "docs/TRACEABILITY_TEMPLATE.md" in release_text
+    assert "DV-1103 requirement traceability" in release_text
+    assert "TRACEABILITY_TEMPLATE" in index_text
