@@ -4151,3 +4151,28 @@ Visual note:
 Known gaps:
 
 - DV-1101 is not complete. The functional matrix, Chinese localization flow, light/dark themes, Windows 100/150/200% scaling, minimum/typical/large layouts, keyboard/accessibility review, issue review, and human sign-off remain pending.
+
+## DV-1102 Ubuntu package preflight evidence - 2026-07-16
+
+Revision: `fac3b02d58eb7c8cf29998ca8ada9c197d4b1544` package artifact, with this evidence recorded in a later documentation commit.
+
+Ubuntu package artifact acquisition and identity:
+
+| Check | Evidence | Observed result |
+|---|---|---|
+| Download package artifact | custom two-step GitHub artifact download using artifact id `8370860438`, resumed from a prior partial download | completed; local file `.artifacts\release-acceptance\29486945685\ubuntu\download\data-viewer-package-Ubuntu-29486945685-1.zip` has `173533355` bytes |
+| GitHub artifact digest | local SHA-256 of downloaded artifact zip | `sha256:efd58777e919e96364b7aef6ff54a415962169e7fa46d60c9d8c0042d705df07`, matching GitHub artifact metadata |
+| Package artifact contents | extracted to `.artifacts\release-acceptance\29486945685\ubuntu\package` | contained `DataViewer-1.0.0.dev0-linux-x86_64.tar.gz`, package checksum file, `pyinstaller-manifest.json`, `sbom.json`, `third-party-licenses.txt`, `release-security-review.json`, and embedded acceptance packet |
+| Inner package checksum | `Get-FileHash .artifacts\release-acceptance\29486945685\ubuntu\package\DataViewer-1.0.0.dev0-linux-x86_64.tar.gz -Algorithm SHA256` | `f661e08768fb17a1d2d1c7a74c2ce510871c5774b039128ade29fbe6f02f6054`, matching `DataViewer-1.0.0.dev0-linux-x86_64.tar.gz.sha256` |
+| Security review | `release-security-review.json` inside package artifact | `release_status` `ready`; leak scan `passed`; no findings |
+| Linux archive structure | `tar -tzf .artifacts\release-acceptance\29486945685\ubuntu\package\DataViewer-1.0.0.dev0-linux-x86_64.tar.gz` | archive lists `DataViewer/DataViewer` plus Linux shared objects such as `PySide6/Qt/lib/libQt6Core.so.6` |
+| Final Ubuntu package metadata packet | `python tools\prepare_release_acceptance_packet.py ... --artifact-id 8370860438 --artifact-digest sha256:efd58777e919e96364b7aef6ff54a415962169e7fa46d60c9d8c0042d705df07 --version-output "Data Viewer 1.0.0.dev0 verified by Ubuntu CI package smoke"` | generated `.artifacts\release-acceptance\29486945685\ubuntu\evidence\DV-1102-checklist.md` and `acceptance-summary.json`; blockers `[]`; all manual rows remain `pending-manual` |
+
+Important boundary:
+
+- The Ubuntu package metadata packet above was generated on this Windows workstation after downloading the Ubuntu artifact, so its local environment fields are not Linux manual-acceptance evidence. It records artifact identity, archive checksum, SBOM/license/security presence, and GitHub metadata only. The actual DV-1102 checklist must be executed and signed on a supported Linux display stack.
+- GitHub Actions run `29486945685`, Ubuntu quality job `87583577243`, already passed the automated locked install, direct dependency smoke, lint, type check, compile, collection, full offscreen regression, PyInstaller build, executable smoke, installed-artifact functional smoke, release evidence generation, acceptance packet generation, package upload, and lightweight acceptance artifact upload for this same package commit.
+
+Known gaps:
+
+- DV-1102 is not complete. It still requires Linux packaged execution outside CI, the full functional matrix, Linux 100/200% visual/accessibility/localization checks, documented platform differences, issue review, and human sign-off.
