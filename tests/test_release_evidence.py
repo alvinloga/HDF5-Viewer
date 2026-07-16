@@ -52,22 +52,22 @@ def test_release_evidence_writes_checksums_sbom_notices_and_review(tmp_path: Pat
     checksum = package_dir / f"{archive.name}.sha256"
     assert checksum.exists()
     assert checksum.read_text(encoding="utf-8").endswith(f"  {archive.name}\n")
-    assert result["release_status"] == "blocked"
-    assert result["pyqt_distribution_decision"] == "unresolved"
+    assert result["release_status"] == "ready"
+    assert result["qt_distribution_decision"] == "pyside6-mit-lgpl-compatible"
 
     sbom = json.loads((package_dir / "sbom.json").read_text(encoding="utf-8"))
     assert sbom["schema_version"] == 1
     assert sbom["metadata"]["artifact_files"] == [archive.name]
     assert "uv_lock_sha256" in sbom["metadata"]
-    assert any(component["name"].lower() == "pyqt6" for component in sbom["components"])
+    assert any(component["name"].lower() == "pyside6" for component in sbom["components"])
 
     notices = (package_dir / "third-party-licenses.txt").read_text(encoding="utf-8")
     assert "Third-party license notices for Data Viewer" in notices
-    assert "PyQt6" in notices
+    assert "PySide6" in notices
 
     review = json.loads((package_dir / "release-security-review.json").read_text(encoding="utf-8"))
-    assert review["release_status"] == "blocked"
-    assert review["findings"][0]["owner"] == "project-owner"
+    assert review["release_status"] == "ready"
+    assert review["findings"] == []
     assert not review["leak_scan"]["findings"]
 
     serialized_outputs = "\n".join(
@@ -146,4 +146,4 @@ def test_ci_generates_release_evidence_before_uploading_packages() -> None:
     assert "third-party-licenses.txt" in workflow
     assert "sbom.json" in workflow
     assert "*.sha256" in workflow
-    assert "PyQt licensing decision" in release_workflow
+    assert "release evidence is accepted" in release_workflow

@@ -9,7 +9,7 @@ The repository is an HDF5-focused viewer, while the intended product is a genera
 
 ## Decision
 
-Rename the target product to **Data Viewer**. V1 is a local-first PyQt6 desktop application with equal Windows and Linux acceptance.
+Rename the target product to **Data Viewer**. V1 is a local-first PySide6 desktop application with equal Windows and Linux acceptance.
 
 V1 supports HDF5, NPY, NPZ, CSV, TSV, TXT, MAT, NIfTI, XLSX, JSON, YAML/YML, plus each format's outer `.gz` form. HDF5/NPY/NPZ/CSV/TSV/TXT support safe editing. MAT/NIfTI/XLSX/JSON/YAML and generic gzip wrappers are read-only with Save As/export. NetCDF and Zarr are excluded.
 

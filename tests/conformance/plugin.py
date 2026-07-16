@@ -39,7 +39,7 @@ FORBIDDEN_PLUGIN_IMPORT_PREFIXES = (
     "nibabel",
     "openpyxl",
     "pandas",
-    "PyQt6",
+    "PySide6",
 )
 
 

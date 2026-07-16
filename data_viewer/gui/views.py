@@ -12,8 +12,8 @@ from enum import StrEnum
 from typing import Any, cast
 
 import numpy as np
-from PyQt6.QtCore import QAbstractTableModel, QModelIndex, Qt
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, QPersistentModelIndex, Qt
+from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPlainTextEdit,
@@ -83,7 +83,10 @@ class _PayloadTableModel(QAbstractTableModel):
                 self._column_headers = [f"C{column}" for column in range(values.shape[1])]
         self.endResetModel()
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: N802
+    def rowCount(  # noqa: N802
+        self,
+        parent: QModelIndex | QPersistentModelIndex = QModelIndex(),
+    ) -> int:
         if parent.isValid() or self._payload is None:
             return 0
         if isinstance(self._payload, TablePayload):
@@ -95,12 +98,19 @@ class _PayloadTableModel(QAbstractTableModel):
             return values.shape[0]
         return values.shape[0]
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: N802
+    def columnCount(  # noqa: N802
+        self,
+        parent: QModelIndex | QPersistentModelIndex = QModelIndex(),
+    ) -> int:
         if parent.isValid() or self._payload is None:
             return 0
         return len(self._column_headers)
 
-    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:  # noqa: N802
+    def data(  # noqa: N802
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
         if role != Qt.ItemDataRole.DisplayRole or self._payload is None or not index.isValid():
             return None
         row = index.row()

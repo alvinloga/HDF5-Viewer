@@ -13,7 +13,7 @@
 
 | Dependency | Purpose | Boundary/security rule |
 |---|---|---|
-| PyQt6 | native desktop UI | GUI layer only; distribution license review is mandatory |
+| PySide6 | native desktop UI | GUI layer only; LGPL obligations and bundled notices are release gates |
 | NumPy | canonical array payloads and NPY/NPZ | `allow_pickle=False` everywhere |
 | h5py | HDF5 | session-owned handles; direct bounded selections |
 | pandas | chunked delimited-text parsing | adapters only; DataSource API does not expose DataFrames |
@@ -50,7 +50,7 @@ Target `pyproject.toml` groups:
 ```toml
 [project]
 dependencies = [
-  "PyQt6",
+  "PySide6",
   "numpy",
   "h5py",
   "pandas",
@@ -84,9 +84,11 @@ packaging = ["pyinstaller"]
 
 ## 6. Licensing
 
-The repository currently declares MIT, while PyQt6 is offered under GPL/commercial licensing. Before public binary distribution, the project owner must choose and document a compatible distribution model or licensed alternative. The decision is currently **unresolved**, so public binary packaging is blocked. This is a release blocker, not merely a README footnote. See [Riverbank's PyQt licensing overview](https://riverbankcomputing.com/software/pyqt/intro).
+The repository source remains MIT licensed. The v1 Qt binding decision is resolved by ADR-010: Data Viewer uses PySide6 / Qt for Python instead of PyQt6 so public Windows and Linux binaries can keep the project MIT license while following PySide6 LGPL distribution obligations.
 
-For each lock update, export the resolved set from the locked environment, capture each direct/transitive distribution's license metadata and SPDX mapping in the release SBOM, and review changes before merge. The release task verifies the generated SBOM and bundled license notices against `uv.lock`; unknown, incompatible, or non-redistributable licenses block inclusion.
+Public binary packaging is no longer blocked by the former PyQt6 GPL/commercial-license decision. Release remains gated on recording and shipping the generated SBOM, third-party notices, archive checksums, and security review evidence for the exact artifacts.
+
+For each lock update, export the resolved set from the locked environment, capture each direct/transitive distribution's license metadata and SPDX mapping in the release SBOM, and review changes before merge. The release task verifies the generated SBOM and bundled license notices against `uv.lock`; unknown, incompatible, or non-redistributable licenses block inclusion. PySide6 LGPL obligations, including bundled notices and user relinking/replaceability expectations for Qt libraries where applicable, are reviewed during release acceptance.
 
 ## 7. Security baseline
 

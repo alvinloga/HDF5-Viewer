@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QSpinBox
+from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QSpinBox
 
 from data_viewer.domain import DataDomain, DataMetadata, NodeKind, ResourceId, SourceCapability
 from data_viewer.gui.plugin_forms import ParameterFormWidget

@@ -13,5 +13,6 @@ ADRs capture accepted decisions that constrain implementation. They are immutabl
 | [007](ADR-007-gzip-wrapper.md) | Universal outer gzip support | Accepted |
 | [008](ADR-008-dual-platform-gate.md) | Windows and Linux equal release gates | Accepted |
 | [009](ADR-009-ui-design-system.md) | Native high-density Qt design system | Accepted |
+| [010](ADR-010-pyside6-mit-qt-binding.md) | PySide6 Qt binding preserves MIT distribution | Accepted |
 
 New ADRs use: title, status, date, context, decision, alternatives, consequences, and related documents.

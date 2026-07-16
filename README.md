@@ -152,7 +152,7 @@ QT_QPA_PLATFORM=xcb python -m data_viewer
 初始只读审查已经被当前锁定的 Windows/Linux 基线取代：
 
 - `uv sync --locked --all-extras` 在独立 CPython 3.12 环境与 Windows/Ubuntu CI 均通过；
-- 首版直接依赖（包括 PyQt6）在两端导入通过；
+- 首版直接依赖（包括 PySide6）在两端导入通过；
 - 全量 `pytest --collect-only -q` 收集 189 项；全量执行为 188 passed、1 skipped；
 - 当前 CI 已验证锁定安装、lint/type、编译、collection、offscreen GUI 回归、JUnit/manifest 证据上传及源码包/wheel 构建；
 - release gate 已验证质量测试失败会阻断后续发版 job；
@@ -175,4 +175,4 @@ QT_QPA_PLATFORM=xcb python -m data_viewer
 
 ## 许可证
 
-仓库源代码当前使用 MIT License。PyQt6 自身采用 GPLv3 或商业许可，正式分发 Data Viewer 前必须完成依赖许可审查并确认发布方式与所选 PyQt6 许可兼容。
+仓库源代码使用 MIT License。根据 ADR-010，Data Viewer 首版使用 PySide6 / Qt for Python 作为 Qt 绑定；PySide6 以 LGPLv3/GPLv2/GPLv3 三许可提供，本项目按 MIT 源码分发并在二进制发布时遵守 PySide6/Qt 的 LGPL 通知、可替换性和第三方许可证证据要求。

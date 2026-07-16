@@ -32,8 +32,8 @@ Paths under `data_viewer/` are target paths created incrementally during migrati
 - Depends: DV-0001.
 - Read: Dependencies entire document, ADR-008.
 - Scope: selected lock/constraints configuration, Windows/Linux lock outputs, dependency license inventory process.
-- Acceptance: clean Windows and Linux Python 3.12 environments install from committed locks; all direct imports smoke; exact lock generation command documented; PyQt6 distribution license decision recorded or public packaging explicitly blocked.
-- Verify: fresh-venv locked install and import smoke for PyQt6, NumPy, h5py, pandas, SciPy, NiBabel, openpyxl, PyYAML, Matplotlib, jsonschema, platformdirs.
+- Acceptance: clean Windows and Linux Python 3.12 environments install from committed locks; all direct imports smoke; exact lock generation command documented; PySide6/MIT distribution decision recorded with LGPL release obligations.
+- Verify: fresh-venv locked install and import smoke for PySide6, NumPy, h5py, pandas, SciPy, NiBabel, openpyxl, PyYAML, Matplotlib, jsonschema, platformdirs.
 
 ### [x] DV-0003 Repair and isolate pytest collection
 
@@ -632,8 +632,8 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 
 - Depends: DV-1005.
 - Scope: CI generation/validation and release attachments.
-- Acceptance: direct/transitive licenses reviewed; PyQt decision satisfied; SBOM and SHA-256 per artifact; dependency scan findings resolved or documented with owner/expiry; no credentials/paths leaked.
-- Verify: release-evidence generation, checksum/SBOM/notices, upload-safe relative PyInstaller manifests, and manifest/evidence leak scanning are covered locally; task remains open until the PyQt distribution-license decision is satisfied and final CI artifacts are regenerated/validated for that decision.
+- Acceptance: direct/transitive licenses reviewed; PySide6/MIT Qt binding decision satisfied by ADR-010; SBOM and SHA-256 per artifact; dependency scan findings resolved or documented with owner/expiry; no credentials/paths leaked.
+- Verify: release-evidence generation, checksum/SBOM/notices, upload-safe relative PyInstaller manifests, manifest/evidence leak scanning, and PySide6/MIT decision checks are covered locally; task remains open until final CI artifacts are regenerated/validated for that decision.
 
 ### [x] DV-1008 Remove eligible legacy runtime code and compatibility bridges
 

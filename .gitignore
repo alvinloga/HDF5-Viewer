@@ -15,6 +15,7 @@ venv/
 
 # Build log (generated, not tracked)
 build_log.txt
+.artifacts/
 
 # Test data (too large for GitHub)
 *.h5

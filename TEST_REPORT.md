@@ -3925,4 +3925,34 @@ GitHub Actions verification after the Linux manifest assertion fix:
 
 Known remaining blocker:
 
-- DV-1007 is still not complete because its acceptance criteria explicitly require the PyQt distribution-license decision to be satisfied. The current CI evidence proves the automated generation, smoke, leak-scan, and attachment path-hardening portions only.
+- Superseded by the PySide6/MIT Qt binding decision recorded below. DV-1007 still requires final Windows/Linux CI artifact regeneration after that decision.
+
+## DV-1007 PySide6 MIT binding and release evidence decision - 2026-07-16
+
+Revision: implementation and local evidence are recorded together in the commit containing this section.
+
+Implementation evidence:
+
+- Migrated the active Qt binding from PyQt6 to PySide6 in project dependencies, lock file, runtime imports, GUI tests, pytest-qt configuration, and CI direct-import smoke.
+- Added ADR-010 to record the owner decision: Data Viewer source remains MIT, v1 uses PySide6 / Qt for Python, and binary releases must carry PySide6/Qt LGPL notices, replaceability expectations, SBOM, checksums, and security evidence.
+- Updated dependency policy, product docs, README files, release notes, changelog, and task criteria so the former PyQt6 binary distribution-license blocker is no longer the release gate.
+- Release evidence now records `qt_distribution_decision = pyside6-mit-lgpl-compatible` and reports `release_status = ready` when no leak/security findings remain.
+- Fixed PySide6 compatibility issues in the accessibility audit (`findChildren` no longer receives a tuple of widget classes) and table-model type signatures (`QModelIndex | QPersistentModelIndex`) exposed by PySide6 stubs.
+
+Local Windows verification in the project `.venv` locked environment:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Direct dependency smoke | `.venv\Scripts\python.exe -c "import PySide6.QtCore, numpy, h5py, pandas, scipy, nibabel, openpyxl, yaml, matplotlib, jsonschema, platformdirs; print('direct-import-smoke: ok')"` | passed; printed `direct-import-smoke: ok` |
+| Dependency and release evidence contracts | `.venv\Scripts\python.exe -m pytest tests\test_dependency_policy.py tests\test_release_evidence.py -q` | 7 passed |
+| GUI binding migration coverage | `.venv\Scripts\python.exe -m pytest tests\test_gui_theme.py tests\test_gui_base_views.py tests\test_gui_state_components.py tests\test_gui_dialogs.py tests\test_gui_i18n_accessibility.py tests\test_plugin_compatibility_parameters.py -q` | 38 passed |
+| Main shell and base view regression | `.venv\Scripts\python.exe -m pytest tests\test_gui_shell.py tests\test_gui_base_views.py -q` | 27 passed |
+| Package/release smoke contracts | `.venv\Scripts\python.exe -m pytest tests\test_packaging_artifacts.py tests\test_installed_artifact_smoke.py tests\test_release_evidence.py tests\test_dependency_policy.py -q` | 45 passed |
+| CI-scope lint | `.venv\Scripts\python.exe -m ruff check data_viewer .github\scripts tools tests\test_dependency_policy.py tests\test_release_evidence.py` | passed |
+| CI-scope type check | `.venv\Scripts\python.exe -m mypy data_viewer .github\scripts\write_quality_manifest.py .github\scripts\generate_release_evidence.py .github\scripts\smoke_pyinstaller_artifact.py tools\build_pyinstaller_artifact.py` | passed; no issues in 114 source files |
+| Compile target paths | `.venv\Scripts\python.exe -m compileall -q data_viewer .github\scripts tools` | passed |
+| Full local suite | `.venv\Scripts\python.exe -m pytest -q` | 444 passed in 81.85s |
+
+Known remaining blocker:
+
+- DV-1007 is not marked complete until the PySide6/MIT revision is pushed and final Windows/Linux CI artifacts, release evidence, SBOM/notices, and leak scans are regenerated and validated on GitHub Actions.

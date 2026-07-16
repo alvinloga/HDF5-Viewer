@@ -13,7 +13,7 @@ from typing import Any, cast
 import h5py
 import nibabel as nib
 import numpy as np
-from PyQt6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication
 
 from data_viewer import __version__
 from data_viewer.app.documents import DocumentController

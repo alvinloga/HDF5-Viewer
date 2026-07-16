@@ -17,9 +17,9 @@ from typing import Any
 from pathlib import Path
 
 import numpy as np
-from PyQt6.QtCore import QAbstractTableModel, QModelIndex, Qt, QTimer
-from PyQt6.QtGui import QAction, QCloseEvent
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, QPersistentModelIndex, Qt, QTimer
+from PySide6.QtGui import QAction, QCloseEvent
+from PySide6.QtWidgets import (
     QApplication,
     QAbstractItemView,
     QFormLayout,
@@ -295,17 +295,27 @@ class _ArrayTableModel(QAbstractTableModel):
         self._rows = [[self._format_cell(values)]]
         self.endResetModel()
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: N802
+    def rowCount(  # noqa: N802
+        self,
+        parent: QModelIndex | QPersistentModelIndex = QModelIndex(),
+    ) -> int:
         if parent.isValid():
             return 0
         return len(self._rows)
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: N802
+    def columnCount(  # noqa: N802
+        self,
+        parent: QModelIndex | QPersistentModelIndex = QModelIndex(),
+    ) -> int:
         if parent.isValid():
             return 0
         return len(self._headers[0])
 
-    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:  # noqa: N802
+    def data(  # noqa: N802
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
         if not index.isValid() or role != Qt.ItemDataRole.DisplayRole:
             return None
         row = index.row()

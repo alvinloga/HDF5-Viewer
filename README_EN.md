@@ -116,7 +116,7 @@ The target commands are maintained in `docs/PRODUCT_SPEC.md`.
 The initial read-only audit has been superseded by the current locked Windows/Linux baseline:
 
 - `uv sync --locked --all-extras` passes in an independent CPython 3.12 environment and in Windows/Ubuntu CI;
-- all v1 direct dependencies, including PyQt6, import successfully on both platforms;
+- all v1 direct dependencies, including PySide6, import successfully on both platforms;
 - full collection reports 189 tests and execution reports 188 passed, 1 skipped;
 - CI now verifies locked installation, lint/type, compilation, collection, offscreen GUI regression, JUnit/manifest evidence upload, and sdist/wheel builds;
 - the release gate has been verified to stop when quality tests fail;
@@ -131,4 +131,4 @@ Read [AGENTS.md](AGENTS.md) and [CONTRIBUTING.md](CONTRIBUTING.md). Implement on
 
 ## License
 
-Repository source is currently MIT licensed. PyQt6 is distributed under GPLv3 or a commercial license. A dependency-license review is required before distributing Data Viewer binaries.
+Repository source is MIT licensed. Per ADR-010, Data Viewer v1 uses PySide6 / Qt for Python as its Qt binding; PySide6 is available under LGPLv3/GPLv2/GPLv3 terms, and Data Viewer binaries must ship the required PySide6/Qt notices, replaceability evidence, and third-party license evidence while keeping the project source under MIT.

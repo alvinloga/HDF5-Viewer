@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PyQt6.QtWidgets import QApplication, QLabel, QLineEdit, QPushButton, QTreeWidget, QWidget
+from PySide6.QtWidgets import QApplication, QLabel, QLineEdit, QPushButton, QTreeWidget, QWidget
 
 from data_viewer.gui.accessibility import (
     AccessibilityIssue,

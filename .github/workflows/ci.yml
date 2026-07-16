@@ -80,7 +80,7 @@ jobs:
 
       - name: Smoke-test direct dependencies
         run: >-
-          uv run --locked python -c 'import PyQt6.QtCore, numpy, h5py, pandas, scipy, nibabel, openpyxl, yaml, matplotlib, jsonschema, platformdirs; print("direct-import-smoke: ok")'
+          uv run --locked python -c 'import PySide6.QtCore, numpy, h5py, pandas, scipy, nibabel, openpyxl, yaml, matplotlib, jsonschema, platformdirs; print("direct-import-smoke: ok")'
 
       - name: Lint Data Viewer target and isolation harness
         run: >-

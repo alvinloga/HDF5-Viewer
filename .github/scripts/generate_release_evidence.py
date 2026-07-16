@@ -21,7 +21,7 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_VERSION = 1
-PYQT_FINDING_ID = "DV-1007-PYQT-LICENSE"
+QT_BINDING_FINDING_ID = "DV-1007-QT-BINDING-LICENSE"
 
 
 def generate_release_evidence(
@@ -60,14 +60,14 @@ def generate_release_evidence(
     ]
     leak_findings = _scan_files_for_leaks([path for path in upload_attachments if path.exists()])
     findings = []
-    pyqt_decision = pyqt_distribution_decision(project_root)
-    if pyqt_decision != "satisfied":
+    qt_decision = qt_distribution_decision(project_root)
+    if qt_decision != "pyside6-mit-lgpl-compatible":
         findings.append(
             {
-                "id": PYQT_FINDING_ID,
+                "id": QT_BINDING_FINDING_ID,
                 "severity": "release-blocker",
                 "category": "license",
-                "summary": "PyQt binary distribution license decision is not resolved.",
+                "summary": "Qt binding binary distribution license decision is not resolved.",
                 "owner": "project-owner",
                 "expiry": "before-public-binary-release",
                 "status": "documented",
@@ -89,7 +89,7 @@ def generate_release_evidence(
     review = {
         "schema_version": SCHEMA_VERSION,
         "release_status": "blocked" if findings else "ready",
-        "pyqt_distribution_decision": pyqt_decision,
+        "qt_distribution_decision": qt_decision,
         "artifact_files": [path.name for path in artifacts],
         "checksum_files": [path.name for path in checksum_files],
         "dependency_consistency": {
@@ -188,13 +188,20 @@ def detect_sensitive_text(text: str) -> list[dict[str, str]]:
     return findings
 
 
-def pyqt_distribution_decision(project_root: Path) -> str:
-    """Return the documented PyQt distribution decision state."""
+def qt_distribution_decision(project_root: Path) -> str:
+    """Return the documented Qt binding distribution decision state."""
 
     dependencies = (project_root / "docs" / "DEPENDENCIES.md").read_text(encoding="utf-8")
-    if "currently **unresolved**" in dependencies or "public binary packaging is blocked" in dependencies:
-        return "unresolved"
-    return "satisfied"
+    pyproject = (project_root / "pyproject.toml").read_text(encoding="utf-8")
+    if (
+        "PySide6" in pyproject
+        and 'license = "MIT"' in pyproject
+        and "PySide6 LGPL" in dependencies
+        and "public binary packaging is blocked" not in dependencies
+        and "currently **unresolved**" not in dependencies
+    ):
+        return "pyside6-mit-lgpl-compatible"
+    return "unresolved"
 
 
 def _artifact_files(package_dir: Path) -> list[Path]:

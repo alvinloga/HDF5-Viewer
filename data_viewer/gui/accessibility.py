@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QLineEdit,
     QPlainTextEdit,
     QPushButton,
@@ -96,7 +96,13 @@ def audit_accessible_widgets(root: QWidget) -> list[AccessibilityIssue]:
     widgets: list[QWidget] = []
     if isinstance(root, _AUDITED_CLASSES):
         widgets.append(root)
-    widgets.extend(root.findChildren(_AUDITED_CLASSES))
+    seen_widget_ids = {id(widget) for widget in widgets}
+    for audited_class in _AUDITED_CLASSES:
+        for widget in root.findChildren(audited_class):
+            widget_id = id(widget)
+            if widget_id not in seen_widget_ids:
+                widgets.append(widget)
+                seen_widget_ids.add(widget_id)
 
     issues: list[AccessibilityIssue] = []
     for widget in widgets:

@@ -2,7 +2,7 @@
 
 ## 1. Design intent
 
-Data Viewer is a professional, quiet, high-density scientific desktop workbench. It is inspired by modern IDE information architecture and Fluent 2 clarity while remaining native PyQt6. It is not a web dashboard and must not mimic an official Fluent component library.
+Data Viewer is a professional, quiet, high-density scientific desktop workbench. It is inspired by modern IDE information architecture and Fluent 2 clarity while remaining native PySide6. It is not a web dashboard and must not mimic an official Fluent component library.
 
 Taste settings:
 

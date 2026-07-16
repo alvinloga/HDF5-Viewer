@@ -29,7 +29,7 @@ Build a cross-platform desktop scientific data workbench that lets technical use
 
 - Name: Data Viewer.
 - Platforms: Windows and Linux are equal release gates.
-- Mode: desktop application using PyQt6.
+- Mode: desktop application using PySide6.
 - Connectivity: offline by default; no telemetry or automatic upload.
 - Plugin trust: built-in plugins only in v1.
 
@@ -204,7 +204,7 @@ Target runtime:
 
 - Python 3.11 and 3.12 source compatibility;
 - Python 3.12 release builds;
-- PyQt6 for desktop UI;
+- PySide6 for desktop UI;
 - NumPy as the shared numeric interchange type;
 - format libraries isolated behind adapters;
 - Matplotlib for v1 plots and MRI slice rendering;
@@ -318,4 +318,4 @@ The following defaults are specified but require final human acceptance before t
 - exact editing matrix for JSON/YAML/XLSX after v1;
 - whether NIfTI label overlays enter v1.1 or a later release;
 - external plugin SDK distribution mechanism after API v1 stabilizes;
-- final binary license strategy for PyQt6 distribution.
+- post-v1 Qt binding alternatives only if MIT distribution requirements change.

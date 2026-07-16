@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import numpy as np
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QLabel, QPlainTextEdit, QTableView
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QLabel, QPlainTextEdit, QTableView
 
 from data_viewer.domain import (
     ArrayPayload,

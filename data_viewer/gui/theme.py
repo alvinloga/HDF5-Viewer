@@ -13,10 +13,10 @@ import math
 import re
 from pathlib import Path
 
-from PyQt6.QtCore import QByteArray, Qt
-from PyQt6.QtGui import QColor, QFontDatabase, QIcon, QPainter, QPixmap
-from PyQt6.QtSvg import QSvgRenderer
-from PyQt6.QtWidgets import QApplication
+from PySide6.QtCore import QByteArray, Qt
+from PySide6.QtGui import QColor, QFontDatabase, QIcon, QPainter, QPixmap
+from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtWidgets import QApplication
 
 
 class ThemeMode(StrEnum):

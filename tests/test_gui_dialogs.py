@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QLabel, QLineEdit, QPushButton
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QLabel, QLineEdit, QPushButton
 
 from data_viewer.domain import ResourceId, SourceFingerprint
 from data_viewer.editing.review import SaveReview, SaveStrategy
