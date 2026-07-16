@@ -19,7 +19,7 @@ Current source areas:
 | `services/` | legacy export/search services | removed in DV-1008 after target export queue/exporting/navigation coverage |
 | `utils/` | empty compatibility package by DV-1008 review | removed in DV-1008; no target code depends on it |
 | `config.json` | repository-local settings | migrate to versioned platform config |
-| `HDF5Viewer.spec`, build scripts | packaging | replace names/paths and add smoke tests |
+| `HDF5Viewer.spec`, legacy build scripts | historical packaging entrypoints | removed in DV-1008 after Data Viewer PyInstaller packaging, installed-artifact smoke, release-evidence generation, and Windows/Linux package artifacts replaced them |
 
 No legacy module is deleted merely because a target directory exists. Deletion follows parity tests and import/reference search.
 

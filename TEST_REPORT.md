@@ -3850,3 +3850,35 @@ Local Windows verification in the repository `venv`:
 Known gaps:
 
 - This removes the last legacy runtime root package known to DV-1008. DV-1008 still requires final whole-repository absence checks, task-status updates, and Windows/Linux CI evidence on the final removal revision before it can be marked complete.
+
+## DV-1008 final legacy runtime removal evidence - 2026-07-16
+
+Revision: `e22b7e6e0baad53062854af72bb6fa16a4dc9afa`.
+
+Implementation evidence:
+
+- Root legacy runtime and build surfaces are absent: `main.py`, `core/`, `gui/`, `plugins/`, `services/`, `utils/`, `HDF5Viewer.spec`, `build_windows.py`, and `build_windows.bat` all returned `False` from `Test-Path`.
+- The active reference audit for legacy runtime imports and legacy path strings returned only intentional guard/documentation strings in `tests/test_packaging_artifacts.py`, `tests/test_format_scope.py`, `CHANGELOG.md`, `docs/MIGRATION.md`, and `tasks/todo.md`.
+- `tasks/todo.md` now records DV-1008 as complete only after final local and CI evidence was available.
+
+Local Windows verification in the repository `venv`:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Final full local suite | `venv\Scripts\python.exe -m pytest -q` | 439 passed in 70.12s |
+| Final absence check | `Test-Path core`, `Test-Path gui`, `Test-Path plugins`, `Test-Path services`, `Test-Path utils`, `Test-Path main.py`, `Test-Path HDF5Viewer.spec`, `Test-Path build_windows.py`, `Test-Path build_windows.bat` | all returned `False` |
+| Final active reference audit | `rg -n "from (core\|gui\|plugins\|services\|utils)\|import (core\|gui\|plugins\|services\|utils)\|core/\|gui/\|plugins/\|services/\|utils/\|main\.py\|HDF5Viewer\.spec\|build_windows" tests tools data_viewer packaging .github docs\MIGRATION.md CHANGELOG.md tasks\todo.md` | only intentional guard/documentation strings remained |
+
+GitHub Actions verification:
+
+| Check | Evidence | Observed result |
+|---|---|---|
+| Final Windows/Linux CI | run `29468318989` on branch `codex/data-viewer-foundation` | workflow conclusion `success`; Windows quality and Ubuntu quality jobs passed |
+| Windows package artifact | `data-viewer-package-Windows-29468318989-1` | uploaded |
+| Ubuntu package artifact | `data-viewer-package-Ubuntu-29468318989-1` | uploaded |
+| Windows quality artifact | `data-viewer-quality-Windows-29468318989-1` | uploaded |
+| Ubuntu quality artifact | `data-viewer-quality-Ubuntu-29468318989-1` | uploaded |
+
+Known gaps:
+
+- None for DV-1008. Public release remains gated by later release-candidate, manual Windows/Linux acceptance, and release tasks.

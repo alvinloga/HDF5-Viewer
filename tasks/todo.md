@@ -635,13 +635,13 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: direct/transitive licenses reviewed; PyQt decision satisfied; SBOM and SHA-256 per artifact; dependency scan findings resolved or documented with owner/expiry; no credentials/paths leaked.
 - Verify: regenerate and validate artifacts from CI outputs.
 
-### [ ] DV-1008 Remove eligible legacy runtime code and compatibility bridges
+### [x] DV-1008 Remove eligible legacy runtime code and compatibility bridges
 
 - Depends: DV-1002, DV-1006.
 - Read: Migration §4, §7.
 - Scope: one legacy capability/removal group at a time; do not mix unrelated cleanup.
 - Acceptance: parity/removal criteria proven; no runtime/test/build imports; target bootstrap default; legacy fallback removed; history/docs preserved.
-- Verify: `rg` reference audit, import smoke, full tests, both packages.
+- Verify: completed on 2026-07-16 at `e22b7e6e0baad53062854af72bb6fa16a4dc9afa`; final local suite passed with 439 tests, reference audit left only intentional documentation/guard strings, root legacy runtime/build paths were absent, and GitHub Actions run `29468318989` passed Windows and Ubuntu quality/package jobs with uploaded package and quality artifacts.
 
 ### [ ] DV-1009 Record Checkpoint 10 release-candidate evidence
 
