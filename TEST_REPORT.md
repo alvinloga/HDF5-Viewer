@@ -4198,3 +4198,26 @@ Local Windows verification in the project `.venv` locked environment:
 Known gaps:
 
 - DV-1101 and DV-1102 remain open. This hardens the manual evidence rule but does not execute or sign either platform acceptance matrix.
+
+## P11 release acceptance packet validator - 2026-07-16
+
+Revision: implementation and evidence are recorded together in the commit containing this section.
+
+Change:
+
+- Added `tools/validate_release_acceptance_packet.py` to fail closed on incomplete DV-1101/DV-1102 evidence packets before they are linked as manual acceptance evidence.
+- The validator checks `acceptance-summary.json`, the platform checklist, package artifact identity/digest fields, preflight booleans, unresolved blockers, generated pending markers, functional row statuses/evidence links, visual screenshot rows, and sign-off fields.
+- `docs/RELEASE_ACCEPTANCE.md` now tells reviewers to run the validator after completing and signing a packet. This does not replace human review and does not complete DV-1101/DV-1102 by itself.
+
+Local Windows verification in the project `.venv` locked environment:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Acceptance packet and runbook contracts | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 9 passed in 1.08s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tools\validate_release_acceptance_packet.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py` | passed |
+| Scoped type check | `.venv\Scripts\python.exe -m mypy tools\validate_release_acceptance_packet.py` | passed; no issues in 1 source file |
+| Diff hygiene | `git diff --check` | passed; only Windows line-ending conversion warnings for touched Markdown and test files |
+
+Known gaps:
+
+- DV-1101 and DV-1102 remain open until the completed platform packets pass this validator and are signed/linked with the required screenshots, logs, issue review, artifact identity, and no unresolved integrity/security blocker.

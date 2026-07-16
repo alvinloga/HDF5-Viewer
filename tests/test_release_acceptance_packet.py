@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from tools.prepare_release_acceptance_packet import AcceptanceMetadata, prepare_acceptance_packet
+from tools.validate_release_acceptance_packet import validate_acceptance_packet
 
 
 def test_prepare_release_acceptance_packet_prefills_preflight_without_manual_signoff(
@@ -123,6 +124,73 @@ def test_prepare_release_acceptance_packet_reports_security_blockers(tmp_path: P
     }
 
 
+def test_validate_release_acceptance_packet_rejects_generated_preflight_packet(
+    tmp_path: Path,
+) -> None:
+    packet_dir = _prepare_ready_packet(tmp_path, task_id="DV-1101", platform_name="Windows")
+
+    issues = validate_acceptance_packet(packet_dir, task_id="DV-1101")
+
+    issue_codes = {issue.code for issue in issues}
+    assert "pending-marker" in issue_codes
+    assert "functional-not-accepted" in issue_codes
+    assert "visual-not-accepted" in issue_codes
+    assert "checklist-required-field" in issue_codes
+
+
+def test_validate_release_acceptance_packet_accepts_completed_packet(tmp_path: Path) -> None:
+    packet_dir = _prepare_ready_packet(tmp_path, task_id="DV-1101", platform_name="Windows")
+    checklist_path = packet_dir / "DV-1101-checklist.md"
+    checklist = checklist_path.read_text(encoding="utf-8")
+    checklist = checklist.replace(
+        "| pending-manual | pending-manual | pending-manual | pending-manual | pending-manual |  |  |",
+        "| 150% | 1440x900 typical | light | table | pass | screenshots/table-light.png |  |",
+    )
+    checklist = checklist.replace(
+        "| pending-manual |  |  |  |",
+        "| None |  |  |  |",
+    )
+    replacements = {
+        "pending-manual": "evidence/windows",
+        "- Display server / scaling mechanism: evidence/windows": "- Display server / scaling mechanism: Windows 11 native display, 150% scaling",
+        "- Evidence directory or URL: evidence/windows": "- Evidence directory or URL: evidence/windows",
+        "- Signature: evidence/windows": "- Signature: Alice Reviewer",
+        "- Date: evidence/windows": "- Date: 2026-07-16",
+    }
+    for old, new in replacements.items():
+        checklist = checklist.replace(old, new)
+    for row_id in (
+        "FMT-HDF5",
+        "FMT-NPY",
+        "FMT-NPZ",
+        "FMT-CSV",
+        "FMT-TSV",
+        "FMT-TXT",
+        "FMT-MAT",
+        "FMT-NIFTI",
+        "FMT-XLSX",
+        "FMT-JSON",
+        "FMT-YAML",
+        "EDIT",
+        "EXPORT",
+        "PLUGIN",
+        "COMPARE",
+        "WORKSPACE",
+        "TASKS",
+        "SECURITY",
+        "PACKAGE",
+    ):
+        checklist = checklist.replace(
+            f"| {row_id} | evidence/windows |  | Requires human execution and evidence. |",
+            f"| {row_id} | pass | evidence/windows/{row_id}.md | reviewed |",
+        )
+    checklist_path.write_text(checklist, encoding="utf-8")
+
+    issues = validate_acceptance_packet(packet_dir, task_id="DV-1101")
+
+    assert issues == []
+
+
 def test_ci_generates_preupload_acceptance_packet_before_package_upload() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
 
@@ -140,3 +208,49 @@ def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     digest.update(path.read_bytes())
     return digest.hexdigest()
+
+
+def _prepare_ready_packet(tmp_path: Path, *, task_id: str, platform_name: str) -> Path:
+    artifact_dir = tmp_path / f"artifact-{task_id}"
+    artifact_dir.mkdir()
+    archive = artifact_dir / "DataViewer-0.1.0-windows-x86_64.zip"
+    archive.write_bytes(b"data-viewer-package")
+    archive_hash = _sha256(archive)
+    (artifact_dir / f"{archive.name}.sha256").write_text(
+        f"{archive_hash}  {archive.name}\n",
+        encoding="utf-8",
+    )
+    (artifact_dir / "pyinstaller-manifest.json").write_text(
+        json.dumps({"app_name": "DataViewer", "version": "0.1.0"}),
+        encoding="utf-8",
+    )
+    (artifact_dir / "sbom.json").write_text('{"schema_version": 1}\n', encoding="utf-8")
+    (artifact_dir / "third-party-licenses.txt").write_text("notices\n", encoding="utf-8")
+    (artifact_dir / "release-security-review.json").write_text(
+        json.dumps(
+            {
+                "release_status": "ready",
+                "leak_scan": {"status": "passed", "findings": []},
+                "findings": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    packet_dir = tmp_path / f"packet-{task_id}"
+    prepare_acceptance_packet(
+        artifact_dir=artifact_dir,
+        output_dir=packet_dir,
+        metadata=AcceptanceMetadata(
+            task_id=task_id,
+            platform_name=platform_name,
+            candidate_commit="abc123",
+            run_id="123",
+            job_id="456",
+            artifact_name=f"data-viewer-package-{platform_name}-123-1",
+            artifact_id="789",
+            artifact_digest="sha256:artifactdigest",
+            reviewer="Alice Reviewer",
+            version_output="Data Viewer 0.1.0",
+        ),
+    )
+    return packet_dir

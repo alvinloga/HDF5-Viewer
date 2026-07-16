@@ -81,6 +81,7 @@ All notable Data Viewer changes are recorded here.
 - Added the DV-1007 release-evidence automation slice: CI now generates SHA-256 checksums, `sbom.json`, `third-party-licenses.txt`, and `release-security-review.json` for each package artifact after installed functional smoke; the former Qt-binding distribution-license blocker is resolved by the PySide6/MIT decision in ADR-010.
 - Hardened the DV-1007 release-evidence leak gate: uploaded PyInstaller manifests now use relative paths, installed-artifact smoke resolves those paths for CI, and release evidence scans uploaded manifest/evidence attachments for local path or credential leaks.
 - Added a lightweight release-acceptance artifact upload so Windows/Linux reviewers can download the prefilled DV-1101/DV-1102 checklist and acceptance summary without downloading the full package artifact first.
+- Added a release-acceptance packet validator so signed DV-1101/DV-1102 evidence can be checked for pending generated fields, unresolved blockers, missing artifact identity, missing evidence links, and missing visual screenshot/sign-off fields before release.
 
 ### Fixed
 
