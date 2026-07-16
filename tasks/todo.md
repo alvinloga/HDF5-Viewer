@@ -628,12 +628,12 @@ Each plugin task depends on DV-0706, includes its manifest/package/numerical or 
 - Acceptance: artifact launches, opens representative HDF5/CSV/NIfTI/gzip/workspace, runs reference plugin, exports, closes cleanly; release depends on both smoke jobs; logs/screenshots uploaded.
 - Verify: successful tag-dry-run workflow; deliberate smoke failure blocks release, then revert deliberate failure.
 
-### [ ] DV-1007 Generate SBOM, license notices, checksums, and security evidence
+### [x] DV-1007 Generate SBOM, license notices, checksums, and security evidence
 
 - Depends: DV-1005.
 - Scope: CI generation/validation and release attachments.
 - Acceptance: direct/transitive licenses reviewed; PySide6/MIT Qt binding decision satisfied by ADR-010; SBOM and SHA-256 per artifact; dependency scan findings resolved or documented with owner/expiry; no credentials/paths leaked.
-- Verify: release-evidence generation, checksum/SBOM/notices, upload-safe relative PyInstaller manifests, manifest/evidence leak scanning, and PySide6/MIT decision checks are covered locally; task remains open until final CI artifacts are regenerated/validated for that decision.
+- Verify: completed on 2026-07-16 at `7faee0819315dae2310b2eb858c4942878e4b59d`; Windows/Linux CI run `29472241588` passed locked install, PySide6 direct import smoke, lint, type check, compile, collection, full offscreen regression, wheel/sdist build, PyInstaller package build, executable smoke, installed-artifact functional smoke, release-evidence generation, quality artifact upload, and package artifact upload. Uploaded artifacts include package and quality evidence for both Windows and Ubuntu.
 
 ### [x] DV-1008 Remove eligible legacy runtime code and compatibility bridges
 

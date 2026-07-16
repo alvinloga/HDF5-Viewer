@@ -3955,4 +3955,16 @@ Local Windows verification in the project `.venv` locked environment:
 
 Known remaining blocker:
 
-- DV-1007 is not marked complete until the PySide6/MIT revision is pushed and final Windows/Linux CI artifacts, release evidence, SBOM/notices, and leak scans are regenerated and validated on GitHub Actions.
+- None for DV-1007 after the final CI evidence below.
+
+GitHub Actions verification:
+
+| Check | Evidence | Observed result |
+|---|---|---|
+| Final Windows/Linux CI for PySide6/MIT release evidence | run `29472241588` on branch `codex/data-viewer-foundation`, revision `7faee0819315dae2310b2eb858c4942878e4b59d` | workflow conclusion `success`; Windows quality and Ubuntu quality jobs passed |
+| Windows quality job | job `87537547677` | lock install, PySide6 direct import smoke, lint, type check, compile, collection, full offscreen regression, wheel/sdist, PyInstaller package build, executable smoke, installed-artifact functional smoke, release evidence generation, quality upload, and package upload all passed |
+| Ubuntu quality job | job `87537547711` | same gate passed |
+| Windows package artifact | `data-viewer-package-Windows-29472241588-1` | uploaded; artifact id `8365236934`; size `132176700`; digest `sha256:9291be73daad90c300642bf295c98871e31c042a31e029281a670fd505d3a138`; not expired |
+| Ubuntu package artifact | `data-viewer-package-Ubuntu-29472241588-1` | uploaded; artifact id `8365245732`; size `173534344`; digest `sha256:24517133ccfd83176a0e7605773a86f32d114a64640de64605c80e88635e0c27`; not expired |
+| Windows quality artifact | `data-viewer-quality-Windows-29472241588-1` | uploaded; artifact id `8365235882`; size `132834528`; digest `sha256:126f2495abce6116145e7c27377f42f710fbc0346f47ca89a230d0a115a3e354`; not expired |
+| Ubuntu quality artifact | `data-viewer-quality-Ubuntu-29472241588-1` | uploaded; artifact id `8365244186`; size `174238188`; digest `sha256:586653420958f6ee1002f04e3038253aa6e8e7df4a95ec2e5ebada18cbe9eb43`; not expired |
