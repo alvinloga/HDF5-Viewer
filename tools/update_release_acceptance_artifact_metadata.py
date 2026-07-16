@@ -84,6 +84,9 @@ def update_acceptance_artifact_metadata(
 
     artifact["id"] = artifact_id
     artifact["github_digest"] = artifact_digest
+    preflight = summary.get("preflight")
+    if isinstance(preflight, dict):
+        preflight["artifact_digest_recorded"] = True
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     checklist_path.write_text(updated_checklist, encoding="utf-8")
 

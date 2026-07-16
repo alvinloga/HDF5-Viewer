@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 from tools.prepare_release_acceptance_packet import AcceptanceMetadata, prepare_acceptance_packet
@@ -141,6 +143,33 @@ def test_validate_release_acceptance_packet_rejects_generated_preflight_packet(
     assert "checklist-required-field" in issue_codes
 
 
+def test_validate_release_acceptance_packet_cli_runs_as_documented(tmp_path: Path) -> None:
+    packet_dir = _prepare_ready_packet(tmp_path, task_id="DV-1101", platform_name="Windows")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "tools/validate_release_acceptance_packet.py",
+            str(packet_dir),
+            "--task-id",
+            "DV-1101",
+            "--json",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    assert "ModuleNotFoundError" not in completed.stderr
+    payload = json.loads(completed.stdout)
+    assert payload["issue_count"] > 0
+    assert {issue["code"] for issue in payload["issues"]} >= {
+        "pending-marker",
+        "functional-not-accepted",
+    }
+
+
 def test_validate_release_acceptance_packet_accepts_completed_packet(tmp_path: Path) -> None:
     packet_dir = _prepare_ready_packet(tmp_path, task_id="DV-1101", platform_name="Windows")
     checklist_path = packet_dir / "DV-1101-checklist.md"
@@ -231,6 +260,7 @@ def test_update_release_acceptance_artifact_metadata_fills_preupload_fields_only
     summary = json.loads((packet_dir / "acceptance-summary.json").read_text(encoding="utf-8"))
     assert summary["artifact"]["id"] == "8377858744"
     assert summary["artifact"]["github_digest"] == result["artifact_digest"]
+    assert summary["preflight"]["artifact_digest_recorded"] is True
     assert summary["manual_status"] == "pending-manual"
     assert summary["manual_rows"]["FMT-HDF5"] == "pending-manual"
 

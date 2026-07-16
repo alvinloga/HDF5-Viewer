@@ -4346,16 +4346,21 @@ Change:
 
 - Added `tools/update_release_acceptance_artifact_metadata.py` so release reviewers can fill the final GitHub package artifact ID and digest in a CI-generated pre-upload DV-1101/DV-1102 packet.
 - The updater checks the expected task ID, optional artifact name, nonblank artifact ID, and `sha256:` digest prefix before modifying files.
-- The updater only changes `acceptance-summary.json` artifact metadata and the matching checklist's package artifact ID/digest lines. It does not mark manual functional rows, visual rows, evidence links, or sign-off fields as complete.
+- The updater only changes `acceptance-summary.json` artifact metadata, its generated `artifact_digest_recorded` preflight flag, and the matching checklist's package artifact ID/digest lines. It does not mark manual functional rows, visual rows, evidence links, or sign-off fields as complete.
 - `docs/RELEASE_ACCEPTANCE.md` now documents the updater command before the final packet validator step.
+- Fixed `tools/validate_release_acceptance_packet.py` so the documented direct script invocation works outside pytest/module import contexts.
 
 Local Windows verification in the project `.venv` locked environment:
 
 | Check | Command | Observed result |
 |---|---|---|
-| Acceptance packet and runbook contracts | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 14 passed in 1.80s |
-| Scoped lint | `.venv\Scripts\python.exe -m ruff check tools\update_release_acceptance_artifact_metadata.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py` | passed |
-| Scoped type check | `.venv\Scripts\python.exe -m mypy tools\update_release_acceptance_artifact_metadata.py` | passed; no issues in 1 source file |
+| Acceptance packet and runbook contracts | `.venv\Scripts\python.exe -m pytest tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py -q` | 15 passed in 1.70s |
+| Scoped lint | `.venv\Scripts\python.exe -m ruff check tools\update_release_acceptance_artifact_metadata.py tools\validate_release_acceptance_packet.py tests\test_release_acceptance_packet.py tests\test_release_acceptance_docs.py` | passed |
+| Scoped type check | `.venv\Scripts\python.exe -m mypy tools\update_release_acceptance_artifact_metadata.py tools\validate_release_acceptance_packet.py` | passed; no issues in 2 source files |
+| Fresh Windows pre-upload packet metadata update | `.venv\Scripts\python.exe tools\update_release_acceptance_artifact_metadata.py .artifacts\release-acceptance\29507926190\windows\acceptance-upload-fresh --task-id DV-1101 --artifact-name data-viewer-package-Windows-29507926190-1 --artifact-id 8379428336 --artifact-digest sha256:d2e4aaf50da0ac65afb1d8c05e26cc95959adb801f10383b793125481896a497` | passed; packet artifact metadata updated |
+| Fresh Ubuntu pre-upload packet metadata update | `.venv\Scripts\python.exe tools\update_release_acceptance_artifact_metadata.py .artifacts\release-acceptance\29507926190\ubuntu\acceptance-upload-fresh --task-id DV-1102 --artifact-name data-viewer-package-Ubuntu-29507926190-1 --artifact-id 8379423605 --artifact-digest sha256:3c6444c48025b31c77d28b57688cc72a0b9bd4c98c510dc1fd090b7ef1985709` | passed; packet artifact metadata updated |
+| Fresh Windows packet validator after metadata update | `.venv\Scripts\python.exe tools\validate_release_acceptance_packet.py .artifacts\release-acceptance\29507926190\windows\acceptance-upload-fresh --task-id DV-1101 --json` | failed as expected with 26 manual/sign-off/visual issues only; no `pending-after-upload`, missing artifact identity, or `preflight-not-passed` issue |
+| Fresh Ubuntu packet validator after metadata update | `.venv\Scripts\python.exe tools\validate_release_acceptance_packet.py .artifacts\release-acceptance\29507926190\ubuntu\acceptance-upload-fresh --task-id DV-1102 --json` | failed as expected with 26 manual/sign-off/visual issues only; no `pending-after-upload`, missing artifact identity, or `preflight-not-passed` issue |
 | Diff hygiene | `git diff --check` | passed; only Windows line-ending conversion warnings for touched Markdown and test files |
 
 Known gaps:
