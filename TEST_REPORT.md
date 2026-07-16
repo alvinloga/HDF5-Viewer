@@ -4366,3 +4366,54 @@ Local Windows verification in the project `.venv` locked environment:
 Known gaps:
 
 - This tool supports DV-1101/DV-1102 evidence preparation only. It does not execute packaged manual acceptance, does not sign packets, and does not complete DV-1101 or DV-1102.
+
+## P11 final prepared acceptance packet refresh - 2026-07-16
+
+Revision: `6af310ba43a53f4a4aa2f9b30f05a5f59b6513db` (`fix: support direct acceptance packet validation`).
+
+GitHub Actions run:
+
+- Run: `29508834399`
+- URL: `https://github.com/alvinloga/HDF5-Viewer/actions/runs/29508834399`
+- Result: success
+- Branch: `codex/data-viewer-foundation`
+
+Windows and Ubuntu quality/package jobs for this revision passed locked install,
+direct dependency smoke, lint, type check, compile, test collection, full
+offscreen regression, wheel/sdist build, PyInstaller package build, executable
+smoke, installed-artifact functional smoke, release evidence generation,
+acceptance packet generation, package upload, and lightweight acceptance
+artifact upload.
+
+Uploaded package and acceptance artifacts:
+
+| Platform | Artifact | GitHub artifact ID | GitHub artifact digest | Size |
+|---|---|---:|---|---:|
+| Windows | `data-viewer-package-Windows-29508834399-1` | `8379847767` | `sha256:40b3598ed16f1682bcf48b933a33b91e610873d2b8b07bd1d7164ced52ecb507` | `132179174` |
+| Windows | `data-viewer-acceptance-Windows-29508834399-1` | `8379848445` | `sha256:89026fffed6df05462d53c745df80c159e86e3fb11b81110ad5f0a480c135828` | `2384` |
+| Ubuntu | `data-viewer-package-Ubuntu-29508834399-1` | `8379817140` | `sha256:904da892df88be6f48b0726371175a2d271ff71d2dbfe829eb0ad72cc8d8581a` | `173534069` |
+| Ubuntu | `data-viewer-acceptance-Ubuntu-29508834399-1` | `8379817449` | `sha256:9903d2a5a29eb5faa269e30ab781bdf2db294c89a162cc81da6ef4c715a04feb` | `2454` |
+
+Local Windows evidence preparation:
+
+| Check | Command | Observed result |
+|---|---|---|
+| Latest run status | `gh run view 29508834399 --json status,conclusion,jobs,url,headSha` | completed with `success`; Windows and Ubuntu jobs both completed with `success` |
+| Artifact metadata | `gh api repos/alvinloga/HDF5-Viewer/actions/runs/29508834399/artifacts` | returned six unexpired artifacts: Windows/Ubuntu quality, package, and acceptance uploads |
+| Windows lightweight packet download | `gh run download 29508834399 --name data-viewer-acceptance-Windows-29508834399-1 --dir .artifacts\release-acceptance\29508834399\windows\acceptance-upload-prepared` | downloaded `acceptance-summary.json` and `DV-1101-checklist.md` |
+| Ubuntu lightweight packet download | `gh run download 29508834399 --name data-viewer-acceptance-Ubuntu-29508834399-1 --dir .artifacts\release-acceptance\29508834399\ubuntu\acceptance-upload-prepared` | downloaded `acceptance-summary.json` and `DV-1102-checklist.md` |
+| Windows packet metadata update | `.venv\Scripts\python.exe tools\update_release_acceptance_artifact_metadata.py .artifacts\release-acceptance\29508834399\windows\acceptance-upload-prepared --task-id DV-1101 --artifact-name data-viewer-package-Windows-29508834399-1 --artifact-id 8379847767 --artifact-digest sha256:40b3598ed16f1682bcf48b933a33b91e610873d2b8b07bd1d7164ced52ecb507` | passed; package artifact ID/digest and generated digest preflight flag updated |
+| Ubuntu packet metadata update | `.venv\Scripts\python.exe tools\update_release_acceptance_artifact_metadata.py .artifacts\release-acceptance\29508834399\ubuntu\acceptance-upload-prepared --task-id DV-1102 --artifact-name data-viewer-package-Ubuntu-29508834399-1 --artifact-id 8379817140 --artifact-digest sha256:904da892df88be6f48b0726371175a2d271ff71d2dbfe829eb0ad72cc8d8581a` | passed; package artifact ID/digest and generated digest preflight flag updated |
+| Windows prepared packet validator | `.venv\Scripts\python.exe tools\validate_release_acceptance_packet.py .artifacts\release-acceptance\29508834399\windows\acceptance-upload-prepared --task-id DV-1101 --json` | failed as expected with 26 manual/sign-off/visual issues only; no `pending-after-upload`, missing artifact identity, or `preflight-not-passed` issue |
+| Ubuntu prepared packet validator | `.venv\Scripts\python.exe tools\validate_release_acceptance_packet.py .artifacts\release-acceptance\29508834399\ubuntu\acceptance-upload-prepared --task-id DV-1102 --json` | failed as expected with 26 manual/sign-off/visual issues only; no `pending-after-upload`, missing artifact identity, or `preflight-not-passed` issue |
+
+Prepared local packet directories:
+
+- Windows: `.artifacts\release-acceptance\29508834399\windows\acceptance-upload-prepared`
+- Ubuntu: `.artifacts\release-acceptance\29508834399\ubuntu\acceptance-upload-prepared`
+
+Known gaps:
+
+- DV-1101 remains open. The Windows prepared packet still needs native packaged execution against the full functional matrix, native visual/accessibility/localization/DPI screenshots, issue review, and reviewer sign-off.
+- DV-1102 remains open. The Ubuntu prepared packet still needs supported-Linux native packaged execution against the full functional matrix, Linux visual/accessibility/localization/DPI screenshots, issue review, and reviewer sign-off.
+- DV-1103 and DV-1104 remain blocked on signed Windows and Linux acceptance packets that pass `tools/validate_release_acceptance_packet.py`.
